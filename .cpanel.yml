@@ -13,6 +13,8 @@ deployment:
     - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd frontend && npm ci && GOMAXPROCS=1 npx vite build"
 
     # ─── 4. Frontend dist → raíz del subdominio ──────────────────────────────
-    - /usr/bin/rsync -a frontend/dist/ $HOME/wms.chimuelo.cl/
+    # No copiamos .htaccess: cPanel/Passenger escribe ahí las directivas que
+    # enrutan /api hacia la app Node. Sobrescribirlo deja /api en 404 LiteSpeed.
+    - /usr/bin/rsync -a --exclude='.htaccess' frontend/dist/ $HOME/wms.chimuelo.cl/
 
     - echo "Deploy OK. Restart la app Node si hubo cambios de backend."

@@ -21,7 +21,7 @@ Esta guía cubre el despliegue del WMS en cPanel usando **Git Version Control**.
     ├── assets/
     ├── manifest.webmanifest
     ├── sw.js
-    └── .htaccess                 ← reescritura SPA (viene de frontend/public/)
+    └── .htaccess                 ← Passenger /api + reescritura SPA
 ```
 
 ## Setup inicial (una sola vez)
@@ -70,6 +70,46 @@ META_ORDER_STOP_POSITION=_wdg_stop_position
 
 Click **Create**. Aún no arranca porque la carpeta `backend/` no existe; eso lo hace el primer deploy.
 
+### 3.1. Proteger el `.htaccess` de Passenger
+
+cPanel/CloudLinux guarda en `~/wms.chimuelo.cl/.htaccess` un bloque parecido a:
+
+```apache
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/USUARIO/wms.chimuelo.cl/backend"
+PassengerBaseURI "/api"
+PassengerNodejs "/home/USUARIO/nodevenv/wms.chimuelo.cl/backend/20/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+```
+
+Ese bloque es obligatorio para que `https://wms.chimuelo.cl/api/*` llegue al backend Express. Si se sobrescribe, el login falla con un `404 Not Found` HTML de LiteSpeed en `POST /api/auth/login`.
+
+Después de crear o guardar la app Node en cPanel, conserva ese bloque y añade debajo las reglas SPA:
+
+```apache
+RewriteEngine On
+RewriteBase /
+
+RewriteRule ^backend(/.*)?$  - [F,L]
+RewriteRule ^frontend(/.*)?$ - [F,L]
+RewriteRule ^docs(/.*)?$     - [F,L]
+RewriteRule ^\.cpanel\.yml$  - [F,L]
+RewriteRule ^\.git(/.*)?$    - [F,L]
+
+RewriteRule ^api(/.*)?$ - [L]
+
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+RewriteRule ^ /index.html [L]
+Options -Indexes
+```
+
+El deploy excluye `.htaccess` para no borrar las directivas de Passenger.
+
 ### 4. Configurar Git Version Control
 
 `cPanel → Git Version Control → Create`:
@@ -93,7 +133,7 @@ Una vez clonado, en la fila del repo en cPanel verás botones **Manage**, **Pull
    - Instala dependencias del backend con `npm ci --omit=dev`
    - Genera el cliente Prisma
    - Construye el frontend con `npm run build`
-   - Copia `frontend/dist/` a la raíz del subdominio (incluye `.htaccess`)
+   - Copia `frontend/dist/` a la raíz del subdominio sin sobrescribir `.htaccess`
 
 El primer deploy puede tardar 1-3 min (instalación de dependencias).
 
@@ -164,7 +204,17 @@ La app Node está caída. Logs en:
 
 ### El SPA muestra 404 al recargar en una ruta tipo `/sequences/5`
 
-Falta el `.htaccess` o no llegó al subdominio. Verificar que `~/wms.chimuelo.cl/.htaccess` existe y tiene el contenido de `frontend/public/.htaccess`. Si no, hacer rsync manual o redeployar.
+Faltan las reglas SPA en `~/wms.chimuelo.cl/.htaccess`. Verificar que el archivo conserva el bloque `CLOUDLINUX PASSENGER` y que debajo incluye las reglas de reescritura indicadas en "Proteger el `.htaccess` de Passenger".
+
+### Login devuelve 404 HTML de LiteSpeed en `/api/auth/login`
+
+El request no está llegando a Node/Express. Verificar `https://wms.chimuelo.cl/api/health`:
+
+- Si responde HTML de LiteSpeed con 404, falta el bloque Passenger en `~/wms.chimuelo.cl/.htaccess` o la app Node no está configurada con URL `/api`.
+- Si responde JSON con `{"status":"ok",...}`, el backend sí está activo y el problema está en credenciales, WordPress/JWT o variables de entorno.
+- Si responde 502, revisar logs de Passenger y reiniciar la app Node.
+
+Para repararlo rápido, entrar a `cPanel → Setup Node.js App`, abrir la app `wms.chimuelo.cl/api`, guardar/reiniciar para que cPanel regenere Passenger, y volver a añadir las reglas SPA indicadas arriba sin borrar el bloque `CLOUDLINUX PASSENGER`.
 
 ### El webhook de WC devuelve 401
 
