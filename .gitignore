@@ -16,3 +16,22 @@ coverage/
 .next/
 *.tsbuildinfo
 .pnp.*
+
+# Artefactos accidentales del tsc -b sobre vite.config.ts
+frontend/vite.config.d.ts
+frontend/vite.config.js
+
+# Carpeta temporal que crea Passenger en runtime
+backend/tmp/
+
+# Build del frontend al doc root cuando el repo está clonado ahí
+# (cPanel server tiene el repo en /home/USER/wms.chimuelo.cl/ y .cpanel.yml
+#  rsyncea el dist/ a esa misma raíz; estos archivos no deben trackearse).
+/index.html
+/assets/
+/favicon.svg
+/manifest.webmanifest
+/registerSW.js
+/sw.js
+/workbox-*.js
+/.htaccess
