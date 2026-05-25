@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"c:\\\\Users\\\\dsalg\\\\OneDrive - Webpremium\\\\Proyectos\\\\Chimuelo\\\\wms app\")",
+      "Bash(ls \"C:\\\\Users\\\\dsalg\\\\.claude\\\\projects\\\\c--Users-dsalg-OneDrive---Webpremium-Proyectos-Chimuelo-wms-app\\\\memory\\\\\" 2>/dev/null || echo \"empty\")",
+      "Read(//c/Users/dsalg/.claude/projects/c--Users-dsalg-OneDrive---Webpremium-Proyectos-Chimuelo-wms-app/memory\" 2>/dev/**)",
+      "Bash(mkdir -p \"/c/Users/dsalg/.claude/projects/c--Users-dsalg-OneDrive---Webpremium-Proyectos-Chimuelo-wms-app/memory\")",
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(DATABASE_URL=\"mysql://x:x@localhost:3306/x\" npx prisma validate)",
+      "Bash(npx tsc *)",
+      "Bash(npx vite *)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\dsalg\\.claude\\projects\\c--Users-dsalg-OneDrive---Webpremium-Proyectos-Chimuelo-wms-app\\memory"
+    ]
+  }
+}

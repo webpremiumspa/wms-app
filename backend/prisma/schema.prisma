@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Espejo ligero del usuario WP. Las credenciales viven en WordPress;
+// aquí guardamos solo lo necesario para mostrar el operario en la UI
+// y resolver capabilities sin pegarle a WP en cada request.
+model UserMeta {
+  wpUserId      Int      @id @map("wp_user_id")
+  username      String   @db.VarChar(120)
+  displayName   String   @map("display_name") @db.VarChar(180)
+  email         String?  @db.VarChar(180)
+  capabilities  Json
+  active        Boolean  @default(true)
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  sequencesCreated Sequence[] @relation("SequenceCreator")
+  packedOrders     Order[]    @relation("OrderPacker")
+  events           Event[]
+
+  @@map("users_meta")
+}
+
+// Espejo del producto WC. Lo poblamos por sync (webhook product.updated
+// o pull on-demand). Guarda la bodega para evitar consultar WC en cada picking.
+model ProductMeta {
+  wpProductId   Int      @id @map("wp_product_id")
+  sku           String?  @db.VarChar(120)
+  name          String   @db.VarChar(255)
+  warehouse     Warehouse?
+  thumbnailUrl  String?  @map("thumbnail_url") @db.VarChar(500)
+  syncedAt      DateTime @default(now()) @map("synced_at")
+
+  orderItems    OrderItem[]
+
+  @@index([sku])
+  @@index([warehouse])
+  @@map("products_meta")
+}
+
+model Order {
+  id              Int      @id @default(autoincrement())
+  wpOrderId       Int      @unique @map("wp_order_id")
+  number          String   @db.VarChar(64)
+  status          OrderStatus @default(received)
+  route           String?  @db.VarChar(64)
+  stopPosition    Int?     @map("stop_position")
+  customerName    String?  @map("customer_name") @db.VarChar(200)
+  customerAddress String?  @map("customer_address") @db.VarChar(500)
+  hasB2Pending    Boolean  @default(false) @map("has_b2_pending")
+  bagsExpected    Int      @default(1) @map("bags_expected")
+  packedById      Int?     @map("packed_by_id")
+  packedAt        DateTime? @map("packed_at")
+  classifiedAt    DateTime? @map("classified_at")
+  loadedAt        DateTime? @map("loaded_at")
+  deliveredAt     DateTime? @map("delivered_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  packedBy        UserMeta? @relation("OrderPacker", fields: [packedById], references: [wpUserId])
+  items           OrderItem[]
+  sequenceLinks   SequenceOrder[]
+  events          Event[]
+
+  @@index([status])
+  @@index([route])
+  @@map("orders")
+}
+
+model OrderItem {
+  id            Int      @id @default(autoincrement())
+  orderId       Int      @map("order_id")
+  productId     Int      @map("product_id")
+  qty           Int
+  warehouse     Warehouse
+  pickedAt      DateTime? @map("picked_at")
+  packedAt      DateTime? @map("packed_at")
+
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       ProductMeta @relation(fields: [productId], references: [wpProductId])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+// Secuencia de picking: agrupa N pedidos para un recorrido único de bodega.
+model Sequence {
+  id            Int      @id @default(autoincrement())
+  warehouse     Warehouse
+  createdById   Int      @map("created_by_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+  closedAt      DateTime? @map("closed_at")
+  expectedBags  Int      @default(0) @map("expected_bags")
+  actualBags    Int      @default(0) @map("actual_bags")
+  status        SequenceStatus @default(open)
+
+  createdBy     UserMeta @relation("SequenceCreator", fields: [createdById], references: [wpUserId])
+  orders        SequenceOrder[]
+
+  @@map("sequences")
+}
+
+model SequenceOrder {
+  sequenceId    Int      @map("sequence_id")
+  orderId       Int      @map("order_id")
+
+  sequence      Sequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@id([sequenceId, orderId])
+  @@map("sequence_orders")
+}
+
+// Log de eventos para trazabilidad (quién hizo qué sobre qué pedido).
+model Event {
+  id            Int      @id @default(autoincrement())
+  type          String   @db.VarChar(60)
+  actorId       Int?     @map("actor_id")
+  orderId       Int?     @map("order_id")
+  payload       Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  actor         UserMeta? @relation(fields: [actorId], references: [wpUserId])
+  order         Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([type])
+  @@index([orderId])
+  @@map("events")
+}
+
+enum Warehouse {
+  B1
+  B2
+}
+
+enum OrderStatus {
+  received       // pedido sincronizado, aún no asignado a secuencia
+  sequenced      // ya está en una secuencia abierta
+  picked         // items recolectados
+  packed         // bolsa armada
+  classified     // QR escaneado en la mañana, ruta confirmada
+  loaded         // subido a la camioneta
+  delivered      // entregado (lo escribe el repartidor o el sistema externo)
+}
+
+enum SequenceStatus {
+  open
+  closed
+}

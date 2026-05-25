@@ -1,0 +1,49 @@
+import { api } from './api';
+import type {
+  PendingOrder,
+  Sequence,
+  SequenceDetail,
+  PickingReport,
+  PendingPackingOrder,
+  StockProblem,
+  OrderDetail,
+  Warehouse,
+} from './types';
+
+export const sequencesApi = {
+  list: async (): Promise<Sequence[]> => (await api.get('/sequences')).data.sequences,
+
+  get: async (id: number): Promise<SequenceDetail> => (await api.get(`/sequences/${id}`)).data.sequence,
+
+  pickingReport: async (id: number): Promise<PickingReport> =>
+    (await api.get(`/sequences/${id}/picking-report`)).data,
+
+  pendingPacking: async (id: number): Promise<PendingPackingOrder[]> =>
+    (await api.get(`/sequences/${id}/pending-packing`)).data.orders,
+
+  pendingOrders: async (): Promise<PendingOrder[]> => (await api.get('/orders/pending')).data.orders,
+
+  validateStock: async (orderIds: number[]): Promise<StockProblem[]> =>
+    (await api.post('/sequences/validate-stock', { orderIds })).data.problems,
+
+  create: async (warehouse: Warehouse, orderIds: number[]): Promise<Sequence> =>
+    (await api.post('/sequences', { warehouse, orderIds })).data.sequence,
+
+  markPicked: async (id: number, productId: number, picked: boolean): Promise<void> => {
+    await api.patch(`/sequences/${id}/picking`, { productId, picked });
+  },
+
+  close: async (id: number, actualBags?: number): Promise<Sequence> =>
+    (await api.post(`/sequences/${id}/close`, actualBags !== undefined ? { actualBags } : {})).data.sequence,
+};
+
+export const ordersApi = {
+  get: async (id: number): Promise<OrderDetail> => (await api.get(`/orders/${id}`)).data.order,
+  pack: async (id: number, itemIds: number[]): Promise<void> => {
+    await api.post(`/orders/${id}/pack`, { itemIds });
+  },
+  albaranPdfUrl: (id: number): string => {
+    const base = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+    return `${base}/orders/${id}/albaran.pdf`;
+  },
+};
