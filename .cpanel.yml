@@ -1,0 +1,25 @@
+---
+deployment:
+  tasks:
+    # ─── 1. Backend → wms.chimuelo.cl/backend/ ───────────────────────────────
+    # Sincroniza el código backend al Application root de la app Node.
+    # Excluye node_modules y .env (las env vars vienen del panel de cPanel).
+    - /usr/bin/rsync -a --delete --exclude='node_modules' --exclude='.env' backend/ $HOME/wms.chimuelo.cl/backend/
+
+    # ─── 2. Instalar dependencias del backend y generar cliente Prisma ───────
+    # Activa el venv de Node 20 que cPanel creó para esta app.
+    - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd $HOME/wms.chimuelo.cl/backend && npm ci --omit=dev && npx prisma generate"
+
+    # ─── 3. Build del frontend (usando el mismo Node 20) ─────────────────────
+    - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd frontend && npm ci && npm run build"
+
+    # ─── 4. Frontend dist → raíz del subdominio ──────────────────────────────
+    # Sin --delete para no borrar /backend ni archivos manuales.
+    - /usr/bin/rsync -a frontend/dist/ $HOME/wms.chimuelo.cl/
+
+    # ─── 5. Recordatorio ─────────────────────────────────────────────────────
+    # Tras el deploy: cPanel → Setup Node.js App → Restart.
+    # Si hubo cambios en prisma/schema.prisma, por SSH:
+    #   source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate
+    #   cd $HOME/wms.chimuelo.cl/backend && npx prisma migrate deploy
+    - echo "Deploy OK. Restart la app Node si hubo cambios de backend."

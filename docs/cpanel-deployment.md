@@ -1,45 +1,63 @@
-# Despliegue en cPanel
+# Despliegue en cPanel vía Git
 
-Esta guía cubre el despliegue del backend Node.js y el frontend estático en cPanel, con el subdominio `wms.chimuelo.cl`.
+Esta guía cubre el despliegue del WMS en cPanel usando **Git Version Control**. El backend Node.js corre como app Passenger en `wms.chimuelo.cl/api` y el frontend (SPA + PWA) se sirve estático en la raíz del subdominio.
 
-## Antes de empezar
+## Estructura final en el servidor
 
-- Crear el subdominio `wms.chimuelo.cl` en `cPanel → Dominios` apuntando a una carpeta dedicada, por ejemplo `/home/USUARIO/wms.chimuelo.cl`.
-- Crear una base de datos MySQL: `cPanel → MySQL Databases`
-  - Nombre BD: `USUARIO_wms`
-  - Usuario BD: `USUARIO_wms`
-  - Asignar al usuario "All Privileges" sobre la BD.
-- Tener SSH habilitado (recomendado) o usar Terminal de cPanel.
+```
+/home/USUARIO/
+├── repos/wms-chimuelo/           ← Git clone (deploy source)
+│   ├── .cpanel.yml               ← script que ejecuta el deploy
+│   ├── backend/
+│   ├── frontend/
+│   └── docs/
+└── wms.chimuelo.cl/              ← document root del subdominio
+    ├── backend/                  ← Application root de la app Node
+    │   ├── server.js
+    │   ├── package.json
+    │   ├── src/
+    │   └── prisma/
+    ├── index.html                ← build del SPA
+    ├── assets/
+    ├── manifest.webmanifest
+    ├── sw.js
+    └── .htaccess                 ← reescritura SPA (viene de frontend/public/)
+```
 
-## 1. Backend (Node.js App)
+## Setup inicial (una sola vez)
 
-### 1.1 Subir código
+### 1. Crear el subdominio
 
-Opciones:
-- **Git** (recomendado): `cPanel → Git Version Control → Create` apuntando al repo, rama `main`, deploy a `/home/USUARIO/wms-backend`.
-- **Manual**: subir el contenido de `backend/` por SFTP a `/home/USUARIO/wms-backend`.
+`cPanel → Dominios → Crear` con dominio `wms.chimuelo.cl` y document root `/home/USUARIO/wms.chimuelo.cl` (sin `public_html`).
 
-### 1.2 Crear app en "Setup Node.js App"
+### 2. Crear base de datos MySQL
 
-- `cPanel → Setup Node.js App → Create Application`
-- **Node.js version:** 20.20.2
-- **Application mode:** Production
-- **Application root:** `wms-backend` (path relativo a home)
-- **Application URL:** `wms.chimuelo.cl` con path `/api` *(ver nota abajo)*
-- **Application startup file:** `server.js`
+`cPanel → MySQL Databases`:
+- BD: `USUARIO_wms`
+- Usuario: `USUARIO_wms`
+- Asignar al usuario "All Privileges" sobre la BD.
 
-> **Nota sobre el path**: cPanel sirve la app Node bajo el path indicado. Si configuras `/api`, Passenger interceptará solo URLs que empiecen con `/api/` y el resto (la SPA) lo sirve cPanel desde `public_html` del subdominio.
-> Alternativa: la app cubre la raíz (`/`) y dentro de Express servimos también los estáticos del frontend. Elige una sola estrategia. La guía asume **path `/api` para la app Node y la SPA en `public_html`**.
+### 3. Configurar la app Node.js
 
-### 1.3 Variables de entorno
+`cPanel → Setup Node.js App → Create Application`:
 
-En la pantalla de la app, sección "Environment variables", añadir las del `backend/.env.example`. Las críticas:
+| Campo | Valor |
+|---|---|
+| Node.js version | 20.20.2 |
+| Application mode | Production (para producción) |
+| Application root | `wms.chimuelo.cl/backend` |
+| Application URL | `wms.chimuelo.cl` con path `/api` |
+| Application startup file | `server.js` |
+
+> El path `/api` es lo que hace que Passenger solo intercepte URLs bajo `wms.chimuelo.cl/api/*` y deje todo el resto para que Apache sirva la SPA.
+
+En **Environment variables**, añadir todas las del `backend/.env.example`:
 
 ```
 NODE_ENV=production
 PORT=4000
 FRONTEND_ORIGIN=https://wms.chimuelo.cl
-DATABASE_URL=mysql://USUARIO_wms:PASS@localhost:3306/USUARIO_wms
+DATABASE_URL=mysql://USUARIO_wms:PASSWORD@localhost:3306/USUARIO_wms
 WP_BASE_URL=https://chimuelo.cl
 WP_JWT_SECRET=...
 WC_CONSUMER_KEY=ck_...
@@ -50,88 +68,114 @@ META_ORDER_ROUTE=_wdg_route
 META_ORDER_STOP_POSITION=_wdg_stop_position
 ```
 
-### 1.4 Instalar dependencias y migrar BD
+Click **Create**. Aún no arranca porque la carpeta `backend/` no existe; eso lo hace el primer deploy.
 
-Desde la pantalla de la app, botón **"Run NPM Install"**.
+### 4. Configurar Git Version Control
 
-Luego, abrir terminal SSH (`cPanel → Terminal`) y ejecutar el "Enter to the virtual environment" que muestra cPanel — algo como:
+`cPanel → Git Version Control → Create`:
+
+- **Clone a Repository:** sí
+- **Clone URL:** `git@github.com:tuusuario/wms-chimuelo.git` (o HTTPS con token)
+- **Repository Path:** `/home/USUARIO/repos/wms-chimuelo`
+- **Repository Name:** `wms-chimuelo`
+
+Si usas SSH con GitHub, asegúrate de que la clave pública del cPanel (`cPanel → SSH Access → Manage SSH Keys`) esté agregada como **Deploy Key** en el repo de GitHub.
+
+Una vez clonado, en la fila del repo en cPanel verás botones **Manage**, **Pull or Deploy** y otros.
+
+### 5. Primer deploy
+
+`cPanel → Git Version Control → tu repo → Manage → Pull or Deploy`:
+
+1. **Update from Remote** — trae los últimos commits.
+2. **Deploy HEAD Commit** — ejecuta `.cpanel.yml`, que:
+   - Copia `backend/` a `wms.chimuelo.cl/backend/`
+   - Instala dependencias del backend con `npm ci --omit=dev`
+   - Genera el cliente Prisma
+   - Construye el frontend con `npm run build`
+   - Copia `frontend/dist/` a la raíz del subdominio (incluye `.htaccess`)
+
+El primer deploy puede tardar 1-3 min (instalación de dependencias).
+
+### 6. Migrar la base de datos
+
+Aún por SSH (`cPanel → Terminal`):
 
 ```bash
-source /home/USUARIO/nodevenv/wms-backend/20/bin/activate && cd /home/USUARIO/wms-backend
-npx prisma generate
+source ~/nodevenv/wms.chimuelo.cl/backend/20/bin/activate
+cd ~/wms.chimuelo.cl/backend
 npx prisma migrate deploy
 ```
 
-### 1.5 Reiniciar la app
+### 7. Restart de la app
 
-Botón **"Restart"** en la pantalla de la app.
+`cPanel → Setup Node.js App → Restart` sobre la app `wms.chimuelo.cl/api`.
 
-Probar:
-```
+### 8. Verificar
+
+```bash
 curl https://wms.chimuelo.cl/api/health
 ```
-Debe devolver `{"status":"ok","db":"ok",...}`.
 
-## 2. Frontend (SPA estática)
-
-### 2.1 Build local
-
-En tu equipo (no en cPanel):
-
-```powershell
-cd frontend
-copy .env.example .env       # ajustar VITE_API_URL=https://wms.chimuelo.cl/api
-npm install
-npm run build
+Debe responder:
+```json
+{"status":"ok","db":"ok","ts":"..."}
 ```
 
-Esto genera `frontend/dist/`.
+Abrir `https://wms.chimuelo.cl/` en el navegador — debe cargar la pantalla de login.
 
-### 2.2 Subir build
+## Deploys posteriores
 
-Subir el **contenido** de `frontend/dist/` (no la carpeta, sino los archivos dentro) a `public_html` del subdominio en cPanel:
-
-```
-/home/USUARIO/wms.chimuelo.cl/
-  ├── index.html
-  ├── assets/
-  ├── manifest.webmanifest
-  ├── sw.js
-  └── ...
+```bash
+# En tu equipo local:
+git add .
+git commit -m "..."
+git push origin main
 ```
 
-### 2.3 Reescritura para SPA
+En cPanel:
+1. `Git Version Control → tu repo → Manage → Pull or Deploy`
+2. **Update from Remote**
+3. **Deploy HEAD Commit**
+4. Si tocaste `prisma/schema.prisma`, abrir Terminal y correr `npx prisma migrate deploy` (ver paso 6).
+5. **Restart** de la app Node si tocaste el backend.
 
-Crear `/home/USUARIO/wms.chimuelo.cl/.htaccess`:
+## Workflow recomendado
 
-```apache
-RewriteEngine On
-RewriteBase /
+- **Solo cambios de backend:** después del deploy, hacer Restart.
+- **Solo cambios de frontend:** no requiere Restart. El navegador refresca el service worker automáticamente.
+- **Cambios de schema:** deploy + `prisma migrate deploy` por SSH + Restart.
 
-# No reescribir /api/ (lo maneja la app Node)
-RewriteCond %{REQUEST_URI} ^/api(/|$) [OR]
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
+## Troubleshooting
 
-# Resto va al index.html (SPA)
-RewriteRule ^ /index.html [L]
-```
+### "Cannot find module" al iniciar la app
 
-### 2.4 Comprobar
+`npm ci` falló durante el deploy. Revisar los logs del deploy en `cPanel → Git Version Control → Last Deployment`. Comprobar también que `npm ci --omit=dev` no excluye una dep que el runtime sí necesita.
 
-Abrir `https://wms.chimuelo.cl` en el navegador móvil. Debe cargar la pantalla de login.
+### "Environment variable not found: DATABASE_URL"
 
-## 3. Actualizaciones
+Las env vars no están seteadas en la app Node, o no se hizo Restart después de añadirlas. Revisar `cPanel → Setup Node.js App → tu app → Environment variables` y hacer Restart.
 
-- Backend: `git pull` en el directorio de la app, `npx prisma migrate deploy` si hay cambios de schema, botón **Restart** de la app Node.
-- Frontend: `npm run build` local, subir `dist/` a `public_html`, refrescar (PWA invalida el cache solo gracias a `registerType: 'autoUpdate'`).
+### 502 al abrir la SPA
 
-## 4. Logs
+La app Node está caída. Logs en:
+- `~/nodevenv/wms.chimuelo.cl/backend/20/passenger.log`
+- `cPanel → Errors`
 
-- Stdout de la app Node: `cPanel → Setup Node.js App → ver "stderr.log" / "passenger.log"` o vía SSH en `/home/USUARIO/nodevenv/wms-backend/...`.
+### El SPA muestra 404 al recargar en una ruta tipo `/sequences/5`
+
+Falta el `.htaccess` o no llegó al subdominio. Verificar que `~/wms.chimuelo.cl/.htaccess` existe y tiene el contenido de `frontend/public/.htaccess`. Si no, hacer rsync manual o redeployar.
+
+### El webhook de WC devuelve 401
+
+`WC_WEBHOOK_SECRET` en el env de la app Node no coincide con el secret configurado en el webhook de WooCommerce. Verificar ambos lados.
+
+## Logs
+
+- Stdout/stderr de la app: `cPanel → Setup Node.js App → tu app → "Show Logs"` o vía SSH `~/nodevenv/wms.chimuelo.cl/backend/20/passenger.log`.
 - Apache: `cPanel → Metrics → Errors`.
+- Deploy: `cPanel → Git Version Control → Manage → Last Deployment`.
 
-## 5. Backups
+## Backups
 
-cPanel hace backup diario de la BD; también puedes programar `mysqldump` con `cron`. Recordar excluir `node_modules/` de los backups del sistema de archivos.
+cPanel hace backup diario de la BD. Verificar también que `wms.chimuelo.cl/.env` (si existe) esté en backup. El código no es crítico — está en git.

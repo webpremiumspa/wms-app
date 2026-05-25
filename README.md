@@ -35,6 +35,15 @@ npm install
 npm run dev              # arranca en http://localhost:5173
 ```
 
+## Despliegue
+
+Por git: cPanel `Git Version Control` clona el repo, el archivo [.cpanel.yml](.cpanel.yml) sincroniza backend y construye el frontend en cada deploy. Detalles completos en [docs/cpanel-deployment.md](docs/cpanel-deployment.md).
+
+Configuración Node.js en cPanel:
+- Application root: `wms.chimuelo.cl/backend`
+- Application URL: `wms.chimuelo.cl` con path `/api`
+- Application startup file: `server.js`
+
 ## Documentación
 
 - [docs/architecture.md](docs/architecture.md) — visión técnica y modelo de datos
