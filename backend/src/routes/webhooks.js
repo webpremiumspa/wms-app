@@ -21,14 +21,29 @@ function verifyWcSignature(rawBody, signature) {
 
 router.post('/wc/order', async (req, res, next) => {
   try {
+    // WC's webhook.created "ping" usa application/x-www-form-urlencoded
+    // (body = "webhook_id=N") y NO trae firma HMAC. Lo único que pide es
+    // un 2xx para marcar el webhook como activo.
+    const ctype = (req.header('content-type') || '').toLowerCase();
+    if (!ctype.includes('application/json')) {
+      return res.json({ ok: true, ping: true });
+    }
+
+    const raw = req.body;
+    if (!Buffer.isBuffer(raw) || raw.length === 0) {
+      return res.json({ ok: true, ping: true });
+    }
+
     const sig = req.header('x-wc-webhook-signature');
-    const raw = req.body; // Buffer (express.raw)
     if (!verifyWcSignature(raw, sig)) throw new HttpError(401, 'Bad webhook signature');
 
-    const payload = JSON.parse(raw.toString('utf8'));
+    let payload;
+    try {
+      payload = JSON.parse(raw.toString('utf8'));
+    } catch {
+      throw new HttpError(400, 'Invalid JSON payload');
+    }
 
-    // WC dispara webhooks por varios estados; nos quedamos con los que importan
-    // al WMS (processing/on-hold/completed). Ignoramos cancelled/refunded.
     const status = payload.status;
     if (!['processing', 'on-hold', 'completed'].includes(status)) {
       return res.json({ ok: true, ignored: true, status });
