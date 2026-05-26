@@ -18,7 +18,13 @@ export function PackingList() {
 
   if (isLoading || !data) return <Spinner />;
 
-  const packed = data.filter((o) => o.status !== 'sequenced' && o.status !== 'picked').length;
+  const packed = data.filter((o) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.status)).length;
+  // Pendientes primero, empacados al final (mejor flujo visual del picker).
+  const sorted = [...data].sort((a, b) => {
+    const aDone = ['packed', 'classified', 'loaded', 'delivered'].includes(a.status) ? 1 : 0;
+    const bDone = ['packed', 'classified', 'loaded', 'delivered'].includes(b.status) ? 1 : 0;
+    return aDone - bDone;
+  });
 
   return (
     <div className="space-y-4">
@@ -30,7 +36,7 @@ export function PackingList() {
       <ProgressBar value={packed} total={data.length} label="Pedidos empacados" />
 
       <div className="space-y-2">
-        {data.map((o) => {
+        {sorted.map((o) => {
           const done = o.status === 'packed' || o.status === 'classified' || o.status === 'loaded' || o.status === 'delivered';
           return (
             <Link

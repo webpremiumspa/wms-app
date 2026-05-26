@@ -179,7 +179,10 @@ export async function markPicked({ sequenceId, productId, actorId, picked }) {
   }
 }
 
-// Lista los pedidos listos para empacar dentro de una secuencia.
+// Lista TODOS los pedidos de la secuencia con su estado actual. La UI los
+// muestra ordenados (no empacados arriba) y usa el conteo total para la barra
+// de progreso. Antes filtraba solo 'picked'/'sequenced' y los empacados
+// desaparecían de la lista, lo que rompía el progreso (0/X siempre).
 // En modo 'by_order' el picker recoge y empaca en un solo paso, por eso
 // `ready` siempre es true (no requiere picking previo).
 export async function getPendingPacking(sequenceId) {
@@ -189,7 +192,7 @@ export async function getPendingPacking(sequenceId) {
   const orders = await prisma.order.findMany({
     where: {
       sequenceLinks: { some: { sequenceId } },
-      status: { in: ['picked', 'sequenced'] },
+      status: { in: ['sequenced', 'picked', 'packed', 'classified', 'loaded'] },
     },
     include: { items: { include: { product: true } } },
     orderBy: { id: 'asc' },
