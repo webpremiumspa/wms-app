@@ -87,7 +87,10 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.SUPER
 });
 
 const packSchema = z.object({
-  itemIds: z.array(z.number().int().positive()).min(1),
+  // Puede venir vacío en pedidos que solo tienen items de Bodega 2 (no hay nada
+  // que empacar físicamente desde B1, pero el pedido igual se cierra para
+  // imprimir el albarán que lleva los items a sacar del granel).
+  itemIds: z.array(z.number().int().positive()),
 });
 
 // Packing: el operador confirma los items B1 introducidos en la bolsa.
@@ -108,16 +111,20 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
     const b1Items = order.items.filter((i) => i.warehouse === 'B1');
     const required = new Set(b1Items.map((i) => i.id));
     const confirmed = new Set(parsed.data.itemIds);
-    const missing = [...required].filter((x) => !confirmed.has(x));
-    if (missing.length > 0) {
-      throw new HttpError(409, 'All B1 items must be checked before packing', { missingItemIds: missing });
+    // Solo verificamos completitud si el pedido tiene items B1. Si solo tiene
+    // B2, no hay nada que empacar y el pedido se cierra directo.
+    if (b1Items.length > 0) {
+      const missing = [...required].filter((x) => !confirmed.has(x));
+      if (missing.length > 0) {
+        throw new HttpError(409, 'All B1 items must be checked before packing', { missingItemIds: missing });
+      }
     }
 
     const now = new Date();
     // Soporta modo 'by_order': si los items aún no tenían pickedAt (porque no
     // hubo paso previo de picking), lo seteamos ahora junto al packedAt.
     // Idempotente: no pisa pickedAt si ya estaba.
-    await prisma.$transaction([
+    const itemUpdates = confirmed.size > 0 ? [
       prisma.orderItem.updateMany({
         where: { id: { in: [...confirmed] }, orderId: id, pickedAt: null },
         data: { pickedAt: now },
@@ -126,6 +133,10 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
         where: { id: { in: [...confirmed] }, orderId: id },
         data: { packedAt: now },
       }),
+    ] : [];
+
+    await prisma.$transaction([
+      ...itemUpdates,
       prisma.order.update({
         where: { id },
         data: {
@@ -139,7 +150,7 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
           type: 'order.packed',
           actorId: req.user.wpUserId,
           orderId: id,
-          payload: { itemIds: [...confirmed] },
+          payload: { itemIds: [...confirmed], onlyB2: b1Items.length === 0 },
         },
       }),
     ]);

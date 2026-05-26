@@ -50,7 +50,9 @@ export function PackingOrder() {
 
   if (isLoading || !order) return <Spinner />;
 
-  const allChecked = b1Items.length > 0 && b1Items.every((i) => checked.has(i.id));
+  // Si no hay items B1, el pedido se cierra sin pedir checkboxes (solo B2 a granel).
+  const allChecked = b1Items.length === 0 || b1Items.every((i) => checked.has(i.id));
+  const onlyB2 = b1Items.length === 0;
   const isPacked = order.status === 'packed' || order.status === 'classified' || order.status === 'loaded' || order.status === 'delivered';
 
   function toggle(itemId: number) {
@@ -89,7 +91,13 @@ export function PackingOrder() {
         </div>
       )}
 
-      <div className="space-y-2">
+      {onlyB2 ? (
+        <div className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
+          Este pedido <strong>no tiene items de Bodega 1</strong>. No hay nada que empacar físicamente en la bolsa — el albarán se imprime para que el repartidor tome todo desde el cargamento a granel de Bodega 2.
+        </div>
+      ) : null}
+
+      <div className={onlyB2 ? 'hidden' : 'space-y-2'}>
         <h3 className="text-sm font-semibold text-slate-700">Items a empacar (Bodega 1)</h3>
         <ProgressBar value={[...checked].filter((id) => b1Items.some((i) => i.id === id)).length} total={b1Items.length} label="Items confirmados" />
         {b1Items.map((it) => (
@@ -147,7 +155,7 @@ export function PackingOrder() {
 
       {!isPacked && (
         <div className="sticky bottom-20 z-10 bg-slate-100 pt-2 md:bottom-0">
-          {!allChecked && (
+          {!onlyB2 && !allChecked && (
             <div className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
               Falta marcar items B1. No se puede cerrar el pedido hasta confirmar todos.
             </div>
@@ -158,7 +166,7 @@ export function PackingOrder() {
             className="btn-primary w-full"
           >
             <Printer size={18} />
-            {pack.isPending ? 'Cerrando…' : 'Cerrar pedido e imprimir albarán'}
+            {pack.isPending ? 'Cerrando…' : onlyB2 ? 'Imprimir albarán y cerrar' : 'Cerrar pedido e imprimir albarán'}
           </button>
         </div>
       )}
