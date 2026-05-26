@@ -17,6 +17,7 @@ import { Picking } from '@/pages/Picking';
 import { Dispatch } from '@/pages/Dispatch';
 import { Delivery } from '@/pages/Delivery';
 import { Dashboard } from '@/pages/Dashboard';
+import { Help } from '@/pages/Help';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="dispatch" element={<Dispatch />} />
               <Route path="delivery" element={<Delivery />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="help" element={<Help />} />
             </Route>
           </Routes>
         </AuthProvider>

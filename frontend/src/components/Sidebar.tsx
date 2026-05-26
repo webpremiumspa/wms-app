@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Package, Truck, Scan, ClipboardList, LogOut, BarChart3 } from 'lucide-react';
+import { Home, Package, Truck, Scan, ClipboardList, LogOut, BarChart3, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import clsx from 'clsx';
@@ -13,6 +13,7 @@ const NAV: NavItem[] = [
   { to: '/dispatch', label: 'Clasificación', icon: Scan, cap: CAPS.LOAD },
   { to: '/delivery', label: 'Entrega', icon: Truck, cap: CAPS.DELIVER },
   { to: '/dashboard', label: 'Supervisión', icon: BarChart3, cap: CAPS.SUPERVISE },
+  { to: '/help', label: 'Ayuda', icon: HelpCircle },
 ];
 
 export function Sidebar() {
