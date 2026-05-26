@@ -49,8 +49,12 @@ export const ordersApi = {
   pack: async (id: number, itemIds: number[]): Promise<void> => {
     await api.post(`/orders/${id}/pack`, { itemIds });
   },
-  albaranPdfUrl: (id: number): string => {
-    const base = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
-    return `${base}/orders/${id}/albaran.pdf`;
+  // Descarga el PDF con el header Authorization (que window.open no enviaría)
+  // y lo abre en una nueva pestaña como blob.
+  openAlbaran: async (id: number): Promise<void> => {
+    const res = await api.get(`/orders/${id}/albaran.pdf`, { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   },
 };

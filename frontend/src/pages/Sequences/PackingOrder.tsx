@@ -32,11 +32,15 @@ export function PackingOrder() {
 
   const pack = useMutation({
     mutationFn: () => ordersApi.pack(ordId, [...checked]),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['order', ordId] });
       queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
-      // Abre el albarán en nueva pestaña para imprimir; luego vuelve al listado.
-      window.open(ordersApi.albaranPdfUrl(ordId), '_blank', 'noopener');
+      // Abre el albarán en nueva pestaña (descarga con auth y abre como blob).
+      try {
+        await ordersApi.openAlbaran(ordId);
+      } catch (e) {
+        console.error('No se pudo abrir el albarán', e);
+      }
       navigate(`/sequences/${seqId}/packing`);
     },
   });
@@ -160,15 +164,14 @@ export function PackingOrder() {
       )}
 
       {isPacked && (
-        <a
-          href={ordersApi.albaranPdfUrl(ordId)}
-          target="_blank"
-          rel="noopener"
+        <button
+          type="button"
+          onClick={() => ordersApi.openAlbaran(ordId).catch((e) => console.error(e))}
           className="btn-ghost w-full border border-slate-300"
         >
           <Printer size={18} />
           Reimprimir albarán
-        </a>
+        </button>
       )}
     </div>
   );
