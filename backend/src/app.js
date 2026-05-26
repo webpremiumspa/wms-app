@@ -15,6 +15,7 @@ import dispatchRoutes from './routes/dispatch.js';
 import deliveryRoutes from './routes/delivery.js';
 import dashboardRoutes from './routes/dashboard.js';
 import syncRoutes from './routes/sync.js';
+import publicRoutes from './routes/public.js';
 
 function mountWebhookRoutes(app, prefix = '') {
   // Passenger en cPanel puede montar la app bajo /api y entregar a Express la
@@ -32,6 +33,7 @@ function mountJsonRoutes(app, prefix = '') {
   app.use(`${prefix}/delivery`, deliveryRoutes);
   app.use(`${prefix}/dashboard`, dashboardRoutes);
   app.use(`${prefix}/sync`, syncRoutes);
+  app.use(`${prefix}/public`, publicRoutes);
 
   if (config.env === 'development') {
     app.use(`${prefix}/dev`, devRoutes);

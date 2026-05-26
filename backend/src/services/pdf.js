@@ -11,14 +11,36 @@ function buildQrPayload(order) {
   return `${base}/scan/${order.wpOrderId}`;
 }
 
-// Trae la imagen como Buffer. Timeout corto y fallback null para no bloquear
-// la generación del PDF si la imagen no carga.
+// Trae la imagen como Buffer. PDFKit solo soporta JPEG y PNG, así que pedimos
+// explícitamente esos formatos y descartamos WebP/AVIF (que muchos plugins de
+// optimización de WP sirven por defecto). Timeout largo por Cloudflare.
 async function fetchImageBuffer(url) {
   if (!url) return null;
   try {
-    const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 5000 });
-    return Buffer.from(res.data);
-  } catch {
+    const res = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 8000,
+      headers: {
+        Accept: 'image/jpeg, image/png, image/*;q=0.8',
+        'User-Agent': 'WMS-Albaran-PDF/1.0',
+      },
+    });
+    const ct = (res.headers['content-type'] || '').toLowerCase();
+    if (ct.includes('webp') || ct.includes('avif') || ct.includes('svg')) {
+      console.warn('[pdf] formato no soportado por pdfkit:', ct, url);
+      return null;
+    }
+    // Validación de firma binaria: PNG = 89 50 4E 47, JPEG = FF D8 FF
+    const buf = Buffer.from(res.data);
+    const isPng = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+    const isJpeg = buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+    if (!isPng && !isJpeg) {
+      console.warn('[pdf] buffer no es PNG/JPEG (content-type:', ct, ') url:', url);
+      return null;
+    }
+    return buf;
+  } catch (err) {
+    console.warn('[pdf] image fetch failed:', url, err.message);
     return null;
   }
 }

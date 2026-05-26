@@ -31,6 +31,7 @@ export default function App() {
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/scan/:wpOrderId" element={<Scan />} />
             <Route
               element={
                 <RequireAuth>
@@ -52,7 +53,6 @@ export default function App() {
               <Route path="delivery" element={<Delivery />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="help" element={<Help />} />
-              <Route path="scan/:wpOrderId" element={<Scan />} />
             </Route>
           </Routes>
         </AuthProvider>

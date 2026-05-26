@@ -15,8 +15,12 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      clearAuth();
-      if (location.pathname !== '/login') location.href = '/login';
+      const isPublic = err.config?.url?.includes('/public/');
+      const onPublicPage = location.pathname.startsWith('/scan/');
+      if (!isPublic && !onPublicPage) {
+        clearAuth();
+        if (location.pathname !== '/login') location.href = '/login';
+      }
     }
     return Promise.reject(err);
   },

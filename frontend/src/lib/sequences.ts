@@ -48,6 +48,12 @@ export const ordersApi = {
   get: async (id: number): Promise<OrderDetail> => (await api.get(`/orders/${id}`)).data.order,
   getByWpId: async (wpOrderId: number): Promise<OrderDetail> =>
     (await api.get(`/orders/by-wp/${wpOrderId}`)).data.order,
+
+  // Versión pública del endpoint anterior — no requiere auth.
+  // Usada por el scan del QR para que la cámara del móvil abra el navegador
+  // sin obligar a loguearse antes de ver el contenido del pedido.
+  getPublicByWpId: async (wpOrderId: number): Promise<OrderDetail> =>
+    (await api.get(`/public/orders/${wpOrderId}`)).data.order,
   pack: async (id: number, itemIds: number[]): Promise<void> => {
     await api.post(`/orders/${id}/pack`, { itemIds });
   },
