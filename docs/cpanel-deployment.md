@@ -106,6 +106,8 @@ PassengerStartupFile server.js
 
 Ese bloque es obligatorio para que `https://wms.chimuelo.cl/api/*` llegue al backend Express. Si falta, el login falla con un `404 Not Found` HTML de LiteSpeed en `POST /api/auth/login`.
 
+Si después de guardar la app `api/.htaccess` queda vacío, pegar manualmente ese bloque cambiando `USUARIO` por el usuario real de cPanel. En este proyecto el deploy también escribe ese bloque automáticamente solo cuando `api/.htaccess` está vacío.
+
 En la raíz `~/wms.chimuelo.cl/.htaccess` deben ir las reglas SPA. La regla de `/api` deja que Apache entre a la carpeta `api/` y procese su `.htaccess` de Passenger:
 
 ```apache
@@ -230,6 +232,7 @@ Faltan las reglas SPA en `~/wms.chimuelo.cl/.htaccess`. Verificar que incluye la
 
 El request no está llegando a Node/Express. Verificar `https://wms.chimuelo.cl/api/health`:
 
+- Si responde `403` HTML de Cloudflare al usar `curl` desde el propio hosting, Cloudflare está bloqueando la petición pública desde la IP del servidor. No sirve para diagnosticar Passenger; revisar `api/.htaccess` y probar desde el navegador o pausar temporalmente el WAF para esa ruta.
 - Si responde HTML de LiteSpeed con 404, falta el bloque Passenger en `~/wms.chimuelo.cl/api/.htaccess`, falta la carpeta física `api/`, o la app Node no está configurada con URL `/api`.
 - Si responde JSON con `{"status":"ok",...}`, el backend sí está activo y el problema está en credenciales, WordPress/JWT o variables de entorno.
 - Si responde 502, revisar logs de Passenger y reiniciar la app Node.

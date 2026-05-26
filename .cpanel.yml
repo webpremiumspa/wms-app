@@ -6,6 +6,7 @@ deployment:
     # la app. touch no pisa el bloque Passenger si cPanel ya lo generó.
     - /bin/mkdir -p $HOME/wms.chimuelo.cl/api
     - /bin/touch $HOME/wms.chimuelo.cl/api/.htaccess
+    - /bin/bash -lc 'if [ ! -s "$HOME/wms.chimuelo.cl/api/.htaccess" ]; then printf "%s\n" "# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN" "PassengerAppRoot \"$HOME/wms.chimuelo.cl/backend\"" "PassengerBaseURI \"/api\"" "PassengerNodejs \"$HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/node\"" "PassengerAppType node" "PassengerStartupFile server.js" "# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END" > "$HOME/wms.chimuelo.cl/api/.htaccess"; fi'
 
     # ─── 1. Backend → wms.chimuelo.cl/backend/ ───────────────────────────────
     - /usr/bin/rsync -a --delete --exclude='node_modules' --exclude='.env' backend/ $HOME/wms.chimuelo.cl/backend/
