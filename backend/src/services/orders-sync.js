@@ -2,6 +2,17 @@ import { prisma } from '../db/prisma.js';
 import { config } from '../config.js';
 import { wcGetOrder, wcGetProduct, wcGetProductsByIds, getMeta } from './woocommerce.js';
 
+// Normaliza el valor del meta de bodega. Soporta los formatos comunes:
+//   "B1"/"B2" (recomendado), "1"/"2" (numérico string como en algunos plugins),
+//   1/2 (number), "b1"/"b2" (case insensitive). Cualquier otra cosa → null.
+function normalizeWarehouse(value) {
+  if (value == null) return null;
+  const s = String(value).trim().toUpperCase();
+  if (s === 'B1' || s === '1') return 'B1';
+  if (s === 'B2' || s === '2') return 'B2';
+  return null;
+}
+
 // Upsert de producto en BD local. Si WC no responde (404, timeout, etc.) creamos
 // un placeholder para no bloquear el sync del pedido completo.
 export async function syncProduct(wpProductId, wcProduct = null) {
@@ -20,7 +31,7 @@ export async function syncProduct(wpProductId, wcProduct = null) {
     }
   }
   const warehouseValue = getMeta(data, config.meta.productWarehouse);
-  const warehouse = warehouseValue === 'B1' || warehouseValue === 'B2' ? warehouseValue : null;
+  const warehouse = normalizeWarehouse(warehouseValue);
 
   return prisma.productMeta.upsert({
     where: { wpProductId: data.id },
@@ -48,12 +59,14 @@ export async function ensureProducts(productIds) {
   const unique = [...new Set(productIds.filter((id) => Number.isInteger(id) && id > 0))];
   if (unique.length === 0) return;
 
+  // Re-fetch tanto los que no existen como los que sí pero con warehouse=null
+  // (posiblemente importados antes con un meta mal interpretado).
   const existing = await prisma.productMeta.findMany({
     where: { wpProductId: { in: unique } },
-    select: { wpProductId: true },
+    select: { wpProductId: true, warehouse: true },
   });
-  const existingIds = new Set(existing.map((p) => p.wpProductId));
-  const missing = unique.filter((id) => !existingIds.has(id));
+  const okIds = new Set(existing.filter((p) => p.warehouse !== null).map((p) => p.wpProductId));
+  const missing = unique.filter((id) => !okIds.has(id));
   if (missing.length === 0) return;
 
   // Una sola llamada a WC para todos los productos faltantes.
