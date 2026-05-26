@@ -27,6 +27,7 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
         route: o.route,
         hasB2Pending: o.hasB2Pending,
         itemCount: o.items.length,
+        createdAt: o.createdAt,
       })),
     });
   } catch (err) {

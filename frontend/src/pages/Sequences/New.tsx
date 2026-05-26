@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
 import { syncApi, type SyncResult } from '@/lib/sync';
 import { Spinner } from '@/components/Spinner';
@@ -238,6 +238,22 @@ export function SequenceNew() {
           No hay pedidos pendientes para secuenciar.
         </div>
       ) : (
+        <>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-slate-600">
+              {pending!.length} pedido{pending!.length === 1 ? '' : 's'} pendientes · {selected.size} seleccionado{selected.size === 1 ? '' : 's'}
+            </span>
+            {selected.size > 0 && (
+              <button
+                type="button"
+                onClick={() => { setSelected(new Set()); setProblems(null); }}
+                className="flex items-center gap-1 text-brand-700 hover:underline"
+              >
+                <X size={14} />
+                Limpiar selección
+              </button>
+            )}
+          </div>
         <div className="space-y-2">
           {pending!.map((o) => {
             const isSel = selected.has(o.id);
@@ -257,7 +273,7 @@ export function SequenceNew() {
                     {o.hasB2Pending && <Badge variant="amber">B2</Badge>}
                   </div>
                   <div className="truncate text-xs text-slate-500">
-                    {o.customerName || '—'} · {o.itemCount} items
+                    {new Date(o.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })} · {o.customerName || '—'} · {o.itemCount} items
                   </div>
                 </div>
                 <input type="checkbox" readOnly checked={isSel} className="h-5 w-5" />
@@ -265,6 +281,7 @@ export function SequenceNew() {
             );
           })}
         </div>
+        </>
       )}
 
       {problems && (

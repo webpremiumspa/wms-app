@@ -88,6 +88,9 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
   const route = getMeta(data, config.meta.orderRoute) || null;
   const stopPositionRaw = getMeta(data, config.meta.orderStopPosition);
   const stopPosition = stopPositionRaw ? Number(stopPositionRaw) : null;
+  // Usamos date_created de WC como createdAt local: refleja cuándo se hizo el
+  // pedido, no cuándo lo sincronizamos.
+  const wcDate = data.date_created ? new Date(data.date_created) : new Date();
 
   // 2. Tx con solo escrituras locales. Tiempo extendido por las dudas.
   return prisma.$transaction(
@@ -103,6 +106,7 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           customerName: [data.billing?.first_name, data.billing?.last_name].filter(Boolean).join(' ') || null,
           customerAddress: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', ') || null,
           bagsExpected: 1,
+          createdAt: wcDate,
         },
         update: {
           number: String(data.number ?? data.id),
@@ -110,6 +114,7 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           stopPosition: Number.isFinite(stopPosition) ? stopPosition : null,
           customerName: [data.billing?.first_name, data.billing?.last_name].filter(Boolean).join(' ') || null,
           customerAddress: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', ') || null,
+          createdAt: wcDate,
         },
       });
 

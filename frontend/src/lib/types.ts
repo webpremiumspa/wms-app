@@ -19,6 +19,7 @@ export type PendingOrder = {
   route: string | null;
   hasB2Pending: boolean;
   itemCount: number;
+  createdAt: string;
 };
 
 export type Sequence = {
