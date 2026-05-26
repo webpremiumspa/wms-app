@@ -21,7 +21,9 @@ Esta guía cubre el despliegue del WMS en cPanel usando **Git Version Control**.
     ├── assets/
     ├── manifest.webmanifest
     ├── sw.js
-    └── .htaccess                 ← Passenger /api + reescritura SPA
+    ├── .htaccess                 ← reescritura SPA
+    └── api/
+        └── .htaccess             ← Passenger /api generado por cPanel
 ```
 
 ## Setup inicial (una sola vez)
@@ -70,9 +72,22 @@ META_ORDER_STOP_POSITION=_wdg_stop_position
 
 Click **Create**. Aún no arranca porque la carpeta `backend/` no existe; eso lo hace el primer deploy.
 
-### 3.1. Proteger el `.htaccess` de Passenger
+### 3.1. Crear la carpeta física `/api`
 
-cPanel/CloudLinux guarda en `~/wms.chimuelo.cl/.htaccess` un bloque parecido a:
+cPanel/CloudLinux necesita una carpeta física para el path del **Application URL**. Antes de guardar la app con URL `/api`, crea:
+
+```bash
+mkdir -p ~/wms.chimuelo.cl/api
+```
+
+Si esa carpeta no existe, cPanel puede fallar al guardar con:
+
+```text
+Unable to set environment variables in htaccess file for the application.
+[Errno 2] No such file or directory: '/home/USUARIO/wms.chimuelo.cl/api/.htaccess'
+```
+
+Después de guardar la app, cPanel escribe en `~/wms.chimuelo.cl/api/.htaccess` un bloque parecido a:
 
 ```apache
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
@@ -84,9 +99,9 @@ PassengerStartupFile server.js
 # DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
 ```
 
-Ese bloque es obligatorio para que `https://wms.chimuelo.cl/api/*` llegue al backend Express. Si se sobrescribe, el login falla con un `404 Not Found` HTML de LiteSpeed en `POST /api/auth/login`.
+Ese bloque es obligatorio para que `https://wms.chimuelo.cl/api/*` llegue al backend Express. Si falta, el login falla con un `404 Not Found` HTML de LiteSpeed en `POST /api/auth/login`.
 
-Después de crear o guardar la app Node en cPanel, conserva ese bloque y añade debajo las reglas SPA:
+En la raíz `~/wms.chimuelo.cl/.htaccess` deben ir las reglas SPA. La regla de `/api` deja que Apache entre a la carpeta `api/` y procese su `.htaccess` de Passenger:
 
 ```apache
 RewriteEngine On
@@ -108,7 +123,7 @@ RewriteRule ^ /index.html [L]
 Options -Indexes
 ```
 
-El deploy excluye `.htaccess` para no borrar las directivas de Passenger.
+El deploy crea la carpeta `api/` si falta y excluye el `.htaccess` raíz para no borrar reglas configuradas en cPanel.
 
 ### 4. Configurar Git Version Control
 
@@ -204,17 +219,17 @@ La app Node está caída. Logs en:
 
 ### El SPA muestra 404 al recargar en una ruta tipo `/sequences/5`
 
-Faltan las reglas SPA en `~/wms.chimuelo.cl/.htaccess`. Verificar que el archivo conserva el bloque `CLOUDLINUX PASSENGER` y que debajo incluye las reglas de reescritura indicadas en "Proteger el `.htaccess` de Passenger".
+Faltan las reglas SPA en `~/wms.chimuelo.cl/.htaccess`. Verificar que incluye las reglas de reescritura indicadas arriba y que mantiene `RewriteRule ^api(/.*)?$ - [L]`.
 
 ### Login devuelve 404 HTML de LiteSpeed en `/api/auth/login`
 
 El request no está llegando a Node/Express. Verificar `https://wms.chimuelo.cl/api/health`:
 
-- Si responde HTML de LiteSpeed con 404, falta el bloque Passenger en `~/wms.chimuelo.cl/.htaccess` o la app Node no está configurada con URL `/api`.
+- Si responde HTML de LiteSpeed con 404, falta el bloque Passenger en `~/wms.chimuelo.cl/api/.htaccess`, falta la carpeta física `api/`, o la app Node no está configurada con URL `/api`.
 - Si responde JSON con `{"status":"ok",...}`, el backend sí está activo y el problema está en credenciales, WordPress/JWT o variables de entorno.
 - Si responde 502, revisar logs de Passenger y reiniciar la app Node.
 
-Para repararlo rápido, entrar a `cPanel → Setup Node.js App`, abrir la app `wms.chimuelo.cl/api`, guardar/reiniciar para que cPanel regenere Passenger, y volver a añadir las reglas SPA indicadas arriba sin borrar el bloque `CLOUDLINUX PASSENGER`.
+Para repararlo rápido, crear `~/wms.chimuelo.cl/api`, entrar a `cPanel → Setup Node.js App`, abrir la app `wms.chimuelo.cl/api`, guardar/reiniciar para que cPanel regenere `api/.htaccess`, y verificar que la raíz mantiene las reglas SPA indicadas arriba.
 
 ### El webhook de WC devuelve 401
 

@@ -1,6 +1,10 @@
 ---
 deployment:
   tasks:
+    # cPanel/CloudLinux necesita una carpeta física para el Application URL /api.
+    # Ahí escribe el .htaccess de Passenger que enruta /api hacia backend/server.js.
+    - /bin/mkdir -p $HOME/wms.chimuelo.cl/api
+
     # ─── 1. Backend → wms.chimuelo.cl/backend/ ───────────────────────────────
     - /usr/bin/rsync -a --delete --exclude='node_modules' --exclude='.env' backend/ $HOME/wms.chimuelo.cl/backend/
 
