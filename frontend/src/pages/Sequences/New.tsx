@@ -30,7 +30,12 @@ export function SequenceNew() {
   // Sync state
   const [afterDate, setAfterDate] = useState(yesterdayISO());
   const [beforeDate, setBeforeDate] = useState(todayISO());
+  const [statuses, setStatuses] = useState<string[]>(['processing', 'on-hold', 'completed']);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+
+  function toggleStatus(s: string) {
+    setStatuses((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
+  }
 
   const { data: pending, isLoading } = useQuery({
     queryKey: ['orders', 'pending'],
@@ -43,6 +48,7 @@ export function SequenceNew() {
     mutationFn: () => syncApi.orders({
       after: afterDate || undefined,
       before: beforeDate || undefined,
+      statuses: statuses.length > 0 ? statuses : undefined,
     }),
     onSuccess: (result) => {
       setSyncResult(result);
@@ -119,12 +125,41 @@ export function SequenceNew() {
           <div className="flex items-end">
             <button
               onClick={() => sync.mutate()}
-              disabled={sync.isPending}
+              disabled={sync.isPending || statuses.length === 0}
               className="btn-primary w-full"
             >
               <RefreshCw size={16} className={sync.isPending ? 'animate-spin' : ''} />
               {sync.isPending ? 'Sincronizando…' : 'Sincronizar'}
             </button>
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs font-medium text-slate-600">Estados de WC a incluir</div>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {[
+              { key: 'processing', label: 'Procesando' },
+              { key: 'on-hold', label: 'En espera' },
+              { key: 'completed', label: 'Completado' },
+              { key: 'pending', label: 'Pendiente pago' },
+            ].map((s) => {
+              const active = statuses.includes(s.key);
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => toggleStatus(s.key)}
+                  className={clsx(
+                    'rounded-full px-3 py-1 text-xs font-medium ring-1 transition',
+                    active
+                      ? 'bg-brand-50 text-brand-800 ring-brand-300'
+                      : 'bg-white text-slate-500 ring-slate-300 hover:bg-slate-50',
+                  )}
+                >
+                  {active ? '✓ ' : ''}{s.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

@@ -35,7 +35,7 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     const before = normalizeDate(parsed.data.before, true);
     const statuses = parsed.data.statuses?.length
       ? parsed.data.statuses
-      : ['processing', 'on-hold'];
+      : ['processing', 'on-hold', 'completed'];
 
     // Paginación: WC permite hasta 100 por página. Tope de seguridad: 10 páginas (1000 pedidos).
     const wcOrders = [];
