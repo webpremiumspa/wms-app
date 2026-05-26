@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { requireAuth } from '../middleware/auth.js';
 import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
+import { prisma } from '../db/prisma.js';
 import { wcListOrders } from '../services/woocommerce.js';
 import { syncOrder, ensureProducts } from '../services/orders-sync.js';
 
