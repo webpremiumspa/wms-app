@@ -11,6 +11,23 @@ import sequenceRoutes from './routes/sequences.js';
 import webhookRoutes from './routes/webhooks.js';
 import devRoutes from './routes/dev.js';
 
+function mountWebhookRoutes(app, prefix = '') {
+  // Passenger en cPanel puede montar la app bajo /api y entregar a Express la
+  // ruta sin ese prefijo. Montamos ambos modos para soportar local y cPanel.
+  app.use(`${prefix}/hooks`, express.raw({ type: 'application/json' }), webhookRoutes);
+}
+
+function mountJsonRoutes(app, prefix = '') {
+  app.use(`${prefix}/health`, healthRoutes);
+  app.use(`${prefix}/auth`, authRoutes);
+  app.use(`${prefix}/orders`, orderRoutes);
+  app.use(`${prefix}/sequences`, sequenceRoutes);
+
+  if (config.env === 'development') {
+    app.use(`${prefix}/dev`, devRoutes);
+  }
+}
+
 export function createApp() {
   const app = express();
 
@@ -22,18 +39,13 @@ export function createApp() {
   app.use(morgan(config.env === 'development' ? 'dev' : 'combined'));
 
   // Webhook routes need the raw body for signature verification.
-  app.use('/api/hooks', express.raw({ type: 'application/json' }), webhookRoutes);
+  mountWebhookRoutes(app, '/api');
+  mountWebhookRoutes(app);
 
   app.use(express.json({ limit: '1mb' }));
 
-  app.use('/api/health', healthRoutes);
-  app.use('/api/auth', authRoutes);
-  app.use('/api/orders', orderRoutes);
-  app.use('/api/sequences', sequenceRoutes);
-
-  if (config.env === 'development') {
-    app.use('/api/dev', devRoutes);
-  }
+  mountJsonRoutes(app, '/api');
+  mountJsonRoutes(app);
 
   app.use(notFound);
   app.use(errorHandler);
