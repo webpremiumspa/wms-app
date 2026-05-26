@@ -30,7 +30,7 @@ export function SequenceNew() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [warehouse] = useState<Warehouse>('B1');
-  const [mode, setMode] = useState<'by_sku' | 'by_order'>('by_sku');
+  const [mode, setMode] = useState<'by_sku' | 'by_order'>('by_order');
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [problems, setProblems] = useState<StockProblem[] | null>(null);
 

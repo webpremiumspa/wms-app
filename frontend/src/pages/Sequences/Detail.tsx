@@ -164,15 +164,16 @@ export function SequenceDetail() {
           <div className="flex items-center justify-between gap-3">
             <span className="text-red-800">
               {advancedOrders > 0
-                ? `Eliminar la secuencia revertirá ${orderCount - deliveredOrders} pedidos a "received" y se perderá el picking/packing ya hecho.`
-                : 'Eliminar la secuencia. Los pedidos vuelven a estar disponibles para sequenciar.'}
+                ? `Eliminar va a deshacer el picking y el empaque hecho hasta ahora en ${advancedOrders} pedido(s).`
+                : 'Eliminar la secuencia. Los pedidos vuelven a estar disponibles para una nueva.'}
             </span>
             <button
               type="button"
               onClick={() => {
+                const revertCount = orderCount - deliveredOrders;
                 const msg = advancedOrders > 0
-                  ? `⚠ La secuencia tiene ${advancedOrders} pedido(s) ya con picking/packing. Eliminar va a:\n\n• Revertir ${orderCount - deliveredOrders} pedidos a "received"\n• Limpiar pickedAt, packedAt y packer\n${deliveredOrders > 0 ? `• ${deliveredOrders} pedido(s) entregado(s) NO se tocan\n` : ''}\n¿Continuar?`
-                  : `Eliminar la secuencia #${seq.id}? Los ${orderCount} pedidos volverán a estar disponibles para sequenciar.`;
+                  ? `⚠ Esta secuencia tiene ${advancedOrders} pedido(s) en los que ya se hizo picking o empaque.\n\nSi la eliminas:\n\n• ${revertCount} pedido(s) volverán a estar pendientes y disponibles para una nueva secuencia.\n• Se borrará el progreso del picking (qué items se recolectaron).\n• Se borrará el empaque (qué items se metieron en la bolsa y quién lo hizo).\n• Los albaranes ya impresos quedarán como papeles físicos sin reflejo en el sistema. Hay que volver a empacar para imprimir nuevos.\n${deliveredOrders > 0 ? `• ${deliveredOrders} pedido(s) ya entregado(s) no se tocan.\n` : ''}\n¿Continuar?`
+                  : `¿Eliminar la secuencia #${seq.id}?\n\nLos ${orderCount} pedido(s) volverán a estar disponibles para una nueva secuencia. Como aún no se hizo picking ni empaque, no se pierde ningún progreso.`;
                 if (window.confirm(msg)) deleteSeq.mutate();
               }}
               disabled={deleteSeq.isPending}
@@ -184,7 +185,7 @@ export function SequenceDetail() {
           </div>
           {deliveredOrders > 0 && (
             <div className="text-xs text-red-700">
-              {deliveredOrders} pedido(s) en estado <strong>delivered</strong> se conservan (ya finalizaron en el sistema externo).
+              {deliveredOrders} pedido(s) ya entregado(s) se conservan tal cual están — no se tocan.
             </div>
           )}
         </div>

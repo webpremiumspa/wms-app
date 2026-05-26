@@ -13,6 +13,7 @@ import {
   BarChart3,
   Lightbulb,
   AlertOctagon,
+  BookOpen,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -244,6 +245,48 @@ const SECTIONS: Section[] = [
         <p>
           Si una alerta aparece en amarillo o rojo, abre el módulo correspondiente y resuelve antes de que comprometa la salida a las 10am.
         </p>
+      </>
+    ),
+  },
+  {
+    id: 'glossary',
+    title: 'Glosario · qué significa cada estado y cada término',
+    icon: BookOpen,
+    body: (
+      <>
+        <p>El WMS usa algunos términos que pueden aparecer en mensajes, alertas o el dashboard. Acá los traducimos a lenguaje claro:</p>
+        <h4>Estados por los que pasa un pedido</h4>
+        <ul>
+          <li><strong>Pendiente</strong> (en el sistema: <code>received</code>) — el pedido llegó al WMS desde la tienda, está pagado, pero todavía nadie lo tocó. Listo para entrar en una secuencia.</li>
+          <li><strong>En secuencia</strong> (<code>sequenced</code>) — fue agrupado con otros pedidos para hacer un solo recorrido de picking. Aún no se recolectó nada.</li>
+          <li><strong>Pickeado</strong> (<code>picked</code>) — todos sus items de Bodega 1 ya fueron recolectados de la estantería.</li>
+          <li><strong>Empacado</strong> (<code>packed</code>) — la bolsa fue armada, sellada y se imprimió el albarán con QR. Listo para clasificación.</li>
+          <li><strong>Clasificado</strong> (<code>classified</code>) — alguien escaneó el QR en la mañana, el sistema le dijo qué ruta y la bolsa se llevó al área de su camioneta.</li>
+          <li><strong>Cargado</strong> (<code>loaded</code>) — la bolsa está físicamente arriba del vehículo, lista para salir a reparto.</li>
+          <li><strong>Entregado</strong> (<code>delivered</code>) — el sistema externo de entregas confirmó que llegó al cliente. Estado final.</li>
+        </ul>
+        <h4>Términos que aparecen en alertas</h4>
+        <ul>
+          <li><strong>Picking</strong> — el acto de recolectar productos de los estantes de la bodega.</li>
+          <li><strong>Packing / empaque</strong> — armar la bolsa individual del pedido con sus productos y sellarla.</li>
+          <li><strong>Picker</strong> — la persona que hace picking.</li>
+          <li><strong>Packer</strong> — la persona que arma las bolsas. Queda registrado quién cerró cada pedido (trazabilidad).</li>
+          <li><strong>SKU</strong> — código único de cada producto. Distintos colores o tamaños = distintos SKU.</li>
+          <li><strong>Secuencia</strong> — un grupo de pedidos preparados juntos en un solo recorrido. Permite ser eficiente con productos similares.</li>
+          <li><strong>Bodega 1 (B1)</strong> — bodega principal donde se hace el picking y packing.</li>
+          <li><strong>Bodega 2 (B2)</strong> — bodega satélite con stock distinto. Sus productos llegan en camión a primera hora y se reparten a granel en los camiones de reparto.</li>
+          <li><strong>Albarán</strong> — la hoja impresa que va con cada bolsa, con QR + listado de items + (si aplica) marca de Bodega 2 pendiente.</li>
+        </ul>
+        <h4>"Eliminar la secuencia" — qué se pierde</h4>
+        <p>Si eliminas una secuencia donde ya se hizo picking o empaque:</p>
+        <ul>
+          <li>Los pedidos vuelven al estado <strong>pendiente</strong> para poder reagruparlos.</li>
+          <li>Se borra el registro de qué items fueron recolectados.</li>
+          <li>Se borra el registro de qué items fueron empacados y quién los empacó.</li>
+          <li>Los albaranes ya impresos quedan como papel físico sin reflejo en el sistema. Hay que volver a empacar para imprimir nuevos.</li>
+          <li>Los pedidos ya entregados no se tocan: están finalizados.</li>
+        </ul>
+        <p className="text-slate-600">Usa esta opción solo cuando claramente te equivocaste de pedidos o de modo de picking — no en operación normal.</p>
       </>
     ),
   },
