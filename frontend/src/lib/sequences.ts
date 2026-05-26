@@ -23,6 +23,9 @@ export const sequencesApi = {
 
   pendingOrders: async (): Promise<PendingOrder[]> => (await api.get('/orders/pending')).data.orders,
 
+  clearPending: async (): Promise<{ deleted: number }> =>
+    (await api.delete('/orders/pending')).data,
+
   validateStock: async (orderIds: number[]): Promise<StockProblem[]> =>
     (await api.post('/sequences/validate-stock', { orderIds })).data.problems,
 

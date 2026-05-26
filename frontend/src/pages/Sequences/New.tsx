@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2 } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
 import { syncApi, type SyncResult } from '@/lib/sync';
 import { Spinner } from '@/components/Spinner';
@@ -59,6 +59,16 @@ export function SequenceNew() {
     }),
     onSuccess: (result) => {
       setSyncResult(result);
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
+    },
+  });
+
+  const clearPending = useMutation({
+    mutationFn: () => sequencesApi.clearPending(),
+    onSuccess: () => {
+      setSelected(new Set());
+      setSyncResult(null);
+      setProblems(null);
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
     },
   });
@@ -194,6 +204,27 @@ export function SequenceNew() {
             })}
           </div>
         </div>
+
+        {(pending?.length ?? 0) > 0 && (
+          <div className="flex items-center justify-between rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs">
+            <span className="text-slate-600">
+              ¿Los pedidos importados tienen fecha o datos incorrectos? Bórralos y vuelve a sincronizar.
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Esto borrará los ${pending!.length} pedidos pendientes del WMS (los que aún no entraron a una secuencia). Vas a tener que volver a sincronizar. ¿Continuar?`)) {
+                  clearPending.mutate();
+                }
+              }}
+              disabled={clearPending.isPending}
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-red-700 hover:bg-red-50"
+            >
+              <Trash2 size={14} />
+              {clearPending.isPending ? 'Borrando…' : 'Borrar pendientes'}
+            </button>
+          </div>
+        )}
 
         {sync.error && (
           <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">

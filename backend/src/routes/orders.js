@@ -9,6 +9,18 @@ import { renderAlbaranPdf } from '../services/pdf.js';
 const router = Router();
 router.use(requireAuth);
 
+// Borra todos los pedidos pendientes (status='received', sin haber entrado a
+// secuencia). Útil cuando se importan con metadata vieja y conviene volver a
+// sincronizar desde cero.
+router.delete('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
+  try {
+    const result = await prisma.order.deleteMany({ where: { status: 'received' } });
+    res.json({ deleted: result.count });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const limit = Math.min(Number(req.query.limit) || 50, 200);
