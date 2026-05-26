@@ -9,10 +9,13 @@ deployment:
     # ─── 1. Backend → wms.chimuelo.cl/backend/ ───────────────────────────────
     - /usr/bin/rsync -a --delete --exclude='node_modules' --exclude='.env' backend/ $HOME/wms.chimuelo.cl/backend/
 
-    # ─── 2. Backend deps. --ignore-scripts evita que @prisma/client corra su
-    # postinstall (que detona WASM y muere por límite de memoria de CloudLinux).
-    # El cliente Prisma ya viene generado en backend/generated/ desde local.
-    - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd $HOME/wms.chimuelo.cl/backend && npm ci --omit=dev --ignore-scripts"
+    # ─── 2. Backend deps. Solo corre `npm ci` cuando el package-lock.json
+    # cambió (verificación por hash). En deploys normales (solo código) se
+    # salta y el deploy termina en segundos, sin riesgo de saturar procesos.
+    # --ignore-scripts evita que @prisma/client corra su postinstall (que
+    # detona WASM y muere por límite de memoria de CloudLinux). El cliente
+    # Prisma ya viene generado en backend/generated/ desde local.
+    - /bin/bash -lc 'source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd $HOME/wms.chimuelo.cl/backend && CURRENT_HASH=$(sha256sum package-lock.json | cut -d" " -f1) && STORED_HASH=$(cat node_modules/.lockfile-hash 2>/dev/null || echo "") && if [ "$CURRENT_HASH" != "$STORED_HASH" ]; then echo ">> lockfile cambió, instalando dependencias..." && npm ci --omit=dev --ignore-scripts && echo "$CURRENT_HASH" > node_modules/.lockfile-hash; else echo ">> lockfile sin cambios, skip npm ci"; fi'
 
     # ─── 3. Frontend dist (ya buildeado en local) → raíz del subdominio ──────
     - /usr/bin/rsync -a --exclude='.htaccess' frontend/dist/ $HOME/wms.chimuelo.cl/
