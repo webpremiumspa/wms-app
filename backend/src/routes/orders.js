@@ -6,6 +6,8 @@ import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { renderAlbaranPdf } from '../services/pdf.js';
+import { wcGetProduct } from '../services/woocommerce.js';
+import { config } from '../config.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -143,6 +145,36 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
     ]);
 
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Diagnóstico de un producto: muestra qué dice WC + qué tenemos local. Útil
+// para entender por qué un item sigue marcado como B1 cuando deberia ser B2.
+router.get('/debug-product/:wpProductId', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const wpId = Number(req.params.wpProductId);
+    if (!wpId) throw new HttpError(400, 'Invalid wpProductId');
+
+    const local = await prisma.productMeta.findUnique({ where: { wpProductId: wpId } });
+    let wc = null;
+    let wcError = null;
+    try {
+      const data = await wcGetProduct(wpId);
+      wc = {
+        id: data.id,
+        sku: data.sku,
+        name: data.name,
+        meta_data_count: (data.meta_data || []).length,
+        meta_data: data.meta_data || [],
+        warehouseMetaKey: config.meta.productWarehouse,
+        warehouseMetaFound: (data.meta_data || []).find((m) => m.key === config.meta.productWarehouse) || null,
+      };
+    } catch (e) {
+      wcError = e.message;
+    }
+    res.json({ wpProductId: wpId, configKey: config.meta.productWarehouse, local, wc, wcError });
   } catch (err) {
     next(err);
   }
