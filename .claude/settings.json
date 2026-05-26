@@ -14,7 +14,8 @@
       "Read(//c/Users/dsalg/OneDrive - Webpremium/Proyectos/Chimuelo/**)",
       "Bash(node --check src/routes/dashboard.js)",
       "Bash(node --check src/app.js)",
-      "Bash(node --check src/services/orders-sync.js)"
+      "Bash(node --check src/services/orders-sync.js)",
+      "Bash(node --check src/routes/sync.js)"
     ],
     "additionalDirectories": [
       "C:\\Users\\dsalg\\.claude\\projects\\c--Users-dsalg-OneDrive---Webpremium-Proyectos-Chimuelo-wms-app\\memory"

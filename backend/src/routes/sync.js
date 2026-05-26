@@ -60,15 +60,24 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     let failed = 0;
     const errors = [];
     const orders = [];
-    for (const wco of wcOrders) {
-      try {
-        const order = await syncOrder(wco.id, wco);
-        orders.push({ wpOrderId: order.wpOrderId, number: order.number, status: order.status });
-        synced += 1;
-      } catch (err) {
-        failed += 1;
-        errors.push({ wpOrderId: wco.id, message: err.message });
-      }
+
+    // Procesar en lotes paralelos para acelerar (cada syncOrder hace pre-sync
+    // de productos fuera de su tx, así que pueden correr concurrentemente sin
+    // pelearse por la conexión).
+    const CONCURRENCY = 4;
+    for (let i = 0; i < wcOrders.length; i += CONCURRENCY) {
+      const batch = wcOrders.slice(i, i + CONCURRENCY);
+      const results = await Promise.allSettled(batch.map((wco) => syncOrder(wco.id, wco)));
+      results.forEach((r, idx) => {
+        const wco = batch[idx];
+        if (r.status === 'fulfilled') {
+          orders.push({ wpOrderId: r.value.wpOrderId, number: r.value.number, status: r.value.status });
+          synced += 1;
+        } else {
+          failed += 1;
+          errors.push({ wpOrderId: wco.id, message: r.reason?.message || 'sync error' });
+        }
+      });
     }
 
     res.json({

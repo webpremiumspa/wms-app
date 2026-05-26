@@ -20,6 +20,12 @@ function yesterdayISO() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+const PRESETS = [
+  { label: 'Hoy', range: () => ({ after: todayISO(), before: todayISO() }) },
+  { label: 'Ayer', range: () => ({ after: yesterdayISO(), before: yesterdayISO() }) },
+  { label: 'Últimos 2 días', range: () => ({ after: yesterdayISO(), before: todayISO() }) },
+];
+
 export function SequenceNew() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -103,6 +109,31 @@ export function SequenceNew() {
         <p className="text-xs text-slate-500">
           Trae al WMS los pedidos en estado <em>processing</em>/<em>on-hold</em> dentro del rango. Los duplicados se actualizan sin crear copias.
         </p>
+        <div className="flex flex-wrap gap-2">
+          {PRESETS.map((p) => {
+            const range = p.range();
+            const active = afterDate === range.after && beforeDate === range.before;
+            return (
+              <button
+                key={p.label}
+                type="button"
+                onClick={() => {
+                  setAfterDate(range.after);
+                  setBeforeDate(range.before);
+                }}
+                className={clsx(
+                  'rounded-full px-3 py-1 text-xs font-medium ring-1 transition',
+                  active
+                    ? 'bg-brand-700 text-white ring-brand-700'
+                    : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50',
+                )}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+
         <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
           <label className="block">
             <span className="text-xs font-medium text-slate-600">Desde</span>
