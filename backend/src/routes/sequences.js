@@ -29,9 +29,11 @@ router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.PICK_B2,
   }
 });
 
-// Eliminar una secuencia. Revierte los pedidos a 'received' y borra los
-// vínculos. NO permite si alguno de los pedidos ya pasó de 'sequenced'
-// (picked/packed/etc) — ahí ya hay trabajo hecho y no conviene perderlo.
+// Eliminar una secuencia. Permite hacerlo siempre que la secuencia esté abierta,
+// incluso si algunos pedidos ya pasaron de 'sequenced'. Revierte TODO ese
+// progreso (status, timestamps, packer) para que los pedidos vuelvan a estar
+// disponibles. Pedidos en 'delivered' se conservan (ya están finalizados por
+// el sistema externo).
 router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -41,31 +43,44 @@ router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (r
     });
     if (!seq) throw new HttpError(404, 'Sequence not found');
 
-    const advanced = seq.orders.filter((so) => so.order.status !== 'sequenced');
-    if (advanced.length > 0) {
-      throw new HttpError(409, 'Algunos pedidos ya avanzaron del estado "sequenced". Eliminar la secuencia perdería ese progreso.', {
-        advancedOrders: advanced.map((so) => ({ number: so.order.number, status: so.order.status })),
-      });
-    }
-
-    const orderIds = seq.orders.map((so) => so.orderId);
+    const orderIds = seq.orders
+      .filter((so) => so.order.status !== 'delivered')
+      .map((so) => so.orderId);
+    const skippedDelivered = seq.orders.filter((so) => so.order.status === 'delivered').length;
 
     await prisma.$transaction([
-      prisma.order.updateMany({
-        where: { id: { in: orderIds }, status: 'sequenced' },
-        data: { status: 'received' },
+      // Revertir items: limpiar pickedAt y packedAt para los pedidos a resetear
+      prisma.orderItem.updateMany({
+        where: { orderId: { in: orderIds } },
+        data: { pickedAt: null, packedAt: null },
       }),
+      // Revertir pedidos al estado 'received' y limpiar timestamps WMS
+      prisma.order.updateMany({
+        where: { id: { in: orderIds } },
+        data: {
+          status: 'received',
+          packedAt: null,
+          packedById: null,
+          classifiedAt: null,
+          loadedAt: null,
+        },
+      }),
+      // Borrar la secuencia (cascadea SequenceOrder)
       prisma.sequence.delete({ where: { id } }),
       prisma.event.create({
         data: {
           type: 'sequence.deleted',
           actorId: req.user.wpUserId,
-          payload: { sequenceId: id, ordersReverted: orderIds.length },
+          payload: {
+            sequenceId: id,
+            ordersReverted: orderIds.length,
+            skippedDelivered,
+          },
         },
       }),
     ]);
 
-    res.json({ ok: true, ordersReverted: orderIds.length });
+    res.json({ ok: true, ordersReverted: orderIds.length, skippedDelivered });
   } catch (err) {
     next(err);
   }

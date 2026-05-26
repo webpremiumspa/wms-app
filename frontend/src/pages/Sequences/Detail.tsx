@@ -88,9 +88,11 @@ export function SequenceDetail() {
   const seq = data;
   const orderCount = seq.orders.length;
   const packed = seq.orders.filter((o) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.order.status)).length;
-  // Solo se puede eliminar si la secuencia está abierta y NINGÚN pedido avanzó
-  // del estado `sequenced` (no hay picking ni packing aún).
-  const canDelete = seq.status === 'open' && seq.orders.every((o) => o.order.status === 'sequenced');
+  // Se puede eliminar si la secuencia está abierta. Si hay pedidos avanzados,
+  // mostramos advertencia más fuerte porque se va a perder ese progreso.
+  const canDelete = seq.status === 'open';
+  const advancedOrders = seq.orders.filter((o) => o.order.status !== 'sequenced' && o.order.status !== 'delivered').length;
+  const deliveredOrders = seq.orders.filter((o) => o.order.status === 'delivered').length;
 
   return (
     <div className="space-y-4">
@@ -158,23 +160,33 @@ export function SequenceDetail() {
       </div>
 
       {canDelete && (
-        <div className="flex items-center justify-between rounded-lg border border-dashed border-red-200 bg-red-50 px-3 py-2 text-sm">
-          <span className="text-red-800">
-            Si te equivocaste de pedidos, puedes eliminar la secuencia. Los pedidos vuelven a quedar disponibles para una nueva.
-          </span>
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm(`Eliminar la secuencia #${seq.id}? Los ${orderCount} pedidos volverán a estar disponibles para sequenciar.`)) {
-                deleteSeq.mutate();
-              }
-            }}
-            disabled={deleteSeq.isPending}
-            className="flex items-center gap-1 rounded-md px-2 py-1 font-medium text-red-700 hover:bg-red-100"
-          >
-            <Trash2 size={14} />
-            {deleteSeq.isPending ? 'Eliminando…' : 'Eliminar secuencia'}
-          </button>
+        <div className="space-y-2 rounded-lg border border-dashed border-red-200 bg-red-50 p-3 text-sm">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-red-800">
+              {advancedOrders > 0
+                ? `Eliminar la secuencia revertirá ${orderCount - deliveredOrders} pedidos a "received" y se perderá el picking/packing ya hecho.`
+                : 'Eliminar la secuencia. Los pedidos vuelven a estar disponibles para sequenciar.'}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                const msg = advancedOrders > 0
+                  ? `⚠ La secuencia tiene ${advancedOrders} pedido(s) ya con picking/packing. Eliminar va a:\n\n• Revertir ${orderCount - deliveredOrders} pedidos a "received"\n• Limpiar pickedAt, packedAt y packer\n${deliveredOrders > 0 ? `• ${deliveredOrders} pedido(s) entregado(s) NO se tocan\n` : ''}\n¿Continuar?`
+                  : `Eliminar la secuencia #${seq.id}? Los ${orderCount} pedidos volverán a estar disponibles para sequenciar.`;
+                if (window.confirm(msg)) deleteSeq.mutate();
+              }}
+              disabled={deleteSeq.isPending}
+              className="flex shrink-0 items-center gap-1 rounded-md bg-red-100 px-3 py-1 font-medium text-red-700 hover:bg-red-200"
+            >
+              <Trash2 size={14} />
+              {deleteSeq.isPending ? 'Eliminando…' : 'Eliminar secuencia'}
+            </button>
+          </div>
+          {deliveredOrders > 0 && (
+            <div className="text-xs text-red-700">
+              {deliveredOrders} pedido(s) en estado <strong>delivered</strong> se conservan (ya finalizaron en el sistema externo).
+            </div>
+          )}
         </div>
       )}
 
