@@ -13,6 +13,7 @@ import devRoutes from './routes/dev.js';
 import pickingB2Routes from './routes/picking-b2.js';
 import dispatchRoutes from './routes/dispatch.js';
 import deliveryRoutes from './routes/delivery.js';
+import dashboardRoutes from './routes/dashboard.js';
 
 function mountWebhookRoutes(app, prefix = '') {
   // Passenger en cPanel puede montar la app bajo /api y entregar a Express la
@@ -28,6 +29,7 @@ function mountJsonRoutes(app, prefix = '') {
   app.use(`${prefix}/picking/b2`, pickingB2Routes);
   app.use(`${prefix}/dispatch`, dispatchRoutes);
   app.use(`${prefix}/delivery`, deliveryRoutes);
+  app.use(`${prefix}/dashboard`, dashboardRoutes);
 
   if (config.env === 'development') {
     app.use(`${prefix}/dev`, devRoutes);
