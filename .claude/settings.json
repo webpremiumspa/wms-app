@@ -16,7 +16,8 @@
       "Bash(node --check src/app.js)",
       "Bash(node --check src/services/orders-sync.js)",
       "Bash(node --check src/routes/sync.js)",
-      "Bash(node --check src/services/woocommerce.js)"
+      "Bash(node --check src/services/woocommerce.js)",
+      "Bash(node --check src/routes/orders.js)"
     ],
     "additionalDirectories": [
       "C:\\Users\\dsalg\\.claude\\projects\\c--Users-dsalg-OneDrive---Webpremium-Proyectos-Chimuelo-wms-app\\memory"

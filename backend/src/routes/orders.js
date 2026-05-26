@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import axios from 'axios';
 import { requireAuth } from '../middleware/auth.js';
 import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
@@ -142,6 +143,56 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
     ]);
 
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Endpoint de diagnóstico: para cada item de un pedido, reporta si tiene
+// thumbnailUrl, si se puede fetchear, qué content-type y tamaño tiene, y si
+// es JPEG/PNG. Útil para entender por qué las fotos aparecen vacías en el PDF.
+router.get('/:id/debug-images', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { items: { include: { product: true } } },
+    });
+    if (!order) throw new HttpError(404, 'Order not found');
+
+    const results = [];
+    for (const it of order.items) {
+      const url = it.product?.thumbnailUrl;
+      const row = {
+        sku: it.product?.sku || null,
+        name: it.product?.name || null,
+        thumbnailUrl: url || null,
+      };
+      if (!url) {
+        row.error = 'thumbnailUrl es null en BD (probable: producto sin imagen en WC o sync no la capturó)';
+      } else {
+        try {
+          const r = await axios.get(url, {
+            responseType: 'arraybuffer',
+            timeout: 8000,
+            headers: { Accept: 'image/jpeg, image/png, image/*;q=0.8', 'User-Agent': 'WMS-Debug/1.0' },
+            validateStatus: () => true,
+          });
+          const buf = Buffer.from(r.data);
+          row.httpStatus = r.status;
+          row.contentType = r.headers['content-type'] || null;
+          row.sizeBytes = buf.length;
+          row.firstBytesHex = buf.slice(0, 8).toString('hex');
+          row.isPng = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+          row.isJpeg = buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+          row.pdfkitCompatible = row.isPng || row.isJpeg;
+        } catch (e) {
+          row.error = e.message;
+        }
+      }
+      results.push(row);
+    }
+    res.json({ orderId: order.id, number: order.number, items: results });
   } catch (err) {
     next(err);
   }
