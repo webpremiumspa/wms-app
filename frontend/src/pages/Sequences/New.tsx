@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2 } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
 import { syncApi, type SyncResult } from '@/lib/sync';
 import { Spinner } from '@/components/Spinner';
@@ -84,6 +84,10 @@ export function SequenceNew() {
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
       navigate(`/sequences/${seq.id}`);
+    },
+    onError: (err: any) => {
+      // mostrado más abajo
+      console.error('createSequence error', err);
     },
   });
 
@@ -314,16 +318,31 @@ export function SequenceNew() {
             <span className="text-slate-600">
               {pending!.length} pedido{pending!.length === 1 ? '' : 's'} pendientes · {selected.size} seleccionado{selected.size === 1 ? '' : 's'}
             </span>
-            {selected.size > 0 && (
-              <button
-                type="button"
-                onClick={() => { setSelected(new Set()); setProblems(null); }}
-                className="flex items-center gap-1 text-brand-700 hover:underline"
-              >
-                <X size={14} />
-                Limpiar selección
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {selected.size < pending!.length && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelected(new Set(pending!.map((o) => o.id)));
+                    setProblems(null);
+                  }}
+                  className="flex items-center gap-1 text-brand-700 hover:underline"
+                >
+                  <CheckSquare size={14} />
+                  Seleccionar todos
+                </button>
+              )}
+              {selected.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => { setSelected(new Set()); setProblems(null); }}
+                  className="flex items-center gap-1 text-brand-700 hover:underline"
+                >
+                  <X size={14} />
+                  Limpiar selección
+                </button>
+              )}
+            </div>
           </div>
         <div className="space-y-2">
           {pending!.map((o) => {
@@ -378,6 +397,17 @@ export function SequenceNew() {
                 Quita los pedidos afectados o repón stock antes de generar la secuencia.
               </p>
             </>
+          )}
+        </div>
+      )}
+
+      {create.error && (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {(create.error as any).response?.data?.message || (create.error as any).message || 'No se pudo generar la secuencia'}
+          {(create.error as any).response?.data?.details && (
+            <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-xs">
+              {JSON.stringify((create.error as any).response.data.details, null, 2)}
+            </pre>
           )}
         </div>
       )}
