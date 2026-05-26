@@ -1,10 +1,26 @@
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
+import axios from 'axios';
+import { config } from '../config.js';
 
-// Encodea el pedido en el QR como "WMS:<wpOrderId>" para que el escáner del
-// módulo de despacho lo reconozca como nuestro y no como cualquier QR de WC.
+// QR encodea una URL navegable. Al escanear desde la cámara del móvil abre el
+// navegador en `/scan/<wpOrderId>` directamente. El parser del backend acepta
+// también el formato legacy `WMS:<id>` para albaranes ya impresos.
 function buildQrPayload(order) {
-  return `WMS:${order.wpOrderId}`;
+  const base = (config.frontendOrigin || 'https://wms.chimuelo.cl').replace(/\/$/, '');
+  return `${base}/scan/${order.wpOrderId}`;
+}
+
+// Trae la imagen como Buffer. Timeout corto y fallback null para no bloquear
+// la generación del PDF si la imagen no carga.
+async function fetchImageBuffer(url) {
+  if (!url) return null;
+  try {
+    const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 5000 });
+    return Buffer.from(res.data);
+  } catch {
+    return null;
+  }
 }
 
 export async function renderAlbaranPdf(order, stream) {
@@ -18,6 +34,14 @@ export async function renderAlbaranPdf(order, stream) {
     width: 220,
   });
 
+  // Pre-fetch thumbnails en paralelo (con tope de concurrencia).
+  const itemImages = new Map();
+  const urls = [...new Set(order.items.map((i) => i.product?.thumbnailUrl).filter(Boolean))];
+  const buffers = await Promise.all(urls.map(fetchImageBuffer));
+  urls.forEach((url, idx) => {
+    if (buffers[idx]) itemImages.set(url, buffers[idx]);
+  });
+
   // Header
   doc.font('Helvetica-Bold').fontSize(20).text('Albarán de pedido', 40, 40);
   doc.font('Helvetica').fontSize(11).fillColor('#475569')
@@ -27,8 +51,8 @@ export async function renderAlbaranPdf(order, stream) {
 
   // QR arriba a la derecha
   doc.image(qrPng, 410, 35, { width: 140, height: 140 });
-  doc.font('Helvetica').fontSize(9).fillColor('#475569')
-    .text(`QR: ${buildQrPayload(order)}`, 410, 180, { width: 140, align: 'center' });
+  doc.font('Helvetica').fontSize(8).fillColor('#94a3b8')
+    .text('Escanea para ver pedido', 410, 180, { width: 140, align: 'center' });
 
   // Cliente
   doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Cliente', 40, 150);
@@ -55,7 +79,7 @@ export async function renderAlbaranPdf(order, stream) {
   cursorY += 20;
 
   const b1Items = order.items.filter((i) => i.warehouse === 'B1');
-  drawTable(doc, b1Items, cursorY);
+  drawTable(doc, b1Items, cursorY, itemImages);
   cursorY = doc.y + 10;
 
   // Listado de items B2 (los que NO van en la bolsa, se entregan a granel)
@@ -65,21 +89,27 @@ export async function renderAlbaranPdf(order, stream) {
     doc.fillColor('#b45309').font('Helvetica-Bold').fontSize(12)
       .text('Sacar del cargamento a granel (Bodega 2):', 40, cursorY);
     cursorY += 20;
-    drawTable(doc, b2Items, cursorY, '#fffbeb');
+    drawTable(doc, b2Items, cursorY, itemImages, '#fffbeb');
   }
 
   doc.end();
 }
 
-function drawTable(doc, items, startY, rowBg = null) {
+function drawTable(doc, items, startY, itemImages, rowBg = null) {
   const x = 40;
   const w = 515;
+  const rowH = 36;
+  const imgSize = 30;
+  const colImgX = x + 4;
+  const colSkuX = x + 44;
+  const colNameX = x + 140;
   const colQtyX = x + w - 60;
 
   // Header
   doc.font('Helvetica-Bold').fontSize(10).fillColor('#475569');
-  doc.text('SKU', x + 6, startY + 4, { width: 90 });
-  doc.text('Producto', x + 100, startY + 4, { width: 300 });
+  doc.text('Foto', colImgX, startY + 4, { width: 36 });
+  doc.text('SKU', colSkuX, startY + 4, { width: 90 });
+  doc.text('Producto', colNameX, startY + 4, { width: 260 });
   doc.text('Cant.', colQtyX, startY + 4, { width: 50, align: 'right' });
   doc.moveTo(x, startY + 20).lineTo(x + w, startY + 20).strokeColor('#e2e8f0').stroke();
 
@@ -88,14 +118,33 @@ function drawTable(doc, items, startY, rowBg = null) {
   for (const it of items) {
     if (rowBg) {
       doc.save();
-      doc.rect(x, y - 4, w, 22).fill(rowBg);
+      doc.rect(x, y - 2, w, rowH).fill(rowBg);
       doc.restore();
       doc.fillColor('#0f172a');
     }
-    doc.text(it.product?.sku || '—', x + 6, y, { width: 90 });
-    doc.text(it.product?.name || '—', x + 100, y, { width: 300 });
-    doc.text(String(it.qty), colQtyX, y, { width: 50, align: 'right' });
-    y += 22;
+
+    // Thumbnail (si está disponible)
+    const thumbUrl = it.product?.thumbnailUrl;
+    if (thumbUrl && itemImages.has(thumbUrl)) {
+      try {
+        doc.image(itemImages.get(thumbUrl), colImgX, y, { fit: [imgSize, imgSize] });
+      } catch {
+        // formato no soportado por pdfkit, lo saltamos silenciosamente
+      }
+    } else {
+      // Caja gris vacía para mantener alineación
+      doc.save();
+      doc.rect(colImgX, y, imgSize, imgSize).fillAndStroke('#f1f5f9', '#e2e8f0');
+      doc.restore();
+      doc.fillColor('#0f172a');
+    }
+
+    const textY = y + 10;
+    doc.text(it.product?.sku || '—', colSkuX, textY, { width: 90 });
+    doc.text(it.product?.name || '—', colNameX, textY, { width: 260 });
+    doc.font('Helvetica-Bold').text(String(it.qty), colQtyX, textY, { width: 50, align: 'right' });
+    doc.font('Helvetica');
+    y += rowH;
   }
   doc.y = y;
 }

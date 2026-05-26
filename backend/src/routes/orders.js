@@ -47,6 +47,25 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
   }
 });
 
+// Lookup por wpOrderId (el ID que viene del QR escaneado).
+router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.DELIVER, WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (req, res, next) => {
+  try {
+    const wpOrderId = Number(req.params.wpOrderId);
+    if (!wpOrderId) throw new HttpError(400, 'Invalid wpOrderId');
+    const order = await prisma.order.findUnique({
+      where: { wpOrderId },
+      include: {
+        items: { include: { product: true } },
+        packedBy: { select: { displayName: true, username: true } },
+      },
+    });
+    if (!order) throw new HttpError(404, `Pedido ${wpOrderId} no encontrado en el WMS`);
+    res.json({ order });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.DELIVER, WMS_CAPS.LOAD), async (req, res, next) => {
   try {
     const id = Number(req.params.id);

@@ -18,6 +18,7 @@ import { Dispatch } from '@/pages/Dispatch';
 import { Delivery } from '@/pages/Delivery';
 import { Dashboard } from '@/pages/Dashboard';
 import { Help } from '@/pages/Help';
+import { Scan } from '@/pages/Scan';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="delivery" element={<Delivery />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="help" element={<Help />} />
+              <Route path="scan/:wpOrderId" element={<Scan />} />
             </Route>
           </Routes>
         </AuthProvider>

@@ -46,6 +46,8 @@ export const sequencesApi = {
 
 export const ordersApi = {
   get: async (id: number): Promise<OrderDetail> => (await api.get(`/orders/${id}`)).data.order,
+  getByWpId: async (wpOrderId: number): Promise<OrderDetail> =>
+    (await api.get(`/orders/by-wp/${wpOrderId}`)).data.order,
   pack: async (id: number, itemIds: number[]): Promise<void> => {
     await api.post(`/orders/${id}/pack`, { itemIds });
   },
