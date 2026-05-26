@@ -1,6 +1,6 @@
 import { prisma } from '../db/prisma.js';
 import { config } from '../config.js';
-import { wcGetOrder, wcGetProduct, getMeta } from './woocommerce.js';
+import { wcGetOrder, wcGetProduct, wcGetProductsByIds, getMeta } from './woocommerce.js';
 
 // Upsert de producto en BD local. Si WC no responde (404, timeout, etc.) creamos
 // un placeholder para no bloquear el sync del pedido completo.
@@ -41,28 +41,36 @@ export async function syncProduct(wpProductId, wcProduct = null) {
   });
 }
 
-// Pre-sincroniza los productos referenciados en un pedido WC. CORRE FUERA DE LA
-// TRANSACCIÓN del pedido para evitar que las llamadas a WC API (lentas vía
-// Cloudflare) excedan el timeout de Prisma.
-async function ensureProductsFromOrder(orderData, concurrency = 5) {
-  const productIds = [...new Set(
-    (orderData.line_items || [])
-      .map((li) => li.product_id)
-      .filter((id) => Number.isInteger(id) && id > 0),
-  )];
-  if (productIds.length === 0) return;
+// Pre-sincroniza un conjunto de productIds: detecta los que faltan, los pide a
+// WC en una sola llamada batch (?include=...) y los upsertea uno por uno (DB
+// writes son rápidos, lo lento era WC). Reduce N llamadas HTTP a 1.
+export async function ensureProducts(productIds) {
+  const unique = [...new Set(productIds.filter((id) => Number.isInteger(id) && id > 0))];
+  if (unique.length === 0) return;
 
   const existing = await prisma.productMeta.findMany({
-    where: { wpProductId: { in: productIds } },
+    where: { wpProductId: { in: unique } },
     select: { wpProductId: true },
   });
   const existingIds = new Set(existing.map((p) => p.wpProductId));
-  const missingIds = productIds.filter((id) => !existingIds.has(id));
+  const missing = unique.filter((id) => !existingIds.has(id));
+  if (missing.length === 0) return;
 
-  // Fetch en paralelo controlado (no abrumar WC + Cloudflare).
-  for (let i = 0; i < missingIds.length; i += concurrency) {
-    const batch = missingIds.slice(i, i + concurrency);
-    await Promise.all(batch.map((id) => syncProduct(id)));
+  // Una sola llamada a WC para todos los productos faltantes.
+  let wcProducts = [];
+  try {
+    wcProducts = await wcGetProductsByIds(missing);
+  } catch {
+    // Si WC falla del todo, igual creamos placeholders para no bloquear.
+  }
+
+  const returnedIds = new Set(wcProducts.map((p) => p.id));
+  for (const wcp of wcProducts) {
+    await syncProduct(wcp.id, wcp);
+  }
+  // Lo que WC no devolvió (borrados, sin permisos, etc.) → placeholder
+  for (const id of missing) {
+    if (!returnedIds.has(id)) await syncProduct(id, null);
   }
 }
 
@@ -71,8 +79,11 @@ async function ensureProductsFromOrder(orderData, concurrency = 5) {
 export async function syncOrder(wpOrderId, wcOrder = null) {
   const data = wcOrder || (await wcGetOrder(wpOrderId));
 
-  // 1. Pre-sync de productos FUERA de la transacción.
-  await ensureProductsFromOrder(data);
+  // 1. Pre-sync de productos FUERA de la transacción (en 1 sola llamada a WC).
+  const productIds = (data.line_items || [])
+    .map((li) => li.product_id)
+    .filter((id) => id > 0);
+  await ensureProducts(productIds);
 
   const route = getMeta(data, config.meta.orderRoute) || null;
   const stopPositionRaw = getMeta(data, config.meta.orderStopPosition);
@@ -102,7 +113,6 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
         },
       });
 
-      // Reemplazo total de items para evitar drift si WC editó el pedido.
       await tx.orderItem.deleteMany({ where: { orderId: order.id } });
 
       let hasB2 = false;

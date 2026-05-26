@@ -22,6 +22,22 @@ export async function wcGetProduct(productId) {
   return data;
 }
 
+// Trae varios productos en una sola llamada usando ?include=id1,id2,...
+// WC permite hasta 100 ids por request.
+export async function wcGetProductsByIds(ids) {
+  if (!Array.isArray(ids) || ids.length === 0) return [];
+  const all = [];
+  const CHUNK = 100;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const chunk = ids.slice(i, i + CHUNK);
+    const { data } = await wc.get('/products', {
+      params: { include: chunk.join(','), per_page: chunk.length },
+    });
+    all.push(...data);
+  }
+  return all;
+}
+
 // Devuelve el valor de un meta por su key, o undefined si no existe.
 export function getMeta(entity, key) {
   const list = entity?.meta_data || [];

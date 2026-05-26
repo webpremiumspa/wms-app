@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
 import { wcListOrders } from '../services/woocommerce.js';
-import { syncOrder } from '../services/orders-sync.js';
+import { syncOrder, ensureProducts } from '../services/orders-sync.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -56,28 +56,32 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
       page += 1;
     }
 
+    // Pre-fetch UNA vez todos los productos referenciados por todos los pedidos
+    // (1 call HTTP a WC con ?include=ids... en lugar de N calls).
+    const allProductIds = [];
+    for (const wco of wcOrders) {
+      for (const li of wco.line_items || []) {
+        if (li.product_id > 0) allProductIds.push(li.product_id);
+      }
+    }
+    await ensureProducts(allProductIds);
+
     let synced = 0;
     let failed = 0;
     const errors = [];
     const orders = [];
 
-    // Procesar en lotes paralelos para acelerar (cada syncOrder hace pre-sync
-    // de productos fuera de su tx, así que pueden correr concurrentemente sin
-    // pelearse por la conexión).
-    const CONCURRENCY = 4;
-    for (let i = 0; i < wcOrders.length; i += CONCURRENCY) {
-      const batch = wcOrders.slice(i, i + CONCURRENCY);
-      const results = await Promise.allSettled(batch.map((wco) => syncOrder(wco.id, wco)));
-      results.forEach((r, idx) => {
-        const wco = batch[idx];
-        if (r.status === 'fulfilled') {
-          orders.push({ wpOrderId: r.value.wpOrderId, number: r.value.number, status: r.value.status });
-          synced += 1;
-        } else {
-          failed += 1;
-          errors.push({ wpOrderId: wco.id, message: r.reason?.message || 'sync error' });
-        }
-      });
+    // Pedidos secuenciales: cada tx es solo escrituras locales (rápida), no
+    // necesita paralelismo y así evitamos contención en el pool de conexiones.
+    for (const wco of wcOrders) {
+      try {
+        const order = await syncOrder(wco.id, wco);
+        orders.push({ wpOrderId: order.wpOrderId, number: order.number, status: order.status });
+        synced += 1;
+      } catch (err) {
+        failed += 1;
+        errors.push({ wpOrderId: wco.id, message: err.message });
+      }
     }
 
     res.json({
