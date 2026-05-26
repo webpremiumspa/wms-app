@@ -10,6 +10,9 @@ import orderRoutes from './routes/orders.js';
 import sequenceRoutes from './routes/sequences.js';
 import webhookRoutes from './routes/webhooks.js';
 import devRoutes from './routes/dev.js';
+import pickingB2Routes from './routes/picking-b2.js';
+import dispatchRoutes from './routes/dispatch.js';
+import deliveryRoutes from './routes/delivery.js';
 
 function mountWebhookRoutes(app, prefix = '') {
   // Passenger en cPanel puede montar la app bajo /api y entregar a Express la
@@ -22,6 +25,9 @@ function mountJsonRoutes(app, prefix = '') {
   app.use(`${prefix}/auth`, authRoutes);
   app.use(`${prefix}/orders`, orderRoutes);
   app.use(`${prefix}/sequences`, sequenceRoutes);
+  app.use(`${prefix}/picking/b2`, pickingB2Routes);
+  app.use(`${prefix}/dispatch`, dispatchRoutes);
+  app.use(`${prefix}/delivery`, deliveryRoutes);
 
   if (config.env === 'development') {
     app.use(`${prefix}/dev`, devRoutes);

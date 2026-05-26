@@ -13,6 +13,9 @@ import { SequencePicking } from '@/pages/Sequences/Picking';
 import { PackingList } from '@/pages/Sequences/PackingList';
 import { PackingOrder } from '@/pages/Sequences/PackingOrder';
 import { SequenceClose } from '@/pages/Sequences/Close';
+import { PickingB2 } from '@/pages/PickingB2';
+import { Dispatch } from '@/pages/Dispatch';
+import { Delivery } from '@/pages/Delivery';
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -41,8 +44,9 @@ export default function App() {
               <Route path="sequences/:id/packing/:orderId" element={<PackingOrder />} />
               <Route path="sequences/:id/close" element={<SequenceClose />} />
               <Route path="picking" element={<Placeholder title="Picking (acceso rápido)" />} />
-              <Route path="dispatch" element={<Placeholder title="Clasificación y carga" />} />
-              <Route path="delivery" element={<Placeholder title="Entrega" />} />
+              <Route path="picking-b2" element={<PickingB2 />} />
+              <Route path="dispatch" element={<Dispatch />} />
+              <Route path="delivery" element={<Delivery />} />
               <Route path="dashboard" element={<Placeholder title="Supervisión" />} />
             </Route>
           </Routes>

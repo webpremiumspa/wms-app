@@ -9,7 +9,8 @@
       "Bash(npx prisma *)",
       "Bash(DATABASE_URL=\"mysql://x:x@localhost:3306/x\" npx prisma validate)",
       "Bash(npx tsc *)",
-      "Bash(npx vite *)"
+      "Bash(npx vite *)",
+      "Bash(npm run *)"
     ],
     "additionalDirectories": [
       "C:\\Users\\dsalg\\.claude\\projects\\c--Users-dsalg-OneDrive---Webpremium-Proyectos-Chimuelo-wms-app\\memory"

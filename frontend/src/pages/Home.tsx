@@ -8,7 +8,7 @@ type Tile = { to: string; label: string; icon: typeof Package; cap: string };
 const TILES: Tile[] = [
   { to: '/sequences/new', label: 'Generar secuencia', icon: ClipboardList, cap: CAPS.PACK_B1 },
   { to: '/sequences', label: 'Picking Bodega 1', icon: Package, cap: CAPS.PICK_B1 },
-  { to: '/sequences', label: 'Picking Bodega 2', icon: Package, cap: CAPS.PICK_B2 },
+  { to: '/picking-b2', label: 'Picking Bodega 2', icon: Package, cap: CAPS.PICK_B2 },
   { to: '/dispatch', label: 'Clasificación y carga', icon: Scan, cap: CAPS.LOAD },
   { to: '/delivery', label: 'Entrega', icon: Truck, cap: CAPS.DELIVER },
   { to: '/dashboard', label: 'Supervisión', icon: BarChart3, cap: CAPS.SUPERVISE },
