@@ -3,9 +3,17 @@ import { api } from './api';
 export type SyncResult = {
   total: number;
   synced: number;
+  created: number;
+  updated: number;
   failed: number;
   errors: Array<{ wpOrderId: number; message: string }>;
-  orders: Array<{ wpOrderId: number; number: string; status: string }>;
+  orders: Array<{ wpOrderId: number; number: string; status: string; isNew: boolean }>;
+  takenBySequences: Array<{
+    id: number;
+    status: 'open' | 'closed';
+    warehouse: 'B1' | 'B2';
+    orders: Array<{ wpOrderId: number; number: string }>;
+  }>;
   range: { after: string; before: string | null };
   statuses: string[];
 };

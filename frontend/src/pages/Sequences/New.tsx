@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
@@ -245,12 +245,41 @@ export function SequenceNew() {
                 : 'bg-emerald-50 text-emerald-800 ring-emerald-200',
             )}
           >
-            <div className="flex items-center gap-2">
-              <CheckCircle2 size={16} />
-              <span>
-                Sincronización completa: <strong>{syncResult.synced}</strong> de {syncResult.total} pedidos importados
-                {syncResult.failed > 0 && ` · ${syncResult.failed} fallidos`}.
-              </span>
+            <div className="flex items-start gap-2">
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
+              <div>
+                <div>
+                  WC tenía <strong>{syncResult.total}</strong> pedido{syncResult.total === 1 ? '' : 's'} en el rango.
+                </div>
+                <div className="text-xs">
+                  <strong>{syncResult.created}</strong> nuevo{syncResult.created === 1 ? '' : 's'} · <strong>{syncResult.updated}</strong> ya existía{syncResult.updated === 1 ? '' : 'n'} (actualizado{syncResult.updated === 1 ? '' : 's'})
+                  {syncResult.failed > 0 && <> · <strong>{syncResult.failed}</strong> fallido{syncResult.failed === 1 ? '' : 's'}</>}
+                </div>
+                {syncResult.takenBySequences.length > 0 && (
+                  <div className="mt-2 space-y-1 text-xs">
+                    <div className="font-medium text-amber-800">
+                      Algunos pedidos no aparecen abajo porque están en otras secuencias:
+                    </div>
+                    {syncResult.takenBySequences.map((s) => (
+                      <div key={s.id} className="ml-1">
+                        <Link
+                          to={`/sequences/${s.id}`}
+                          className="font-semibold text-brand-700 underline hover:text-brand-800"
+                        >
+                          Secuencia #{s.id}
+                        </Link>
+                        <span className="text-slate-600">
+                          {' '}({s.status === 'open' ? 'abierta' : 'cerrada'}, {s.warehouse}){': '}
+                          {s.orders.map((o) => `#${o.number}`).join(', ')}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="text-slate-600">
+                      Si quieres usarlos en una secuencia nueva, abre la secuencia que los tiene y elimínala (solo permite si aún no se hizo picking).
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             {syncResult.failed > 0 && (
               <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs">

@@ -29,6 +29,48 @@ router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.PICK_B2,
   }
 });
 
+// Eliminar una secuencia. Revierte los pedidos a 'received' y borra los
+// vínculos. NO permite si alguno de los pedidos ya pasó de 'sequenced'
+// (picked/packed/etc) — ahí ya hay trabajo hecho y no conviene perderlo.
+router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const seq = await prisma.sequence.findUnique({
+      where: { id },
+      include: { orders: { include: { order: true } } },
+    });
+    if (!seq) throw new HttpError(404, 'Sequence not found');
+
+    const advanced = seq.orders.filter((so) => so.order.status !== 'sequenced');
+    if (advanced.length > 0) {
+      throw new HttpError(409, 'Algunos pedidos ya avanzaron del estado "sequenced". Eliminar la secuencia perdería ese progreso.', {
+        advancedOrders: advanced.map((so) => ({ number: so.order.number, status: so.order.status })),
+      });
+    }
+
+    const orderIds = seq.orders.map((so) => so.orderId);
+
+    await prisma.$transaction([
+      prisma.order.updateMany({
+        where: { id: { in: orderIds }, status: 'sequenced' },
+        data: { status: 'received' },
+      }),
+      prisma.sequence.delete({ where: { id } }),
+      prisma.event.create({
+        data: {
+          type: 'sequence.deleted',
+          actorId: req.user.wpUserId,
+          payload: { sequenceId: id, ordersReverted: orderIds.length },
+        },
+      }),
+    ]);
+
+    res.json({ ok: true, ordersReverted: orderIds.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.PICK_B2, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const id = Number(req.params.id);

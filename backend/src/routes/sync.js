@@ -66,30 +66,84 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     }
     await ensureProducts(allProductIds);
 
-    let synced = 0;
+    // Detectar cuáles WC orders ya existían en WMS antes del sync para
+    // diferenciar "nuevos" de "actualizados" en la respuesta.
+    const existingWpIds = new Set(
+      (
+        await prisma.order.findMany({
+          where: { wpOrderId: { in: wcOrders.map((o) => o.id) } },
+          select: { wpOrderId: true },
+        })
+      ).map((o) => o.wpOrderId),
+    );
+
+    let created = 0;
+    let updated = 0;
     let failed = 0;
     const errors = [];
     const orders = [];
 
-    // Pedidos secuenciales: cada tx es solo escrituras locales (rápida), no
-    // necesita paralelismo y así evitamos contención en el pool de conexiones.
     for (const wco of wcOrders) {
       try {
+        const wasExisting = existingWpIds.has(wco.id);
         const order = await syncOrder(wco.id, wco);
-        orders.push({ wpOrderId: order.wpOrderId, number: order.number, status: order.status });
-        synced += 1;
+        orders.push({
+          wpOrderId: order.wpOrderId,
+          number: order.number,
+          status: order.status,
+          isNew: !wasExisting,
+        });
+        if (wasExisting) updated += 1;
+        else created += 1;
       } catch (err) {
         failed += 1;
         errors.push({ wpOrderId: wco.id, message: err.message });
       }
     }
 
+    const synced = created + updated;
+
+    // Para los pedidos que ya existían y NO están en estado 'received' (es
+    // decir, están enganchados a una secuencia), agrupamos por secuencia para
+    // que el usuario sepa dónde encontrarlos.
+    const wpIdsNotReceived = orders
+      .filter((o) => !o.isNew && o.status !== 'received')
+      .map((o) => o.wpOrderId);
+
+    const takenBySequences = [];
+    if (wpIdsNotReceived.length > 0) {
+      const taken = await prisma.order.findMany({
+        where: { wpOrderId: { in: wpIdsNotReceived } },
+        select: {
+          wpOrderId: true,
+          number: true,
+          sequenceLinks: {
+            include: { sequence: { select: { id: true, status: true, warehouse: true } } },
+          },
+        },
+      });
+      const bySeq = new Map();
+      for (const o of taken) {
+        for (const link of o.sequenceLinks) {
+          const s = link.sequence;
+          if (!bySeq.has(s.id)) {
+            bySeq.set(s.id, { id: s.id, status: s.status, warehouse: s.warehouse, orders: [] });
+          }
+          bySeq.get(s.id).orders.push({ wpOrderId: o.wpOrderId, number: o.number });
+        }
+      }
+      takenBySequences.push(...Array.from(bySeq.values()).sort((a, b) => a.id - b.id));
+    }
+
     res.json({
       total: wcOrders.length,
       synced,
+      created,
+      updated,
       failed,
       errors,
       orders,
+      takenBySequences,
       range: { after, before: before || null },
       statuses,
     });

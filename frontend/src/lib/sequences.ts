@@ -42,6 +42,9 @@ export const sequencesApi = {
 
   close: async (id: number, actualBags?: number): Promise<Sequence> =>
     (await api.post(`/sequences/${id}/close`, actualBags !== undefined ? { actualBags } : {})).data.sequence,
+
+  delete: async (id: number): Promise<{ ok: boolean; ordersReverted: number }> =>
+    (await api.delete(`/sequences/${id}`)).data,
 };
 
 export const ordersApi = {

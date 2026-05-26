@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
@@ -56,11 +56,22 @@ function OrderItems({ orderId }: { orderId: number }) {
 export function SequenceDetail() {
   const { id } = useParams();
   const seqId = Number(id);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const { data, isLoading } = useQuery({
     queryKey: ['sequence', seqId],
     queryFn: () => sequencesApi.get(seqId),
+  });
+
+  const deleteSeq = useMutation({
+    mutationFn: () => sequencesApi.delete(seqId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sequences'] });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
+      navigate('/sequences');
+    },
   });
 
   if (isLoading || !data) return <Spinner />;
@@ -77,6 +88,9 @@ export function SequenceDetail() {
   const seq = data;
   const orderCount = seq.orders.length;
   const packed = seq.orders.filter((o) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.order.status)).length;
+  // Solo se puede eliminar si la secuencia está abierta y NINGÚN pedido avanzó
+  // del estado `sequenced` (no hay picking ni packing aún).
+  const canDelete = seq.status === 'open' && seq.orders.every((o) => o.order.status === 'sequenced');
 
   return (
     <div className="space-y-4">
@@ -142,6 +156,33 @@ export function SequenceDetail() {
           </div>
         </Link>
       </div>
+
+      {canDelete && (
+        <div className="flex items-center justify-between rounded-lg border border-dashed border-red-200 bg-red-50 px-3 py-2 text-sm">
+          <span className="text-red-800">
+            Si te equivocaste de pedidos, puedes eliminar la secuencia. Los pedidos vuelven a quedar disponibles para una nueva.
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm(`Eliminar la secuencia #${seq.id}? Los ${orderCount} pedidos volverán a estar disponibles para sequenciar.`)) {
+                deleteSeq.mutate();
+              }
+            }}
+            disabled={deleteSeq.isPending}
+            className="flex items-center gap-1 rounded-md px-2 py-1 font-medium text-red-700 hover:bg-red-100"
+          >
+            <Trash2 size={14} />
+            {deleteSeq.isPending ? 'Eliminando…' : 'Eliminar secuencia'}
+          </button>
+        </div>
+      )}
+
+      {deleteSeq.error && (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
+          {(deleteSeq.error as any).response?.data?.message || 'No se pudo eliminar la secuencia'}
+        </div>
+      )}
 
       {/* Lista de pedidos de la secuencia, expandibles */}
       <div className="space-y-2">
