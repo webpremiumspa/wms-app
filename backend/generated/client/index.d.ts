@@ -5635,6 +5635,7 @@ export namespace Prisma {
   export type SequenceMinAggregateOutputType = {
     id: number | null
     warehouse: $Enums.Warehouse | null
+    mode: string | null
     createdById: number | null
     createdAt: Date | null
     closedAt: Date | null
@@ -5646,6 +5647,7 @@ export namespace Prisma {
   export type SequenceMaxAggregateOutputType = {
     id: number | null
     warehouse: $Enums.Warehouse | null
+    mode: string | null
     createdById: number | null
     createdAt: Date | null
     closedAt: Date | null
@@ -5657,6 +5659,7 @@ export namespace Prisma {
   export type SequenceCountAggregateOutputType = {
     id: number
     warehouse: number
+    mode: number
     createdById: number
     createdAt: number
     closedAt: number
@@ -5684,6 +5687,7 @@ export namespace Prisma {
   export type SequenceMinAggregateInputType = {
     id?: true
     warehouse?: true
+    mode?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -5695,6 +5699,7 @@ export namespace Prisma {
   export type SequenceMaxAggregateInputType = {
     id?: true
     warehouse?: true
+    mode?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -5706,6 +5711,7 @@ export namespace Prisma {
   export type SequenceCountAggregateInputType = {
     id?: true
     warehouse?: true
+    mode?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -5804,6 +5810,7 @@ export namespace Prisma {
   export type SequenceGroupByOutputType = {
     id: number
     warehouse: $Enums.Warehouse
+    mode: string
     createdById: number
     createdAt: Date
     closedAt: Date | null
@@ -5834,6 +5841,7 @@ export namespace Prisma {
   export type SequenceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     warehouse?: boolean
+    mode?: boolean
     createdById?: boolean
     createdAt?: boolean
     closedAt?: boolean
@@ -5849,6 +5857,7 @@ export namespace Prisma {
   export type SequenceSelectScalar = {
     id?: boolean
     warehouse?: boolean
+    mode?: boolean
     createdById?: boolean
     createdAt?: boolean
     closedAt?: boolean
@@ -5872,6 +5881,7 @@ export namespace Prisma {
     scalars: $Extensions.GetPayloadResult<{
       id: number
       warehouse: $Enums.Warehouse
+      mode: string
       createdById: number
       createdAt: Date
       closedAt: Date | null
@@ -6251,6 +6261,7 @@ export namespace Prisma {
   interface SequenceFieldRefs {
     readonly id: FieldRef<"Sequence", 'Int'>
     readonly warehouse: FieldRef<"Sequence", 'Warehouse'>
+    readonly mode: FieldRef<"Sequence", 'String'>
     readonly createdById: FieldRef<"Sequence", 'Int'>
     readonly createdAt: FieldRef<"Sequence", 'DateTime'>
     readonly closedAt: FieldRef<"Sequence", 'DateTime'>
@@ -8520,6 +8531,7 @@ export namespace Prisma {
   export const SequenceScalarFieldEnum: {
     id: 'id',
     warehouse: 'warehouse',
+    mode: 'mode',
     createdById: 'createdById',
     createdAt: 'createdAt',
     closedAt: 'closedAt',
@@ -9009,6 +9021,7 @@ export namespace Prisma {
     NOT?: SequenceWhereInput | SequenceWhereInput[]
     id?: IntFilter<"Sequence"> | number
     warehouse?: EnumWarehouseFilter<"Sequence"> | $Enums.Warehouse
+    mode?: StringFilter<"Sequence"> | string
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -9022,6 +9035,7 @@ export namespace Prisma {
   export type SequenceOrderByWithRelationInput = {
     id?: SortOrder
     warehouse?: SortOrder
+    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrderInput | SortOrder
@@ -9038,6 +9052,7 @@ export namespace Prisma {
     OR?: SequenceWhereInput[]
     NOT?: SequenceWhereInput | SequenceWhereInput[]
     warehouse?: EnumWarehouseFilter<"Sequence"> | $Enums.Warehouse
+    mode?: StringFilter<"Sequence"> | string
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -9051,6 +9066,7 @@ export namespace Prisma {
   export type SequenceOrderByWithAggregationInput = {
     id?: SortOrder
     warehouse?: SortOrder
+    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrderInput | SortOrder
@@ -9070,6 +9086,7 @@ export namespace Prisma {
     NOT?: SequenceScalarWhereWithAggregatesInput | SequenceScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Sequence"> | number
     warehouse?: EnumWarehouseWithAggregatesFilter<"Sequence"> | $Enums.Warehouse
+    mode?: StringWithAggregatesFilter<"Sequence"> | string
     createdById?: IntWithAggregatesFilter<"Sequence"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableWithAggregatesFilter<"Sequence"> | Date | string | null
@@ -9567,6 +9584,7 @@ export namespace Prisma {
 
   export type SequenceCreateInput = {
     warehouse: $Enums.Warehouse
+    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     expectedBags?: number
@@ -9579,6 +9597,7 @@ export namespace Prisma {
   export type SequenceUncheckedCreateInput = {
     id?: number
     warehouse: $Enums.Warehouse
+    mode?: string
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -9590,6 +9609,7 @@ export namespace Prisma {
 
   export type SequenceUpdateInput = {
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     expectedBags?: IntFieldUpdateOperationsInput | number
@@ -9602,6 +9622,7 @@ export namespace Prisma {
   export type SequenceUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9614,6 +9635,7 @@ export namespace Prisma {
   export type SequenceCreateManyInput = {
     id?: number
     warehouse: $Enums.Warehouse
+    mode?: string
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -9624,6 +9646,7 @@ export namespace Prisma {
 
   export type SequenceUpdateManyMutationInput = {
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     expectedBags?: IntFieldUpdateOperationsInput | number
@@ -9634,6 +9657,7 @@ export namespace Prisma {
   export type SequenceUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10293,6 +10317,7 @@ export namespace Prisma {
   export type SequenceCountOrderByAggregateInput = {
     id?: SortOrder
     warehouse?: SortOrder
+    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -10311,6 +10336,7 @@ export namespace Prisma {
   export type SequenceMaxOrderByAggregateInput = {
     id?: SortOrder
     warehouse?: SortOrder
+    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -10322,6 +10348,7 @@ export namespace Prisma {
   export type SequenceMinOrderByAggregateInput = {
     id?: SortOrder
     warehouse?: SortOrder
+    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -11292,6 +11319,7 @@ export namespace Prisma {
 
   export type SequenceCreateWithoutCreatedByInput = {
     warehouse: $Enums.Warehouse
+    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     expectedBags?: number
@@ -11303,6 +11331,7 @@ export namespace Prisma {
   export type SequenceUncheckedCreateWithoutCreatedByInput = {
     id?: number
     warehouse: $Enums.Warehouse
+    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     expectedBags?: number
@@ -11421,6 +11450,7 @@ export namespace Prisma {
     NOT?: SequenceScalarWhereInput | SequenceScalarWhereInput[]
     id?: IntFilter<"Sequence"> | number
     warehouse?: EnumWarehouseFilter<"Sequence"> | $Enums.Warehouse
+    mode?: StringFilter<"Sequence"> | string
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -12012,6 +12042,7 @@ export namespace Prisma {
 
   export type SequenceCreateWithoutOrdersInput = {
     warehouse: $Enums.Warehouse
+    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     expectedBags?: number
@@ -12023,6 +12054,7 @@ export namespace Prisma {
   export type SequenceUncheckedCreateWithoutOrdersInput = {
     id?: number
     warehouse: $Enums.Warehouse
+    mode?: string
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -12097,6 +12129,7 @@ export namespace Prisma {
 
   export type SequenceUpdateWithoutOrdersInput = {
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     expectedBags?: IntFieldUpdateOperationsInput | number
@@ -12108,6 +12141,7 @@ export namespace Prisma {
   export type SequenceUncheckedUpdateWithoutOrdersInput = {
     id?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12347,6 +12381,7 @@ export namespace Prisma {
   export type SequenceCreateManyCreatedByInput = {
     id?: number
     warehouse: $Enums.Warehouse
+    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     expectedBags?: number
@@ -12383,6 +12418,7 @@ export namespace Prisma {
 
   export type SequenceUpdateWithoutCreatedByInput = {
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     expectedBags?: IntFieldUpdateOperationsInput | number
@@ -12394,6 +12430,7 @@ export namespace Prisma {
   export type SequenceUncheckedUpdateWithoutCreatedByInput = {
     id?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     expectedBags?: IntFieldUpdateOperationsInput | number
@@ -12405,6 +12442,7 @@ export namespace Prisma {
   export type SequenceUncheckedUpdateManyWithoutCreatedByInput = {
     id?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     expectedBags?: IntFieldUpdateOperationsInput | number

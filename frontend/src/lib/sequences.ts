@@ -26,8 +26,12 @@ export const sequencesApi = {
   validateStock: async (orderIds: number[]): Promise<StockProblem[]> =>
     (await api.post('/sequences/validate-stock', { orderIds })).data.problems,
 
-  create: async (warehouse: Warehouse, orderIds: number[]): Promise<Sequence> =>
-    (await api.post('/sequences', { warehouse, orderIds })).data.sequence,
+  create: async (
+    warehouse: Warehouse,
+    orderIds: number[],
+    mode: 'by_sku' | 'by_order' = 'by_sku',
+  ): Promise<Sequence> =>
+    (await api.post('/sequences', { warehouse, orderIds, mode })).data.sequence,
 
   markPicked: async (id: number, productId: number, picked: boolean): Promise<void> => {
     await api.patch(`/sequences/${id}/picking`, { productId, picked });

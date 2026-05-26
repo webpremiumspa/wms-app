@@ -11,6 +11,8 @@ export type OrderStatus =
 
 export type SequenceStatus = 'open' | 'closed';
 
+export type SequenceMode = 'by_sku' | 'by_order';
+
 export type PendingOrder = {
   id: number;
   wpOrderId: number;
@@ -25,6 +27,7 @@ export type PendingOrder = {
 export type Sequence = {
   id: number;
   warehouse: Warehouse;
+  mode: SequenceMode;
   status: SequenceStatus;
   expectedBags: number;
   actualBags: number;

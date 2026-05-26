@@ -97,6 +97,9 @@ model OrderItem {
 model Sequence {
   id           Int            @id @default(autoincrement())
   warehouse    Warehouse
+  // Modo de picking: by_sku (agrupado por SKU, default) o by_order
+  // (recorre pedido por pedido y mete a la bolsa en el camino).
+  mode         String         @default("by_sku") @db.VarChar(20)
   createdById  Int            @map("created_by_id")
   createdAt    DateTime       @default(now()) @map("created_at")
   closedAt     DateTime?      @map("closed_at")

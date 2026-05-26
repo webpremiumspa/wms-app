@@ -80,7 +80,14 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
     }
 
     const now = new Date();
+    // Soporta modo 'by_order': si los items aún no tenían pickedAt (porque no
+    // hubo paso previo de picking), lo seteamos ahora junto al packedAt.
+    // Idempotente: no pisa pickedAt si ya estaba.
     await prisma.$transaction([
+      prisma.orderItem.updateMany({
+        where: { id: { in: [...confirmed] }, orderId: id, pickedAt: null },
+        data: { pickedAt: now },
+      }),
       prisma.orderItem.updateMany({
         where: { id: { in: [...confirmed] }, orderId: id },
         data: { packedAt: now },

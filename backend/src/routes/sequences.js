@@ -64,6 +64,7 @@ router.post('/validate-stock', requireCap(WMS_CAPS.PACK_B1), async (req, res, ne
 const createSchema = z.object({
   warehouse: z.enum(['B1', 'B2']),
   orderIds: z.array(z.number().int().positive()).min(1),
+  mode: z.enum(['by_sku', 'by_order']).optional(),
 });
 
 router.post('/', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
@@ -73,6 +74,7 @@ router.post('/', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
     const seq = await createSequence({
       warehouse: parsed.data.warehouse,
       orderIds: parsed.data.orderIds,
+      mode: parsed.data.mode || 'by_sku',
       createdById: req.user.wpUserId,
     });
     res.status(201).json({ sequence: seq });

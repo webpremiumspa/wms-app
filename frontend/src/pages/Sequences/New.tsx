@@ -30,6 +30,7 @@ export function SequenceNew() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [warehouse] = useState<Warehouse>('B1');
+  const [mode, setMode] = useState<'by_sku' | 'by_order'>('by_sku');
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [problems, setProblems] = useState<StockProblem[] | null>(null);
 
@@ -68,7 +69,7 @@ export function SequenceNew() {
   });
 
   const create = useMutation({
-    mutationFn: () => sequencesApi.create(warehouse, orderIds),
+    mutationFn: () => sequencesApi.create(warehouse, orderIds, mode),
     onSuccess: (seq) => {
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
@@ -228,6 +229,45 @@ export function SequenceNew() {
             )}
           </div>
         )}
+      </div>
+
+      {/* Selector de modo de picking */}
+      <div className="card space-y-2 p-4">
+        <h3 className="text-sm font-semibold text-slate-800">Modo de picking</h3>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setMode('by_sku')}
+            className={clsx(
+              'rounded-lg p-3 text-left ring-1 transition',
+              mode === 'by_sku' ? 'bg-brand-50 ring-brand-300' : 'bg-white ring-slate-200 hover:bg-slate-50',
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <input type="radio" readOnly checked={mode === 'by_sku'} className="h-4 w-4 accent-brand-600" />
+              <span className="font-semibold">Por SKU (batch)</span>
+            </div>
+            <p className="mt-1 text-xs text-slate-600">
+              Se agrupan los SKUs de todos los pedidos. El picker hace un solo recorrido tomando el volumen total y luego otro paso arma cada bolsa. Más eficiente con muchos pedidos similares.
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode('by_order')}
+            className={clsx(
+              'rounded-lg p-3 text-left ring-1 transition',
+              mode === 'by_order' ? 'bg-brand-50 ring-brand-300' : 'bg-white ring-slate-200 hover:bg-slate-50',
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <input type="radio" readOnly checked={mode === 'by_order'} className="h-4 w-4 accent-brand-600" />
+              <span className="font-semibold">Por pedido</span>
+            </div>
+            <p className="mt-1 text-xs text-slate-600">
+              El picker recorre pedido por pedido, mete los productos en la bolsa al instante e imprime el albarán al cerrar. Mejor cuando los pedidos tienen pocos items distintos y conviene un solo paso.
+            </p>
+          </button>
+        </div>
       </div>
 
       {/* Lista de pedidos pendientes */}

@@ -45,8 +45,10 @@ export async function validateStock(orderIds) {
 // Crea una secuencia para una bodega con la lista de pedidos dada.
 // Marca los pedidos como 'sequenced' para que no entren en una segunda
 // secuencia (optimización #3 del PDF).
-export async function createSequence({ warehouse, orderIds, createdById }) {
+// mode: 'by_sku' (default, agrupado por SKU) o 'by_order' (pedido por pedido).
+export async function createSequence({ warehouse, orderIds, createdById, mode = 'by_sku' }) {
   if (!['B1', 'B2'].includes(warehouse)) throw new HttpError(400, 'Invalid warehouse');
+  if (!['by_sku', 'by_order'].includes(mode)) throw new HttpError(400, 'Invalid mode');
   if (!Array.isArray(orderIds) || orderIds.length === 0) {
     throw new HttpError(400, 'orderIds required');
   }
@@ -62,6 +64,7 @@ export async function createSequence({ warehouse, orderIds, createdById }) {
     const seq = await tx.sequence.create({
       data: {
         warehouse,
+        mode,
         createdById,
         expectedBags: orders.length,
         orders: {
@@ -177,6 +180,8 @@ export async function markPicked({ sequenceId, productId, actorId, picked }) {
 }
 
 // Lista los pedidos listos para empacar dentro de una secuencia.
+// En modo 'by_order' el picker recoge y empaca en un solo paso, por eso
+// `ready` siempre es true (no requiere picking previo).
 export async function getPendingPacking(sequenceId) {
   const seq = await prisma.sequence.findUnique({ where: { id: sequenceId } });
   if (!seq) throw new HttpError(404, 'Sequence not found');
@@ -190,10 +195,10 @@ export async function getPendingPacking(sequenceId) {
     orderBy: { id: 'asc' },
   });
 
-  // Marcamos cuáles tienen todos sus items B1 pickeados (listos para empacar).
   return orders.map((o) => {
     const b1 = o.items.filter((i) => i.warehouse === 'B1');
-    const ready = b1.length > 0 && b1.every((i) => i.pickedAt);
+    const allPicked = b1.length > 0 && b1.every((i) => i.pickedAt);
+    const ready = seq.mode === 'by_order' ? true : allPicked;
     return {
       id: o.id,
       number: o.number,
