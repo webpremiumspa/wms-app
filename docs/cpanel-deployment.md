@@ -153,7 +153,8 @@ Una vez clonado, en la fila del repo en cPanel verás botones **Manage**, **Pull
 2. **Deploy HEAD Commit** — ejecuta `.cpanel.yml`, que:
    - Copia `backend/` a `wms.chimuelo.cl/backend/`
    - Instala dependencias del backend con `npm ci --omit=dev`
-   - Genera el cliente Prisma
+   - Genera el cliente Prisma con `./node_modules/.bin/prisma generate`
+   - Verifica que el backend importe correctamente (`APP_IMPORT_OK`)
    - Construye el frontend con `npm run build`
    - Copia `frontend/dist/` a la raíz del subdominio sin sobrescribir `.htaccess`
 
@@ -223,6 +224,24 @@ Las env vars no están seteadas en la app Node, o no se hizo Restart después de
 La app Node está caída. Logs en:
 - `~/nodevenv/wms.chimuelo.cl/backend/20/passenger.log`
 - `cPanel → Errors`
+
+### `/api/health` devuelve 503 después de un deploy
+
+Passenger sí está recibiendo `/api`, pero la app Node no pudo arrancar. Probar manualmente:
+
+```bash
+source ~/nodevenv/wms.chimuelo.cl/backend/20/bin/activate
+cd ~/wms.chimuelo.cl/backend
+node -e "import('./src/app.js').then(() => console.log('APP_IMPORT_OK')).catch(e => { console.error(e); process.exit(1) })"
+```
+
+Si aparece `@prisma/client did not initialize yet`, ejecutar:
+
+```bash
+./node_modules/.bin/prisma generate
+```
+
+Luego reiniciar la app Node. El deploy actual ya ejecuta `prisma generate` y valida `APP_IMPORT_OK`; si vuelve a fallar, revisar `cPanel → Git Version Control → Last Deployment`.
 
 ### El SPA muestra 404 al recargar en una ruta tipo `/sequences/5`
 
