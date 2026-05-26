@@ -35,3 +35,4 @@ backend/tmp/
 /sw.js
 /workbox-*.js
 /.htaccess
+/api/
