@@ -6,6 +6,11 @@ import { HttpError } from '../middleware/error.js';
 const wp = axios.create({
   baseURL: config.wp.baseUrl,
   timeout: 15000,
+  headers: {
+    // User-Agent estándar; Cloudflare WAF a veces bloquea el default de axios.
+    'User-Agent': 'Mozilla/5.0 (compatible; WMS-Chimuelo/1.0)',
+    Accept: 'application/json',
+  },
 });
 
 // Pide token al plugin JWT del WP. Devuelve { token, user_id, user_email, user_nicename, user_display_name }.
