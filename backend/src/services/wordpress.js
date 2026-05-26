@@ -15,8 +15,14 @@ export async function wpLogin(username, password) {
     return data;
   } catch (err) {
     const status = err.response?.status || 502;
-    const message = err.response?.data?.message || 'WordPress authentication failed';
-    throw new HttpError(status === 403 ? 401 : status, message);
+    const wpData = err.response?.data;
+    const wpMessage = typeof wpData?.message === 'string' ? wpData.message.replace(/<[^>]+>/g, '') : null;
+    const wpCode = wpData?.code || null;
+    const contentType = err.response?.headers?.['content-type'] || null;
+    const message = wpMessage
+      ? `WP (${wpCode || status}): ${wpMessage}`
+      : `WordPress auth failed (HTTP ${status}, content-type: ${contentType || 'unknown'}, url: ${config.wp.baseUrl}/wp-json/jwt-auth/v1/token)`;
+    throw new HttpError(status === 403 ? 401 : status, message, { wpCode, wpStatus: status, contentType });
   }
 }
 
