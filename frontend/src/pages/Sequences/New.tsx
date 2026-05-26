@@ -1,12 +1,24 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ChevronLeft } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
+import { syncApi, type SyncResult } from '@/lib/sync';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import type { StockProblem, Warehouse } from '@/lib/types';
 import clsx from 'clsx';
+
+function todayISO() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function yesterdayISO() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export function SequenceNew() {
   const navigate = useNavigate();
@@ -15,12 +27,28 @@ export function SequenceNew() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [problems, setProblems] = useState<StockProblem[] | null>(null);
 
+  // Sync state
+  const [afterDate, setAfterDate] = useState(yesterdayISO());
+  const [beforeDate, setBeforeDate] = useState(todayISO());
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+
   const { data: pending, isLoading } = useQuery({
     queryKey: ['orders', 'pending'],
     queryFn: sequencesApi.pendingOrders,
   });
 
   const orderIds = useMemo(() => [...selected], [selected]);
+
+  const sync = useMutation({
+    mutationFn: () => syncApi.orders({
+      after: afterDate || undefined,
+      before: beforeDate || undefined,
+    }),
+    onSuccess: (result) => {
+      setSyncResult(result);
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
+    },
+  });
 
   const validate = useMutation({
     mutationFn: () => sequencesApi.validateStock(orderIds),
@@ -43,7 +71,7 @@ export function SequenceNew() {
       else next.add(id);
       return next;
     });
-    setProblems(null); // invalida validación si cambia selección
+    setProblems(null);
   }
 
   const blocking = (problems || []).filter((p) => !p.warning);
@@ -60,6 +88,83 @@ export function SequenceNew() {
         Selecciona los pedidos que entran en la próxima secuencia. Validaremos stock antes de crearla.
       </p>
 
+      {/* Bloque de sincronización manual desde WC */}
+      <div className="card space-y-3 p-4 ring-1 ring-brand-100">
+        <div className="flex items-center gap-2">
+          <RefreshCw size={16} className="text-brand-700" />
+          <h3 className="font-semibold text-slate-800">Sincronizar desde WooCommerce</h3>
+        </div>
+        <p className="text-xs text-slate-500">
+          Trae al WMS los pedidos en estado <em>processing</em>/<em>on-hold</em> dentro del rango. Los duplicados se actualizan sin crear copias.
+        </p>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">Desde</span>
+            <input
+              type="date"
+              className="input mt-1"
+              value={afterDate}
+              onChange={(e) => setAfterDate(e.target.value)}
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-slate-600">Hasta</span>
+            <input
+              type="date"
+              className="input mt-1"
+              value={beforeDate}
+              onChange={(e) => setBeforeDate(e.target.value)}
+            />
+          </label>
+          <div className="flex items-end">
+            <button
+              onClick={() => sync.mutate()}
+              disabled={sync.isPending}
+              className="btn-primary w-full"
+            >
+              <RefreshCw size={16} className={sync.isPending ? 'animate-spin' : ''} />
+              {sync.isPending ? 'Sincronizando…' : 'Sincronizar'}
+            </button>
+          </div>
+        </div>
+
+        {sync.error && (
+          <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+            {(sync.error as any).response?.data?.message || 'Error al sincronizar con WooCommerce'}
+          </div>
+        )}
+
+        {syncResult && (
+          <div
+            className={clsx(
+              'rounded-lg px-3 py-2 text-sm ring-1',
+              syncResult.failed > 0
+                ? 'bg-amber-50 text-amber-900 ring-amber-200'
+                : 'bg-emerald-50 text-emerald-800 ring-emerald-200',
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} />
+              <span>
+                Sincronización completa: <strong>{syncResult.synced}</strong> de {syncResult.total} pedidos importados
+                {syncResult.failed > 0 && ` · ${syncResult.failed} fallidos`}.
+              </span>
+            </div>
+            {syncResult.failed > 0 && (
+              <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs">
+                {syncResult.errors.slice(0, 3).map((e) => (
+                  <li key={e.wpOrderId}>#{e.wpOrderId}: {e.message}</li>
+                ))}
+                {syncResult.errors.length > 3 && (
+                  <li>… y {syncResult.errors.length - 3} más</li>
+                )}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Lista de pedidos pendientes */}
       {isLoading ? (
         <Spinner />
       ) : (pending?.length ?? 0) === 0 ? (
