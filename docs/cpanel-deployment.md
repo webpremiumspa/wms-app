@@ -78,6 +78,9 @@ cPanel/CloudLinux necesita una carpeta física para el path del **Application UR
 
 ```bash
 mkdir -p ~/wms.chimuelo.cl/api
+touch ~/wms.chimuelo.cl/api/.htaccess
+chmod 755 ~/wms.chimuelo.cl/api
+chmod 644 ~/wms.chimuelo.cl/api/.htaccess
 ```
 
 Si esa carpeta no existe, cPanel puede fallar al guardar con:
@@ -86,6 +89,8 @@ Si esa carpeta no existe, cPanel puede fallar al guardar con:
 Unable to set environment variables in htaccess file for the application.
 [Errno 2] No such file or directory: '/home/USUARIO/wms.chimuelo.cl/api/.htaccess'
 ```
+
+Si la carpeta `api/` existe pero sigue apareciendo el error, crear manualmente el archivo vacío `api/.htaccess` con el `touch` anterior. Algunos paneles intentan modificar un `.htaccess` existente en vez de crearlo.
 
 Después de guardar la app, cPanel escribe en `~/wms.chimuelo.cl/api/.htaccess` un bloque parecido a:
 
@@ -123,7 +128,7 @@ RewriteRule ^ /index.html [L]
 Options -Indexes
 ```
 
-El deploy crea la carpeta `api/` si falta y excluye el `.htaccess` raíz para no borrar reglas configuradas en cPanel.
+El deploy crea la carpeta `api/`, crea `api/.htaccess` si falta y excluye el `.htaccess` raíz para no borrar reglas configuradas en cPanel.
 
 ### 4. Configurar Git Version Control
 
@@ -229,7 +234,7 @@ El request no está llegando a Node/Express. Verificar `https://wms.chimuelo.cl/
 - Si responde JSON con `{"status":"ok",...}`, el backend sí está activo y el problema está en credenciales, WordPress/JWT o variables de entorno.
 - Si responde 502, revisar logs de Passenger y reiniciar la app Node.
 
-Para repararlo rápido, crear `~/wms.chimuelo.cl/api`, entrar a `cPanel → Setup Node.js App`, abrir la app `wms.chimuelo.cl/api`, guardar/reiniciar para que cPanel regenere `api/.htaccess`, y verificar que la raíz mantiene las reglas SPA indicadas arriba.
+Para repararlo rápido, crear `~/wms.chimuelo.cl/api/.htaccess`, entrar a `cPanel → Setup Node.js App`, abrir la app `wms.chimuelo.cl/api`, guardar/reiniciar para que cPanel regenere `api/.htaccess`, y verificar que la raíz mantiene las reglas SPA indicadas arriba.
 
 ### El webhook de WC devuelve 401
 
