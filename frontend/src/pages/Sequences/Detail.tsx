@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
@@ -14,6 +14,8 @@ function OrderItems({ orderId }: { orderId: number }) {
   });
 
   if (isLoading || !data) return <div className="px-4 py-3 text-sm text-slate-500">Cargando contenido…</div>;
+
+  const isPacked = ['packed', 'classified', 'loaded', 'delivered'].includes(data.status);
 
   return (
     <div className="space-y-2 bg-slate-50 px-4 py-3">
@@ -37,6 +39,16 @@ function OrderItems({ orderId }: { orderId: number }) {
           <div className="text-sm font-bold text-brand-700">×{it.qty}</div>
         </div>
       ))}
+      {isPacked && (
+        <button
+          type="button"
+          onClick={() => ordersApi.openAlbaran(orderId).catch((e) => console.error(e))}
+          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+        >
+          <Printer size={16} />
+          Reimprimir albarán
+        </button>
+      )}
     </div>
   );
 }
