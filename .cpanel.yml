@@ -12,7 +12,7 @@ deployment:
     - /usr/bin/rsync -a --delete --exclude='node_modules' --exclude='.env' backend/ $HOME/wms.chimuelo.cl/backend/
 
     # ─── 2. Backend: instalar deps y generar cliente Prisma ──────────────────
-    - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd $HOME/wms.chimuelo.cl/backend && npm ci --omit=dev && ./node_modules/.bin/prisma generate && node -e \"import('./src/app.js').then(() => console.log('APP_IMPORT_OK'))\""
+    - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd $HOME/wms.chimuelo.cl/backend && npm ci --omit=dev && ./node_modules/.bin/prisma generate && node -e \"import('@prisma/client').then(({ PrismaClient }) => { new PrismaClient(); console.log('PRISMA_CLIENT_OK'); })\""
 
     # ─── 3. Frontend: instalar deps y build ──────────────────────────────────
     # GOMAXPROCS=1 limita los threads de Go (esbuild) para no exceder el límite

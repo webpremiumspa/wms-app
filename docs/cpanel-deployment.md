@@ -154,7 +154,7 @@ Una vez clonado, en la fila del repo en cPanel verás botones **Manage**, **Pull
    - Copia `backend/` a `wms.chimuelo.cl/backend/`
    - Instala dependencias del backend con `npm ci --omit=dev`
    - Genera el cliente Prisma con `./node_modules/.bin/prisma generate`
-   - Verifica que el backend importe correctamente (`APP_IMPORT_OK`)
+   - Verifica que Prisma Client esté disponible (`PRISMA_CLIENT_OK`)
    - Construye el frontend con `npm run build`
    - Copia `frontend/dist/` a la raíz del subdominio sin sobrescribir `.htaccess`
 
@@ -241,7 +241,7 @@ Si aparece `@prisma/client did not initialize yet`, ejecutar:
 ./node_modules/.bin/prisma generate
 ```
 
-Luego reiniciar la app Node. El deploy actual ya ejecuta `prisma generate` y valida `APP_IMPORT_OK`; si vuelve a fallar, revisar `cPanel → Git Version Control → Last Deployment`.
+Luego reiniciar la app Node. El deploy actual ya ejecuta `prisma generate` y valida `PRISMA_CLIENT_OK`; si vuelve a fallar, revisar `cPanel → Git Version Control → Last Deployment`.
 
 ### El SPA muestra 404 al recargar en una ruta tipo `/sequences/5`
 
