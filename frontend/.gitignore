@@ -1,6 +1,7 @@
 node_modules/
-dist/
 .env
 .env.local
 *.log
 .vite/
+
+# dist/ se commitea: el build se hace en local y el server solo rsyncea.

@@ -1,9 +1,7 @@
 ---
 deployment:
   tasks:
-    # cPanel/CloudLinux necesita una carpeta física para el Application URL /api.
-    # En algunos hosts también espera que api/.htaccess exista antes de guardar
-    # la app. touch no pisa el bloque Passenger si cPanel ya lo generó.
+    # cPanel/CloudLinux necesita carpeta física para el Application URL /api.
     - /bin/mkdir -p $HOME/wms.chimuelo.cl/api
     - /bin/touch $HOME/wms.chimuelo.cl/api/.htaccess
     - /bin/bash -lc 'if [ ! -s "$HOME/wms.chimuelo.cl/api/.htaccess" ]; then printf "%s\n" "# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN" "PassengerAppRoot \"$HOME/wms.chimuelo.cl/backend\"" "PassengerBaseURI \"/api\"" "PassengerNodejs \"$HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/node\"" "PassengerAppType node" "PassengerStartupFile server.js" "# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END" > "$HOME/wms.chimuelo.cl/api/.htaccess"; fi'
@@ -11,20 +9,12 @@ deployment:
     # ─── 1. Backend → wms.chimuelo.cl/backend/ ───────────────────────────────
     - /usr/bin/rsync -a --delete --exclude='node_modules' --exclude='.env' backend/ $HOME/wms.chimuelo.cl/backend/
 
-    # ─── 2. Backend: instalar deps ───────────────────────────────────────────
-    # NO corremos `prisma generate` aquí: CloudLinux no le da memoria suficiente
-    # al WASM del schema engine de Prisma 5.x. El cliente Prisma se genera en
-    # local con `npm run prisma:generate` y se commitea (backend/generated/).
-    - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd $HOME/wms.chimuelo.cl/backend && npm ci --omit=dev"
+    # ─── 2. Backend deps. --ignore-scripts evita que @prisma/client corra su
+    # postinstall (que detona WASM y muere por límite de memoria de CloudLinux).
+    # El cliente Prisma ya viene generado en backend/generated/ desde local.
+    - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd $HOME/wms.chimuelo.cl/backend && npm ci --omit=dev --ignore-scripts"
 
-    # ─── 3. Frontend: instalar deps y build ──────────────────────────────────
-    # GOMAXPROCS=1 limita los threads de Go (esbuild) para no exceder el límite
-    # de procesos que impone CloudLinux en hosting compartido.
-    - /bin/bash -lc "source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd frontend && npm ci && GOMAXPROCS=1 npx vite build"
-
-    # ─── 4. Frontend dist → raíz del subdominio ──────────────────────────────
-    # No copiamos .htaccess: cPanel/Passenger escribe ahí las directivas que
-    # enrutan /api hacia la app Node. Sobrescribirlo deja /api en 404 LiteSpeed.
+    # ─── 3. Frontend dist (ya buildeado en local) → raíz del subdominio ──────
     - /usr/bin/rsync -a --exclude='.htaccess' frontend/dist/ $HOME/wms.chimuelo.cl/
 
     - echo "Deploy OK. Restart la app Node si hubo cambios de backend."
