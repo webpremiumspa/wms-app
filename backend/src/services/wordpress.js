@@ -42,10 +42,27 @@ export async function wpLogin(username, password) {
 
 // Trae el usuario con capabilities. Requiere context=edit y un token válido.
 export async function wpFetchMe(token) {
-  const { data } = await wp.get('/wp-json/wp/v2/users/me?context=edit', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return data;
+  try {
+    const { data } = await wp.get('/wp-json/wp/v2/users/me?context=edit', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return data;
+  } catch (err) {
+    const status = err.response?.status || 502;
+    const wpData = err.response?.data;
+    const wpMessage = typeof wpData?.message === 'string' ? wpData.message.replace(/<[^>]+>/g, '') : null;
+    const wpCode = wpData?.code || null;
+    const contentType = err.response?.headers?.['content-type'] || null;
+    const server = err.response?.headers?.server || null;
+    let bodySnippet = null;
+    if (!wpMessage && typeof wpData === 'string') {
+      bodySnippet = wpData.replace(/\s+/g, ' ').slice(0, 300);
+    }
+    const message = wpMessage
+      ? `WP /users/me (${wpCode || status}): ${wpMessage}`
+      : `WP /users/me failed (HTTP ${status}, server: ${server || 'unknown'}, content-type: ${contentType || 'unknown'}) :: ${bodySnippet || '(no body)'}`;
+    throw new HttpError(status, message, { wpCode, wpStatus: status, contentType, server });
+  }
 }
 
 // Provisiona/actualiza el espejo local del usuario. Solo se guardan
