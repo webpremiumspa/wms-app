@@ -3,14 +3,30 @@ import { config } from '../config.js';
 import { wcGetOrder, wcGetProduct, getMeta } from './woocommerce.js';
 
 // Upsert de un producto en BD local. Si nos pasan el payload WC lo usamos;
-// si no, hacemos pull a la WC API. Determina la bodega leyendo el meta
-// configurado en META_PRODUCT_WAREHOUSE.
-export async function syncProduct(wpProductId, wcProduct = null) {
-  const data = wcProduct || (await wcGetProduct(wpProductId));
+// si no, hacemos pull a la WC API. Si el producto no existe en WC (404 o error),
+// creamos un placeholder para no romper el sync del pedido completo.
+// Recibe `tx` para participar de la transacción del caller (evita problemas de
+// snapshot/aislamiento al leer recién escrito).
+export async function syncProduct(wpProductId, wcProduct = null, tx = prisma) {
+  let data = wcProduct;
+  if (!data) {
+    try {
+      data = await wcGetProduct(wpProductId);
+    } catch {
+      // WC inalcanzable o producto borrado: placeholder mínimo para mantener FK
+      data = {
+        id: wpProductId,
+        sku: null,
+        name: `Producto #${wpProductId}`,
+        images: [],
+        meta_data: [],
+      };
+    }
+  }
   const warehouseValue = getMeta(data, config.meta.productWarehouse);
   const warehouse = warehouseValue === 'B1' || warehouseValue === 'B2' ? warehouseValue : null;
 
-  return prisma.productMeta.upsert({
+  return tx.productMeta.upsert({
     where: { wpProductId: data.id },
     create: {
       wpProductId: data.id,
@@ -66,11 +82,11 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
     let hasB2 = false;
     for (const li of data.line_items || []) {
       const productId = li.product_id;
-      const product = await tx.productMeta.findUnique({ where: { wpProductId: productId } });
-      if (!product) {
-        // Si el producto aún no está sincronizado, lo traemos. Evita huecos.
-        await syncProduct(productId);
-      }
+      if (!productId || productId <= 0) continue; // shipping/fees no son productos
+
+      // syncProduct DENTRO de la misma transacción → el siguiente findUnique
+      // sí ve el upsert.
+      await syncProduct(productId, null, tx);
       const p = await tx.productMeta.findUnique({ where: { wpProductId: productId } });
       const warehouse = p?.warehouse || 'B1';
       if (warehouse === 'B2') hasB2 = true;
