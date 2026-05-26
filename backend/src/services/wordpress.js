@@ -24,10 +24,19 @@ export async function wpLogin(username, password) {
     const wpMessage = typeof wpData?.message === 'string' ? wpData.message.replace(/<[^>]+>/g, '') : null;
     const wpCode = wpData?.code || null;
     const contentType = err.response?.headers?.['content-type'] || null;
+    const server = err.response?.headers?.server || null;
+
+    // Si la respuesta es HTML (no JSON), extraemos un snippet para identificar
+    // quién bloquea (Cloudflare, mod_security, plugin WP, etc.).
+    let bodySnippet = null;
+    if (!wpMessage && typeof wpData === 'string') {
+      bodySnippet = wpData.replace(/\s+/g, ' ').slice(0, 300);
+    }
+
     const message = wpMessage
       ? `WP (${wpCode || status}): ${wpMessage}`
-      : `WordPress auth failed (HTTP ${status}, content-type: ${contentType || 'unknown'}, url: ${config.wp.baseUrl}/wp-json/jwt-auth/v1/token)`;
-    throw new HttpError(status === 403 ? 401 : status, message, { wpCode, wpStatus: status, contentType });
+      : `WordPress auth failed (HTTP ${status}, server: ${server || 'unknown'}, content-type: ${contentType || 'unknown'}) :: ${bodySnippet || '(no body)'}`;
+    throw new HttpError(status === 403 ? 401 : status, message, { wpCode, wpStatus: status, contentType, server });
   }
 }
 
