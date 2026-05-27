@@ -20,7 +20,15 @@ export const sequencesApi = {
   pendingPacking: async (id: number): Promise<PendingPackingOrder[]> =>
     (await api.get(`/sequences/${id}/pending-packing`)).data.orders,
 
-  pendingOrders: async (): Promise<PendingOrder[]> => (await api.get('/orders/pending')).data.orders,
+  pendingOrders: async (): Promise<{ orders: PendingOrder[]; total: number; limit: number; truncated: boolean }> => {
+    const r = await api.get('/orders/pending');
+    return {
+      orders: r.data.orders,
+      total: r.data.total ?? r.data.orders.length,
+      limit: r.data.limit ?? r.data.orders.length,
+      truncated: !!r.data.truncated,
+    };
+  },
 
   clearPending: async (): Promise<{ deleted: number }> =>
     (await api.delete('/orders/pending')).data,

@@ -26,14 +26,22 @@ router.delete('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), asyn
 
 router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
-    const limit = Math.min(Number(req.query.limit) || 50, 200);
-    const orders = await prisma.order.findMany({
-      where: { status: 'received' },
-      take: limit,
-      orderBy: { createdAt: 'asc' },
-      include: { items: true },
-    });
+    // Default alto: el operador del WMS necesita ver TODOS los pendientes del
+    // día para armar secuencias. Cap duro a 2000 para evitar payloads enormes.
+    const limit = Math.min(Number(req.query.limit) || 500, 2000);
+    const [total, orders] = await Promise.all([
+      prisma.order.count({ where: { status: 'received' } }),
+      prisma.order.findMany({
+        where: { status: 'received' },
+        take: limit,
+        orderBy: { createdAt: 'asc' },
+        include: { items: { select: { id: true } } },
+      }),
+    ]);
     res.json({
+      total,
+      limit,
+      truncated: total > orders.length,
       orders: orders.map((o) => ({
         id: o.id,
         wpOrderId: o.wpOrderId,

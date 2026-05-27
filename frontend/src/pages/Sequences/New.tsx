@@ -48,6 +48,10 @@ export function SequenceNew() {
     queryFn: sequencesApi.pendingOrders,
   });
 
+  const pendingList = pending?.orders ?? [];
+  const pendingTotal = pending?.total ?? 0;
+  const pendingTruncated = pending?.truncated ?? false;
+
   const orderIds = useMemo(() => [...selected], [selected]);
 
   const sync = useMutation({
@@ -208,7 +212,7 @@ export function SequenceNew() {
           </div>
         </div>
 
-        {(pending?.length ?? 0) > 0 && (
+        {pendingTotal > 0 && (
           <div className="flex items-center justify-between rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs">
             <span className="text-slate-600">
               ¿Los pedidos importados tienen fecha o datos incorrectos? Bórralos y vuelve a sincronizar.
@@ -216,7 +220,7 @@ export function SequenceNew() {
             <button
               type="button"
               onClick={() => {
-                if (window.confirm(`Esto borrará los ${pending!.length} pedidos pendientes del WMS (los que aún no entraron a una secuencia). Vas a tener que volver a sincronizar. ¿Continuar?`)) {
+                if (window.confirm(`Esto borrará los ${pendingTotal} pedidos pendientes del WMS (los que aún no entraron a una secuencia). Vas a tener que volver a sincronizar. ¿Continuar?`)) {
                   clearPending.mutate();
                 }
               }}
@@ -336,7 +340,7 @@ export function SequenceNew() {
       {/* Lista de pedidos pendientes */}
       {isLoading ? (
         <Spinner />
-      ) : (pending?.length ?? 0) === 0 ? (
+      ) : pendingList.length === 0 ? (
         <div className="card p-6 text-center text-slate-500">
           No hay pedidos pendientes para secuenciar.
         </div>
@@ -344,14 +348,14 @@ export function SequenceNew() {
         <>
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-600">
-              {pending!.length} pedido{pending!.length === 1 ? '' : 's'} pendientes · {selected.size} seleccionado{selected.size === 1 ? '' : 's'}
+              {pendingList.length} pedido{pendingList.length === 1 ? '' : 's'} pendientes · {selected.size} seleccionado{selected.size === 1 ? '' : 's'}
             </span>
             <div className="flex items-center gap-3">
-              {selected.size < pending!.length && (
+              {selected.size < pendingList.length && (
                 <button
                   type="button"
                   onClick={() => {
-                    setSelected(new Set(pending!.map((o) => o.id)));
+                    setSelected(new Set(pendingList.map((o) => o.id)));
                     setProblems(null);
                   }}
                   className="flex items-center gap-1 text-brand-700 hover:underline"
@@ -372,8 +376,13 @@ export function SequenceNew() {
               )}
             </div>
           </div>
+          {pendingTruncated && (
+            <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-amber-200">
+              Mostrando {pendingList.length} de {pendingTotal} pedidos pendientes. Si necesitas ver el resto, contactá soporte para aumentar el límite.
+            </div>
+          )}
         <div className="space-y-2">
-          {pending!.map((o) => {
+          {pendingList.map((o) => {
             const isSel = selected.has(o.id);
             return (
               <button
