@@ -15,6 +15,9 @@ export function Picking() {
   const canPickB1 = hasCap(user, CAPS.PICK_B1);
   const canPickB2 = hasCap(user, CAPS.PICK_B2);
   const [batchSel, setBatchSel] = useState<Set<number>>(new Set());
+  // Por defecto la vista solo muestra trabajo pendiente. El toggle deja ver
+  // las cerradas para auditar "qué cerré hoy" sin navegar a /sequences.
+  const [showClosed, setShowClosed] = useState(false);
 
   const { data: sequences, isLoading } = useQuery({
     queryKey: ['sequences'],
@@ -23,11 +26,12 @@ export function Picking() {
     refetchInterval: 5000,
   });
 
-  // Secuencias con B1 abierto.
-  const openB1 = (sequences || []).filter((s) => s.b1ClosedAt === null);
+  // Sección B1: secuencias con b1ClosedAt = null. Si showClosed está activo,
+  // sumamos las que ya tienen B1 cerrado (con styling distinto).
+  const b1OpenList = (sequences || []).filter((s) => s.b1ClosedAt === null);
+  const b1ClosedList = (sequences || []).filter((s) => !!s.b1ClosedAt);
 
-  // Secuencias con items B2 (abiertas o cerradas — las cerradas se muestran
-  // grisadas y no entran al batch, según Q4(b)).
+  // Sección B2: solo secuencias con items B2 (de lo contrario no aplica B2).
   const withB2 = (sequences || []).filter((s) => (s.b2?.total ?? 0) > 0);
   const b2Open = withB2.filter((s) => !s.b2ClosedAt);
   const b2Closed = withB2.filter((s) => !!s.b2ClosedAt);
@@ -49,7 +53,18 @@ export function Picking() {
 
   return (
     <div className="space-y-4 pb-24">
-      <h2 className="text-xl font-semibold">Picking</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-semibold">Picking</h2>
+        <label className="flex items-center gap-2 text-xs text-slate-600">
+          <input
+            type="checkbox"
+            checked={showClosed}
+            onChange={(e) => setShowClosed(e.target.checked)}
+            className="h-4 w-4 accent-brand-600"
+          />
+          Mostrar cerradas
+        </label>
+      </div>
       <p className="text-sm text-slate-500">
         Cada secuencia tiene su propio picking B1 (para empacar) y picking B2 (a granel). Cierran por separado.
       </p>
@@ -67,9 +82,11 @@ export function Picking() {
 
           {isLoading ? (
             <Spinner />
-          ) : b2Open.length === 0 && b2Closed.length === 0 ? (
+          ) : b2Open.length === 0 && (!showClosed || b2Closed.length === 0) ? (
             <div className="card p-4 text-sm text-slate-500 ring-1 ring-amber-100">
-              No hay secuencias con items B2.
+              {b2Closed.length > 0 && !showClosed
+                ? 'No hay picking B2 pendiente. Activá "Mostrar cerradas" para ver las cerradas.'
+                : 'No hay secuencias con items B2.'}
             </div>
           ) : (
             <>
@@ -118,7 +135,7 @@ export function Picking() {
                 );
               })}
 
-              {b2Closed.map((s) => (
+              {showClosed && b2Closed.map((s) => (
                 <div
                   key={s.id}
                   className="card flex items-center gap-3 p-4 opacity-60 ring-1 ring-slate-200"
@@ -149,7 +166,7 @@ export function Picking() {
           <h3 className="text-sm font-semibold text-slate-700">Picking Bodega 1 · pendiente</h3>
           {isLoading ? (
             <Spinner />
-          ) : openB1.length === 0 ? (
+          ) : b1OpenList.length === 0 ? (
             <div className="card p-4 text-sm text-slate-500">
               No hay secuencias B1 abiertas. {hasCap(user, CAPS.PACK_B1) && (
                 <Link to="/sequences/new" className="text-brand-700 underline">
@@ -158,7 +175,7 @@ export function Picking() {
               )}
             </div>
           ) : (
-            openB1.map((s) => {
+            b1OpenList.map((s) => {
               // En by_order el picker arma y empaca pedido por pedido, así que
               // el link debe llevarlo a la lista de packing (no al reporte por
               // SKU, que es solo para by_sku).
@@ -189,6 +206,27 @@ export function Picking() {
               );
             })
           )}
+
+          {showClosed && b1ClosedList.map((s) => (
+            <div
+              key={s.id}
+              className="card flex items-center gap-3 p-3 opacity-60 ring-1 ring-slate-200"
+              title="B1 ya cerrado"
+            >
+              <div className="rounded-lg bg-slate-100 p-2 text-slate-500">
+                <ClipboardList size={20} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 font-semibold text-slate-600">
+                  Secuencia #{s.id}
+                  <Badge variant="green">B1 cerrado</Badge>
+                </div>
+                <div className="text-xs text-slate-500">
+                  {s._count?.orders ?? s.expectedBags} pedidos · cerrado el {s.b1ClosedAt ? new Date(s.b1ClosedAt).toLocaleString('es-CL') : '—'}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
