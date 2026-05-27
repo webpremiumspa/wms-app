@@ -158,24 +158,36 @@ export function Picking() {
               )}
             </div>
           ) : (
-            openB1.map((s) => (
-              <Link
-                key={s.id}
-                to={`/sequences/${s.id}/picking`}
-                className="card flex items-center gap-3 p-3 hover:shadow-md"
-              >
-                <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
-                  <ClipboardList size={20} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold">Secuencia #{s.id}</div>
-                  <div className="text-xs text-slate-500">
-                    {new Date(s.createdAt).toLocaleString('es-CL')} · {s._count?.orders ?? s.expectedBags} pedidos
+            openB1.map((s) => {
+              // En by_order el picker arma y empaca pedido por pedido, así que
+              // el link debe llevarlo a la lista de packing (no al reporte por
+              // SKU, que es solo para by_sku).
+              const target = s.mode === 'by_order'
+                ? `/sequences/${s.id}/packing`
+                : `/sequences/${s.id}/picking`;
+              const label = s.mode === 'by_order' ? 'Picking + Packing' : 'Picking B1';
+              return (
+                <Link
+                  key={s.id}
+                  to={target}
+                  className="card flex items-center gap-3 p-3 hover:shadow-md"
+                >
+                  <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
+                    <ClipboardList size={20} />
                   </div>
-                </div>
-                <ChevronRight className="text-slate-400" />
-              </Link>
-            ))
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 font-semibold">
+                      Secuencia #{s.id}
+                      <Badge variant="gray">{label}</Badge>
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {new Date(s.createdAt).toLocaleString('es-CL')} · {s._count?.orders ?? s.expectedBags} pedidos
+                    </div>
+                  </div>
+                  <ChevronRight className="text-slate-400" />
+                </Link>
+              );
+            })
           )}
         </div>
       )}
