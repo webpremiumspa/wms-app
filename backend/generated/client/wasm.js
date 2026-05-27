@@ -175,11 +175,12 @@ exports.Prisma.OrderItemScalarFieldEnum = {
 
 exports.Prisma.SequenceScalarFieldEnum = {
   id: 'id',
-  warehouse: 'warehouse',
   mode: 'mode',
   createdById: 'createdById',
   createdAt: 'createdAt',
   closedAt: 'closedAt',
+  b1ClosedAt: 'b1ClosedAt',
+  b2ClosedAt: 'b2ClosedAt',
   expectedBags: 'expectedBags',
   actualBags: 'actualBags',
   status: 'status'

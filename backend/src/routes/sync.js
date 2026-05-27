@@ -119,7 +119,7 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
           wpOrderId: true,
           number: true,
           sequenceLinks: {
-            include: { sequence: { select: { id: true, status: true, warehouse: true } } },
+            include: { sequence: { select: { id: true, status: true } } },
           },
         },
       });
@@ -128,7 +128,7 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
         for (const link of o.sequenceLinks) {
           const s = link.sequence;
           if (!bySeq.has(s.id)) {
-            bySeq.set(s.id, { id: s.id, status: s.status, warehouse: s.warehouse, orders: [] });
+            bySeq.set(s.id, { id: s.id, status: s.status, orders: [] });
           }
           bySeq.get(s.id).orders.push({ wpOrderId: o.wpOrderId, number: o.number });
         }

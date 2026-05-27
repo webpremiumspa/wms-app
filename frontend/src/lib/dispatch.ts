@@ -1,4 +1,5 @@
 import { api } from './api';
+import type { Sequence } from './types';
 
 export type B2PickingItem = {
   productId: number;
@@ -11,9 +12,30 @@ export type B2PickingItem = {
 };
 
 export type B2PickingReport = {
+  sequence: Sequence;
   items: B2PickingItem[];
   allPicked: boolean;
   totalSkus: number;
+};
+
+export type B2PickingBatchReport = {
+  sequenceIds: number[];
+  items: B2PickingItem[];
+  allPicked: boolean;
+  totalSkus: number;
+};
+
+export type B2BatchCloseResult = {
+  closed: number[];
+  stillPending: Array<{ sequenceId: number; total: number; pending: number }>;
+};
+
+export type B2PickingSummaryRow = {
+  sequenceId: number;
+  createdAt: string;
+  ordersCount: number;
+  totalItems: number;
+  pendingItems: number;
 };
 
 export type DispatchOrder = {
@@ -60,10 +82,28 @@ export type RouteSummary = {
 };
 
 export const pickingB2Api = {
-  today: async (): Promise<B2PickingReport> => (await api.get('/picking/b2/today')).data,
-  mark: async (productId: number, picked: boolean): Promise<void> => {
-    await api.patch(`/picking/b2/today/${productId}`, { picked });
+  summary: async (): Promise<B2PickingSummaryRow[]> =>
+    (await api.get('/picking/b2/summary')).data.sequences,
+
+  forSequence: async (sequenceId: number): Promise<B2PickingReport> =>
+    (await api.get(`/picking/b2/sequences/${sequenceId}`)).data,
+
+  mark: async (sequenceId: number, productId: number, picked: boolean): Promise<void> => {
+    await api.patch(`/picking/b2/sequences/${sequenceId}`, { productId, picked });
   },
+
+  closeB2: async (sequenceId: number): Promise<Sequence> =>
+    (await api.post(`/picking/b2/sequences/${sequenceId}/close`)).data.sequence,
+
+  batchReport: async (sequenceIds: number[]): Promise<B2PickingBatchReport> =>
+    (await api.get('/picking/b2/batch', { params: { ids: sequenceIds.join(',') } })).data,
+
+  batchMark: async (sequenceIds: number[], productId: number, picked: boolean): Promise<void> => {
+    await api.patch('/picking/b2/batch', { sequenceIds, productId, picked });
+  },
+
+  batchClose: async (sequenceIds: number[]): Promise<B2BatchCloseResult> =>
+    (await api.post('/picking/b2/batch/close', { sequenceIds })).data,
 };
 
 export const dispatchApi = {

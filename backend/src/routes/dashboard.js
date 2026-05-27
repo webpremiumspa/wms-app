@@ -72,14 +72,18 @@ router.get('/summary', async (_req, res, next) => {
 
     const oldOpenSequences = await prisma.sequence.findMany({
       where: { status: 'open', createdAt: { lt: new Date(Date.now() - 4 * 60 * 60 * 1000) } },
-      select: { id: true, createdAt: true, warehouse: true },
+      select: { id: true, createdAt: true, b1ClosedAt: true, b2ClosedAt: true },
     });
     for (const s of oldOpenSequences) {
       const hours = Math.floor((Date.now() - new Date(s.createdAt).getTime()) / 3600000);
+      const pending = [
+        !s.b1ClosedAt ? 'B1' : null,
+        !s.b2ClosedAt ? 'B2' : null,
+      ].filter(Boolean).join(', ');
       alerts.push({
         severity: 'warning',
         type: 'sequence_old',
-        message: `Secuencia #${s.id} (${s.warehouse}) abierta hace ${hours}h sin cerrar.`,
+        message: `Secuencia #${s.id} abierta hace ${hours}h sin cerrar (pendiente: ${pending}).`,
       });
     }
 

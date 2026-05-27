@@ -23,7 +23,7 @@ export function SequenceClose() {
   const close = useMutation({
     mutationFn: () => {
       const val = actualBags === '' ? undefined : Number(actualBags);
-      return sequencesApi.close(seqId, val);
+      return sequencesApi.closeB1(seqId, val);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
@@ -43,7 +43,8 @@ export function SequenceClose() {
   if (isLoading || !seq) return <Spinner />;
 
   const packed = seq.orders.filter((o) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.order.status)).length;
-  const ready = packed === seq.expectedBags && seq.status === 'open';
+  const b1Closed = !!seq.b1ClosedAt;
+  const ready = packed === seq.expectedBags && !b1Closed;
 
   return (
     <div className="space-y-4">
@@ -54,11 +55,14 @@ export function SequenceClose() {
 
       <div className="card space-y-3 p-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">Cerrar secuencia #{seqId}</h2>
-          <Badge variant={seq.status === 'open' ? 'green' : 'gray'}>
-            {seq.status === 'open' ? 'Abierta' : 'Cerrada'}
+          <h2 className="text-lg font-semibold">Cerrar flujo B1 · #{seqId}</h2>
+          <Badge variant={b1Closed ? 'gray' : 'green'}>
+            {b1Closed ? 'B1 cerrado' : 'B1 abierto'}
           </Badge>
         </div>
+        <p className="text-xs text-slate-500">
+          Esto cierra el packing de Bodega 1. El picking B2 (a granel) se cierra desde su propia pantalla.
+        </p>
         <div className="grid grid-cols-2 gap-3 text-center">
           <div className="rounded-lg bg-slate-50 p-3">
             <div className="text-xs text-slate-500">Pedidos esperados</div>
@@ -70,14 +74,14 @@ export function SequenceClose() {
           </div>
         </div>
 
-        {!ready && seq.status === 'open' && (
+        {!ready && !b1Closed && (
           <div className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             Aún quedan pedidos sin empacar. Completa el packing antes de cerrar.
           </div>
         )}
 
-        {seq.status === 'open' && (
+        {!b1Closed && (
           <>
             <label className="block">
               <span className="text-sm font-medium text-slate-700">
@@ -103,14 +107,14 @@ export function SequenceClose() {
               className="btn-primary w-full"
             >
               <CheckCircle2 size={18} />
-              {close.isPending ? 'Cerrando…' : 'Confirmar cierre'}
+              {close.isPending ? 'Cerrando…' : 'Confirmar cierre B1'}
             </button>
           </>
         )}
 
-        {seq.status === 'closed' && seq.closedAt && (
+        {b1Closed && seq.b1ClosedAt && (
           <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            Cerrada el {new Date(seq.closedAt).toLocaleString('es-CL')}.
+            Flujo B1 cerrado el {new Date(seq.b1ClosedAt).toLocaleString('es-CL')}.
           </div>
         )}
       </div>

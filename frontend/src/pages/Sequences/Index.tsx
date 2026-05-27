@@ -42,10 +42,17 @@ export function SequencesIndex() {
               className="card flex items-center justify-between p-4 hover:shadow-md"
             >
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">#{s.id}</span>
-                  <Badge variant={s.warehouse === 'B1' ? 'blue' : 'amber'}>{s.warehouse}</Badge>
                   <Badge variant={s.status === 'open' ? 'green' : 'gray'}>{s.status === 'open' ? 'Abierta' : 'Cerrada'}</Badge>
+                  <Badge variant={s.b1ClosedAt ? 'green' : 'blue'}>
+                    B1 {s.b1ClosedAt ? 'cerrado' : 'abierto'}
+                  </Badge>
+                  {(s.b2?.total ?? 0) > 0 && (
+                    <Badge variant={s.b2ClosedAt ? 'green' : 'amber'}>
+                      B2 {s.b2ClosedAt ? 'cerrado' : `${(s.b2?.pending ?? 0)} pend.`}
+                    </Badge>
+                  )}
                 </div>
                 <div className="text-xs text-slate-500">
                   {new Date(s.createdAt).toLocaleString('es-CL')} · {s._count?.orders ?? s.expectedBags} pedidos

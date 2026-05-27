@@ -10,20 +10,49 @@ import {
   getPickingReport,
   markPicked,
   getPendingPacking,
-  closeSequence,
+  closeSequenceB1,
 } from '../services/sequences.js';
 
 const router = Router();
 router.use(requireAuth);
 
-router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.PICK_B2, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.PICK_B2, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
   try {
     const sequences = await prisma.sequence.findMany({
       orderBy: { createdAt: 'desc' },
       take: 50,
-      include: { _count: { select: { orders: true } } },
+      include: {
+        _count: { select: { orders: true } },
+        orders: {
+          include: {
+            order: {
+              include: { items: { select: { warehouse: true, pickedAt: true } } },
+            },
+          },
+        },
+      },
     });
-    res.json({ sequences });
+    // Calculamos progreso B1 y B2 (totales y pendientes) para alimentar la UI.
+    const out = sequences.map((s) => {
+      const items = s.orders.flatMap((so) => so.order.items);
+      const b1 = items.filter((i) => i.warehouse === 'B1');
+      const b2 = items.filter((i) => i.warehouse === 'B2');
+      return {
+        id: s.id,
+        mode: s.mode,
+        status: s.status,
+        expectedBags: s.expectedBags,
+        actualBags: s.actualBags,
+        createdAt: s.createdAt,
+        closedAt: s.closedAt,
+        b1ClosedAt: s.b1ClosedAt,
+        b2ClosedAt: s.b2ClosedAt,
+        _count: s._count,
+        b1: { total: b1.length, pending: b1.filter((i) => !i.pickedAt).length },
+        b2: { total: b2.length, pending: b2.filter((i) => !i.pickedAt).length },
+      };
+    });
+    res.json({ sequences: out });
   } catch (err) {
     next(err);
   }
@@ -92,11 +121,32 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.PICK_
     const sequence = await prisma.sequence.findUnique({
       where: { id },
       include: {
-        orders: { include: { order: true } },
+        orders: {
+          include: {
+            order: {
+              include: { items: { select: { warehouse: true, pickedAt: true } } },
+            },
+          },
+        },
         createdBy: { select: { displayName: true, username: true } },
       },
     });
     if (!sequence) throw new HttpError(404, 'Sequence not found');
+
+    // Agregar contadores B1/B2 al payload para que la UI muestre estado de cada flujo.
+    const allItems = sequence.orders.flatMap((so) => so.order.items);
+    const b1 = allItems.filter((i) => i.warehouse === 'B1');
+    const b2 = allItems.filter((i) => i.warehouse === 'B2');
+    sequence.b1 = { total: b1.length, pending: b1.filter((i) => !i.pickedAt).length };
+    sequence.b2 = { total: b2.length, pending: b2.filter((i) => !i.pickedAt).length };
+
+    // Limpiamos los items inflados para no enviar payload gigante (la UI
+    // detalle pide items por pedido aparte).
+    sequence.orders = sequence.orders.map((so) => ({
+      orderId: so.orderId,
+      order: { ...so.order, items: undefined },
+    }));
+
     res.json({ sequence });
   } catch (err) {
     next(err);
@@ -119,7 +169,6 @@ router.post('/validate-stock', requireCap(WMS_CAPS.PACK_B1), async (req, res, ne
 });
 
 const createSchema = z.object({
-  warehouse: z.enum(['B1', 'B2']),
   orderIds: z.array(z.number().int().positive()).min(1),
   mode: z.enum(['by_sku', 'by_order']).optional(),
 });
@@ -129,9 +178,8 @@ router.post('/', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
     const parsed = createSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
     const seq = await createSequence({
-      warehouse: parsed.data.warehouse,
       orderIds: parsed.data.orderIds,
-      mode: parsed.data.mode || 'by_sku',
+      mode: parsed.data.mode || 'by_order',
       createdById: req.user.wpUserId,
     });
     res.status(201).json({ sequence: seq });
@@ -140,7 +188,7 @@ router.post('/', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
   }
 });
 
-router.get('/:id/picking-report', requireCap(WMS_CAPS.PICK_B1, WMS_CAPS.PICK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+router.get('/:id/picking-report', requireCap(WMS_CAPS.PICK_B1, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const report = await getPickingReport(Number(req.params.id));
     res.json(report);
@@ -154,7 +202,7 @@ const pickSchema = z.object({
   picked: z.boolean(),
 });
 
-router.patch('/:id/picking', requireCap(WMS_CAPS.PICK_B1, WMS_CAPS.PICK_B2), async (req, res, next) => {
+router.patch('/:id/picking', requireCap(WMS_CAPS.PICK_B1), async (req, res, next) => {
   try {
     const parsed = pickSchema.safeParse(req.body);
     if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
@@ -183,11 +231,12 @@ const closeSchema = z.object({
   actualBags: z.number().int().nonnegative().optional(),
 });
 
-router.post('/:id/close', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
+// Cierre del flujo B1 (packing terminado). El cierre B2 va por /picking/b2/sequences/:id/close.
+router.post('/:id/close-b1', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
   try {
     const parsed = closeSchema.safeParse(req.body ?? {});
     if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
-    const seq = await closeSequence({
+    const seq = await closeSequenceB1({
       sequenceId: Number(req.params.id),
       actorId: req.user.wpUserId,
       actualBags: parsed.data.actualBags,

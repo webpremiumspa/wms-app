@@ -3,20 +3,19 @@ import { CAPS, hasCap } from '@/lib/auth';
 import { Link } from 'react-router-dom';
 import { Package, Scan, Truck, ClipboardList, BarChart3 } from 'lucide-react';
 
-type Tile = { to: string; label: string; icon: typeof Package; cap: string };
+type Tile = { to: string; label: string; icon: typeof Package; caps: string[] };
 
 const TILES: Tile[] = [
-  { to: '/sequences/new', label: 'Generar secuencia', icon: ClipboardList, cap: CAPS.PACK_B1 },
-  { to: '/sequences', label: 'Picking Bodega 1', icon: Package, cap: CAPS.PICK_B1 },
-  { to: '/picking-b2', label: 'Picking Bodega 2', icon: Package, cap: CAPS.PICK_B2 },
-  { to: '/dispatch', label: 'Clasificación y carga', icon: Scan, cap: CAPS.LOAD },
-  { to: '/delivery', label: 'Entrega', icon: Truck, cap: CAPS.DELIVER },
-  { to: '/dashboard', label: 'Supervisión', icon: BarChart3, cap: CAPS.SUPERVISE },
+  { to: '/sequences/new', label: 'Generar secuencia', icon: ClipboardList, caps: [CAPS.PACK_B1] },
+  { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PICK_B1, CAPS.PICK_B2] },
+  { to: '/dispatch', label: 'Clasificación y carga', icon: Scan, caps: [CAPS.LOAD] },
+  { to: '/delivery', label: 'Entrega', icon: Truck, caps: [CAPS.DELIVER] },
+  { to: '/dashboard', label: 'Supervisión', icon: BarChart3, caps: [CAPS.SUPERVISE] },
 ];
 
 export function Home() {
   const { user } = useAuth();
-  const tiles = TILES.filter((t) => hasCap(user, t.cap));
+  const tiles = TILES.filter((t) => t.caps.some((c) => hasCap(user, c)));
 
   return (
     <div className="space-y-6">

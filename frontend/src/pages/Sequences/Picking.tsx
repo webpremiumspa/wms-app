@@ -34,7 +34,7 @@ export function SequencePicking() {
         Secuencia #{seqId}
       </Link>
       <div className="card space-y-3 p-4">
-        <h2 className="text-lg font-semibold">Reporte de picking · Bodega {data.sequence.warehouse}</h2>
+        <h2 className="text-lg font-semibold">Picking B1 · Secuencia #{seqId}</h2>
         <ProgressBar value={picked} total={data.items.length} label="SKUs recolectados" />
         {data.allPicked && (
           <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">

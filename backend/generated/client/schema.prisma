@@ -93,16 +93,21 @@ model OrderItem {
   @@map("order_items")
 }
 
-// Secuencia de picking: agrupa N pedidos para un recorrido único de bodega.
+// Secuencia de picking: agrupa N pedidos. Es agnóstica de bodega — los items
+// B1 los pickea el equipo de Bodega 1 (y se empacan en bolsa) y los items B2
+// los pickea el equipo de Bodega 2 (a granel para el día). Cada flujo cierra
+// por separado (b1ClosedAt / b2ClosedAt); status global pasa a 'closed' cuando
+// ambos están cerrados.
 model Sequence {
   id           Int            @id @default(autoincrement())
-  warehouse    Warehouse
-  // Modo de picking: by_sku (agrupado por SKU, default) o by_order
-  // (recorre pedido por pedido y mete a la bolsa en el camino).
-  mode         String         @default("by_sku") @db.VarChar(20)
+  // Modo de picking B1: by_sku (agrupado por SKU) o by_order (recorre pedido
+  // por pedido y mete a la bolsa en el camino). El picking B2 siempre es by_sku.
+  mode         String         @default("by_order") @db.VarChar(20)
   createdById  Int            @map("created_by_id")
   createdAt    DateTime       @default(now()) @map("created_at")
   closedAt     DateTime?      @map("closed_at")
+  b1ClosedAt   DateTime?      @map("b1_closed_at")
+  b2ClosedAt   DateTime?      @map("b2_closed_at")
   expectedBags Int            @default(0) @map("expected_bags")
   actualBags   Int            @default(0) @map("actual_bags")
   status       SequenceStatus @default(open)

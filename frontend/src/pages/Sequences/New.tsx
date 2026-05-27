@@ -6,7 +6,7 @@ import { sequencesApi } from '@/lib/sequences';
 import { syncApi, type SyncResult } from '@/lib/sync';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
-import type { StockProblem, Warehouse } from '@/lib/types';
+import type { StockProblem } from '@/lib/types';
 import clsx from 'clsx';
 
 function todayISO() {
@@ -29,7 +29,6 @@ const PRESETS = [
 export function SequenceNew() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [warehouse] = useState<Warehouse>('B1');
   const [mode, setMode] = useState<'by_sku' | 'by_order'>('by_order');
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [problems, setProblems] = useState<StockProblem[] | null>(null);
@@ -79,7 +78,7 @@ export function SequenceNew() {
   });
 
   const create = useMutation({
-    mutationFn: () => sequencesApi.create(warehouse, orderIds, mode),
+    mutationFn: () => sequencesApi.create(orderIds, mode),
     onSuccess: (seq) => {
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
@@ -110,9 +109,9 @@ export function SequenceNew() {
         <ChevronLeft size={16} />
         Volver
       </button>
-      <h2 className="text-xl font-semibold">Generar secuencia · Bodega {warehouse}</h2>
+      <h2 className="text-xl font-semibold">Generar secuencia</h2>
       <p className="text-sm text-slate-500">
-        Selecciona los pedidos que entran en la próxima secuencia. Validaremos stock antes de crearla.
+        Selecciona los pedidos que entran en la próxima secuencia. La secuencia arrastra tanto el picking B1 (para empacar) como el picking B2 (a granel); cada flujo cierra por separado.
       </p>
 
       {/* Bloque de sincronización manual desde WC */}
@@ -269,7 +268,7 @@ export function SequenceNew() {
                           Secuencia #{s.id}
                         </Link>
                         <span className="text-slate-600">
-                          {' '}({s.status === 'open' ? 'abierta' : 'cerrada'}, {s.warehouse}){': '}
+                          {' '}({s.status === 'open' ? 'abierta' : 'cerrada'}){': '}
                           {s.orders.map((o) => `#${o.number}`).join(', ')}
                         </span>
                       </div>

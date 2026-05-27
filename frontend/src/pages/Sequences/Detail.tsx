@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2 } from 'lucide-react';
+import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, PackageOpen } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { useAuth } from '@/hooks/useAuth';
+import { CAPS, hasCap } from '@/lib/auth';
 
 function OrderItems({ orderId }: { orderId: number }) {
   const { data, isLoading } = useQuery({
@@ -58,6 +60,8 @@ export function SequenceDetail() {
   const seqId = Number(id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canPickB2 = hasCap(user, CAPS.PICK_B2);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   const { data, isLoading } = useQuery({
@@ -94,6 +98,10 @@ export function SequenceDetail() {
   const advancedOrders = seq.orders.filter((o) => o.order.status !== 'sequenced' && o.order.status !== 'delivered').length;
   const deliveredOrders = seq.orders.filter((o) => o.order.status === 'delivered').length;
 
+  const b1Closed = !!seq.b1ClosedAt;
+  const b2Closed = !!seq.b2ClosedAt;
+  const hasB2 = (seq.b2?.total || 0) > 0;
+
   return (
     <div className="space-y-4">
       <Link to="/sequences" className="btn-ghost text-sm">
@@ -103,7 +111,6 @@ export function SequenceDetail() {
       <div className="card p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-lg font-semibold">Secuencia #{seq.id}</span>
-          <Badge variant={seq.warehouse === 'B1' ? 'blue' : 'amber'}>{seq.warehouse}</Badge>
           <Badge variant={seq.status === 'open' ? 'green' : 'gray'}>
             {seq.status === 'open' ? 'Abierta' : 'Cerrada'}
           </Badge>
@@ -119,6 +126,27 @@ export function SequenceDetail() {
             Creada por {seq.createdBy.displayName} · {new Date(seq.createdAt).toLocaleString('es-CL')}
           </div>
         )}
+
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <div className={clsx('rounded-lg px-3 py-2 ring-1', b1Closed ? 'bg-emerald-50 ring-emerald-200 text-emerald-800' : 'bg-blue-50 ring-blue-200 text-blue-800')}>
+            <div className="font-semibold">Flujo B1 (packing)</div>
+            <div>
+              {b1Closed
+                ? `Cerrado el ${new Date(seq.b1ClosedAt!).toLocaleString('es-CL')}`
+                : `${packed}/${orderCount} pedidos empacados`}
+            </div>
+          </div>
+          <div className={clsx('rounded-lg px-3 py-2 ring-1', b2Closed ? 'bg-emerald-50 ring-emerald-200 text-emerald-800' : 'bg-amber-50 ring-amber-200 text-amber-800')}>
+            <div className="font-semibold">Flujo B2 (granel)</div>
+            <div>
+              {!hasB2
+                ? 'Sin items B2'
+                : b2Closed
+                ? `Cerrado el ${new Date(seq.b2ClosedAt!).toLocaleString('es-CL')}`
+                : `${(seq.b2?.total || 0) - (seq.b2?.pending || 0)}/${seq.b2?.total} items pickeados`}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className={`grid gap-3 ${seq.mode === 'by_order' ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
@@ -128,7 +156,7 @@ export function SequenceDetail() {
               <Package size={22} />
             </div>
             <div>
-              <div className="font-medium">Picking</div>
+              <div className="font-medium">Picking B1</div>
               <div className="text-xs text-slate-500">Recolectar SKUs en bodega</div>
             </div>
           </Link>
@@ -153,10 +181,23 @@ export function SequenceDetail() {
             <CheckCircle2 size={22} />
           </div>
           <div>
-            <div className="font-medium">Cerrar secuencia</div>
-            <div className="text-xs text-slate-500">Verificación final</div>
+            <div className="font-medium">Cerrar flujo B1</div>
+            <div className="text-xs text-slate-500">Verificación final del packing</div>
           </div>
         </Link>
+        {hasB2 && canPickB2 && (
+          <Link to={`/sequences/${seq.id}/picking-b2`} className="card flex items-center gap-3 p-4 ring-1 ring-amber-200 hover:shadow-md">
+            <div className="rounded-lg bg-amber-50 p-2 text-amber-700">
+              <PackageOpen size={22} />
+            </div>
+            <div>
+              <div className="font-medium">Picking B2 · {b2Closed ? 'cerrado' : 'pendiente'}</div>
+              <div className="text-xs text-slate-500">
+                {b2Closed ? 'Granel cerrado' : 'Recolectar items a granel y cerrar'}
+              </div>
+            </div>
+          </Link>
+        )}
       </div>
 
       {canDelete && (

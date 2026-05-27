@@ -24,15 +24,20 @@ export type PendingOrder = {
   createdAt: string;
 };
 
+export type FlowProgress = { total: number; pending: number };
+
 export type Sequence = {
   id: number;
-  warehouse: Warehouse;
   mode: SequenceMode;
   status: SequenceStatus;
   expectedBags: number;
   actualBags: number;
   createdAt: string;
   closedAt: string | null;
+  b1ClosedAt: string | null;
+  b2ClosedAt: string | null;
+  b1?: FlowProgress;
+  b2?: FlowProgress;
   _count?: { orders: number };
   createdBy?: { displayName: string; username: string };
 };

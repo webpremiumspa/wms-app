@@ -7,7 +7,6 @@ import type {
   PendingPackingOrder,
   StockProblem,
   OrderDetail,
-  Warehouse,
 } from './types';
 
 export const sequencesApi = {
@@ -30,18 +29,17 @@ export const sequencesApi = {
     (await api.post('/sequences/validate-stock', { orderIds })).data.problems,
 
   create: async (
-    warehouse: Warehouse,
     orderIds: number[],
-    mode: 'by_sku' | 'by_order' = 'by_sku',
+    mode: 'by_sku' | 'by_order' = 'by_order',
   ): Promise<Sequence> =>
-    (await api.post('/sequences', { warehouse, orderIds, mode })).data.sequence,
+    (await api.post('/sequences', { orderIds, mode })).data.sequence,
 
   markPicked: async (id: number, productId: number, picked: boolean): Promise<void> => {
     await api.patch(`/sequences/${id}/picking`, { productId, picked });
   },
 
-  close: async (id: number, actualBags?: number): Promise<Sequence> =>
-    (await api.post(`/sequences/${id}/close`, actualBags !== undefined ? { actualBags } : {})).data.sequence,
+  closeB1: async (id: number, actualBags?: number): Promise<Sequence> =>
+    (await api.post(`/sequences/${id}/close-b1`, actualBags !== undefined ? { actualBags } : {})).data.sequence,
 
   delete: async (id: number): Promise<{ ok: boolean; ordersReverted: number }> =>
     (await api.delete(`/sequences/${id}`)).data,

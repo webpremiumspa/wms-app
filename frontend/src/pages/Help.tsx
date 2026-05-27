@@ -106,10 +106,10 @@ const SECTIONS: Section[] = [
       <>
         <p>El picker toma el reporte agrupado por SKU y hace un solo recorrido por la bodega.</p>
         <ol>
-          <li>Ir a <strong>Picking</strong>. Verás:
+          <li>Ir a <strong>Picking</strong>. Verás dos secciones:
             <ul>
-              <li>Las secuencias B1 abiertas (si tienes el rol).</li>
-              <li>El reporte consolidado del día para Bodega 2 (si tienes el rol).</li>
+              <li><strong>Picking B1</strong>: las secuencias abiertas con items B1 pendientes (si tienes el rol).</li>
+              <li><strong>Picking B2</strong>: una tarjeta por cada secuencia con items B2 a granel pendientes (si tienes el rol).</li>
             </ul>
           </li>
           <li>Entra al reporte. Cada fila es un SKU con foto, cantidad total a recolectar y los pedidos que lo necesitan.</li>
@@ -143,34 +143,35 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'close-sequence',
-    title: 'Cerrar la secuencia (control final)',
+    title: 'Cerrar la secuencia (dos flujos)',
     icon: CheckCircle2,
     body: (
       <>
-        <p>Cuando todos los pedidos de la secuencia están empacados:</p>
+        <p>Una secuencia tiene <strong>dos cierres independientes</strong>: el flujo B1 (packing terminado) y el flujo B2 (granel recolectado). Cierran por separado y en cualquier orden.</p>
         <ol>
-          <li>Volver a la secuencia → <strong>Cerrar secuencia</strong>.</li>
-          <li>Verifica el conteo: <em>pedidos esperados</em> vs <em>bolsas empacadas</em>.</li>
-          <li>Opcionalmente, ingresa el conteo físico de bolsas en la zona como doble validación.</li>
-          <li>Si todo coincide → <strong>Confirmar cierre</strong>. Si hay discrepancia, el sistema bloquea y avisa qué pedido falta.</li>
+          <li><strong>Cerrar flujo B1</strong>: cuando todos los pedidos están empacados, el equipo de B1 entra a la secuencia → <em>Cerrar flujo B1</em>, valida pedidos esperados vs bolsas empacadas (opcional: ingreso físico de bolsas), confirma.</li>
+          <li><strong>Cerrar flujo B2</strong>: cuando el equipo B2 termina de recolectar todos los SKUs a granel, entra al picking B2 de esa secuencia → <em>Cerrar picking B2</em>.</li>
+          <li>La secuencia entera pasa a <em>Cerrada</em> cuando ambos flujos están cerrados.</li>
         </ol>
       </>
     ),
   },
   {
     id: 'b2-picking',
-    title: 'Picking Bodega 2 (mañana del despacho)',
+    title: 'Picking Bodega 2 (granel, por secuencia)',
     icon: Package,
     body: (
       <>
-        <p>A primera hora de la mañana, antes de que salga el camión de B2 hacia B1:</p>
+        <p>El equipo de B2 pickea aparte del equipo B1, pero <strong>para las mismas secuencias</strong>. Cada secuencia tiene su propio listado de items B2 a sacar del granel.</p>
         <ol>
-          <li>Abre el WMS → <strong>Inicio → Picking Bodega 2</strong>.</li>
-          <li>El reporte ya está armado automáticamente: consolida todos los SKUs B2 pendientes del día.</li>
-          <li>Recorre con el móvil, marca cada SKU al recolectarlo.</li>
-          <li>Carga el cargamento agrupado al camión de tránsito.</li>
+          <li>Abre <strong>Picking</strong>. Verás una tarjeta por cada secuencia con items B2 pendientes.</li>
+          <li>Entra a la secuencia. El reporte muestra los SKUs B2 con cantidad total a recolectar y cuántos pedidos los necesitan.</li>
+          <li>Recorre con el móvil, marca cada SKU al recolectarlo. El estado se sincroniza en vivo.</li>
+          <li>Cuando termines, toca <strong>Cerrar picking B2</strong>. Ese flujo queda cerrado para esa secuencia.</li>
         </ol>
-        <p>El reporte se actualiza en vivo si alguien más también está pickeando.</p>
+        <p className="text-slate-600">
+          El cierre B2 es independiente del cierre B1 (packing). Pueden cerrarse en cualquier orden.
+        </p>
       </>
     ),
   },
