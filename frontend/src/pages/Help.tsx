@@ -14,6 +14,7 @@ import {
   Lightbulb,
   AlertOctagon,
   BookOpen,
+  Stethoscope,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -81,43 +82,75 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'b1-sequence',
-    title: 'Bodega 1: generar una secuencia de picking',
+    title: 'Generar una secuencia',
     icon: ClipboardList,
     body: (
       <>
-        <p>Una secuencia agrupa varios pedidos para hacer un solo recorrido por la bodega, en lugar de uno por pedido.</p>
+        <p>Una secuencia agrupa varios pedidos para procesarlos juntos. Es <strong>agnóstica de bodega</strong>: arrastra tanto el picking B1 (para empacar) como el picking B2 (a granel) de los pedidos seleccionados. Cada flujo cierra por separado.</p>
+
+        <h4>Paso 1 · Sincronizar pedidos desde WooCommerce</h4>
+        <p>Si los pedidos del día todavía no están en el WMS:</p>
         <ol>
-          <li>Ir a <strong>Secuencias → Generar</strong>.</li>
-          <li>Marca los pedidos que entran en este recorrido (toca la tarjeta para seleccionar).</li>
-          <li>Toca <strong>Validar stock</strong>. El sistema consulta WooCommerce y avisa si algún SKU no tiene unidades suficientes — quita esos pedidos o repón antes de continuar.</li>
-          <li>Toca <strong>Generar secuencia</strong>. Los pedidos quedan reservados (no se pueden incluir en otra secuencia).</li>
+          <li>Elegí un rango de fechas (presets: <em>Hoy</em>, <em>Ayer</em>, <em>Últimos 2 días</em>, o calendario manual).</li>
+          <li>Marcá los estados de WC a incluir: <em>Procesando</em>, <em>En espera</em>, <em>Completado</em>, <em>Pendiente pago</em>, <em>En ruta</em>.</li>
+          <li>Si cambiaste la <strong>bodega</strong> de algún producto en WC y querés que el WMS lo refleje, marcá <em>Refrescar metadata de productos</em> (más lento, sólo cuando lo necesites — sin esto, el sync reutiliza la bodega cacheada localmente).</li>
+          <li>Click <strong>Sincronizar</strong>.</li>
         </ol>
-        <p>
-          La secuencia abierta queda visible para los pickers en su pantalla de Picking.
+        <p className="text-slate-600">
+          El sistema reporta: cuántos pedidos vino WC, cuántos son nuevos, cuántos se actualizaron, cuántos se <strong>saltaron</strong> (pedidos ya en picking/packing — no se tocan para no destruir progreso), y cuáles están tomados por otras secuencias.
+        </p>
+
+        <h4>Paso 2 · Elegir el modo de picking</h4>
+        <ul>
+          <li><strong>Por pedido</strong> (recomendado, default) — el picker recorre <em>pedido por pedido</em>, va metiendo los productos B1 en la bolsa al instante e imprime el albarán al cerrar cada uno. Un solo paso de pick + pack. Mejor cuando los pedidos tienen pocos items distintos.</li>
+          <li><strong>Por SKU (batch)</strong> — se agrupan los SKUs de todos los pedidos y el picker hace <em>un solo recorrido</em> tomando el volumen total. Después, en un segundo paso, otro operador arma las bolsas individuales. Más eficiente con muchos pedidos similares.</li>
+        </ul>
+
+        <h4>Paso 3 · Seleccionar pedidos y generar</h4>
+        <ol>
+          <li>Marcá los pedidos pendientes que entran en esta secuencia (o usá <em>Seleccionar todos</em>).</li>
+          <li>Click <strong>Validar stock</strong>: el sistema consulta WC y avisa si algún SKU no tiene unidades suficientes — quitá esos pedidos o repón antes de continuar.</li>
+          <li>Click <strong>Generar secuencia</strong>. Los pedidos quedan reservados y no pueden incluirse en otra secuencia.</li>
+        </ol>
+        <p className="text-slate-600">
+          La secuencia queda <em>Abierta</em> y visible en la página <strong>Picking</strong> para los equipos B1 y B2.
         </p>
       </>
     ),
   },
   {
     id: 'picking',
-    title: 'Picking: recorrer y recolectar',
+    title: 'Picking B1: recorrer y recolectar',
     icon: Package,
     body: (
       <>
-        <p>El picker toma el reporte agrupado por SKU y hace un solo recorrido por la bodega.</p>
+        <p>La página <strong>Picking</strong> muestra <em>solo trabajo pendiente</em>. Activá el toggle <em>"Mostrar cerradas"</em> arriba a la derecha si querés ver las secuencias ya cerradas (útil para auditar lo del día sin ir al historial).</p>
+        <p>Verás dos secciones:</p>
+        <ul>
+          <li><strong>Picking Bodega 2 · pendiente</strong>: una tarjeta por cada secuencia con items B2 a granel pendientes.</li>
+          <li><strong>Picking Bodega 1 · pendiente</strong>: una tarjeta por cada secuencia con flujo B1 abierto.</li>
+        </ul>
+
+        <h4>Modo "Por pedido" (default)</h4>
+        <p>La tarjeta dice <em>"Picking + Packing"</em>. Al tocarla vas directo a la <strong>lista de pedidos</strong>:</p>
         <ol>
-          <li>Ir a <strong>Picking</strong>. Verás dos secciones:
-            <ul>
-              <li><strong>Picking B1</strong>: las secuencias abiertas con items B1 pendientes (si tienes el rol).</li>
-              <li><strong>Picking B2</strong>: una tarjeta por cada secuencia con items B2 a granel pendientes (si tienes el rol).</li>
-            </ul>
-          </li>
-          <li>Entra al reporte. Cada fila es un SKU con foto, cantidad total a recolectar y los pedidos que lo necesitan.</li>
-          <li>A medida que recolectas, marca el checkbox. El progreso se actualiza en tiempo real (otros operadores ven el mismo estado).</li>
-          <li>Cuando aparezca <strong>"Picking completo"</strong>, pasa al packing.</li>
+          <li>Tocá un pedido pendiente. Vas a ver los items B1 (que van en la bolsa) y, si aplica, los B2 listados aparte (no van — se entregan a granel desde B2).</li>
+          <li>Por cada item B1 que metas en la bolsa, marcá su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
+          <li>Tocá <strong>Cerrar pedido e imprimir albarán</strong>. Se abre el PDF en una nueva pestaña y queda registrado quién armó el pedido.</li>
+          <li>Volvés a la lista, elegís el siguiente pedido, repetís.</li>
         </ol>
+
+        <h4>Modo "Por SKU" (batch)</h4>
+        <p>La tarjeta dice <em>"Picking B1"</em>. Al tocarla vas al <strong>reporte agrupado</strong>:</p>
+        <ol>
+          <li>Cada fila es un SKU con foto, cantidad total a recolectar y cuántos pedidos lo necesitan.</li>
+          <li>Hacés un solo recorrido por la bodega tomando el volumen total de cada SKU.</li>
+          <li>Marcás cada SKU al recolectarlo — el progreso se sincroniza en vivo (varios pickers pueden trabajar la misma secuencia).</li>
+          <li>Cuando aparece <em>"Picking completo"</em>, otro operador entra a <strong>Empacar pedidos</strong> y arma las bolsas individuales con lo recolectado.</li>
+        </ol>
+
         <p className="text-amber-800">
-          Tip: si dos productos se parecen mucho, mira la foto antes de tomar — es la causa #1 de errores en picking.
+          Tip: si dos productos se parecen mucho, mirá la foto antes de tomar — es la causa #1 de errores en picking.
         </p>
       </>
     ),
@@ -128,16 +161,35 @@ const SECTIONS: Section[] = [
     icon: ClipboardCheck,
     body: (
       <>
+        <p>En modo <strong>Por pedido</strong> esto es parte del mismo flujo de picking. En modo <strong>Por SKU</strong> es el segundo paso después de recolectar todo el batch.</p>
         <ol>
-          <li>Desde la secuencia activa, entra a <strong>Empacar pedidos</strong>.</li>
-          <li>Elige un pedido de la lista. Verás los items B1 (que van en la bolsa) y, si corresponde, los items B2 (que NO van — se entregan a granel desde Bodega 2).</li>
-          <li>Por cada item B1 que metas en la bolsa, marca su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
-          <li>Toca <strong>Cerrar pedido e imprimir albarán</strong>. Se abre un PDF para imprimir y se registra automáticamente quién armó el pedido (trazabilidad).</li>
-          <li>Coloca el albarán visible al lado o dentro de la bolsa, asegurando que el QR quede legible.</li>
+          <li>Desde la secuencia, entrá a <strong>Empacar pedidos</strong> (o <em>Picking + Packing</em> según el modo).</li>
+          <li>Elegí un pedido de la lista. Cada tarjeta muestra <strong>ruta</strong> (badge azul), <em>parada de carga</em> y aviso si tiene B2 pendiente.</li>
+          <li>Vas a ver los items B1 (que van en la bolsa) y, si aplica, los B2 (que NO van — se entregan a granel desde Bodega 2).</li>
+          <li>Por cada item B1 que metas en la bolsa, marcá su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
+          <li>Tocá <strong>Cerrar pedido e imprimir albarán</strong>. Se abre un PDF para imprimir y se registra quién armó el pedido (trazabilidad).</li>
+          <li>Colocá el albarán visible al lado o dentro de la bolsa, asegurando que el QR quede legible.</li>
         </ol>
+
+        <h4>Pedidos solo de Bodega 2</h4>
+        <p>Si un pedido <strong>no tiene items B1</strong> (todo es de B2), igual lo cerrás desde la lista de empacar:</p>
+        <ul>
+          <li>No hay items para marcar — el botón cambia a <em>"Imprimir albarán y cerrar"</em>.</li>
+          <li>El albarán impreso solo muestra los items B2 a sacar del granel.</li>
+          <li>El pedido queda en estado <em>Empacado</em> aunque no se armó bolsa física — el repartidor toma todo desde el cargamento B2 al pasar por el cliente.</li>
+        </ul>
+
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
-          <strong>⚠ Marca de Bodega 2:</strong> si el pedido tiene productos pendientes de B2, el albarán impreso muestra una banda amarilla GRANDE de "BODEGA 2 PENDIENTE" + lista de items a sacar del granel. Es visible al instante al manipular la bolsa.
+          <strong>⚠ Marca de Bodega 2 en el albarán:</strong> si el pedido tiene productos pendientes de B2, el PDF muestra una banda amarilla GRANDE de "BODEGA 2 PENDIENTE" + lista de items a sacar del granel. Es visible al instante al manipular la bolsa.
         </div>
+
+        <h4>Reimprimir un albarán</h4>
+        <p>Si se perdió o se manchó el papel, podés reimprimir desde:</p>
+        <ul>
+          <li>La pantalla del pedido empacado.</li>
+          <li>La pantalla de la secuencia (al expandir cada pedido).</li>
+          <li>Después de escanear el QR (con login).</li>
+        </ul>
       </>
     ),
   },
@@ -162,13 +214,28 @@ const SECTIONS: Section[] = [
     icon: Package,
     body: (
       <>
-        <p>El equipo de B2 pickea aparte del equipo B1, pero <strong>para las mismas secuencias</strong>. Cada secuencia tiene su propio listado de items B2 a sacar del granel.</p>
+        <p>El equipo de B2 pickea aparte del equipo B1, pero <strong>para las mismas secuencias</strong>. Cada secuencia tiene su propio listado de items B2 a sacar del granel. Generalmente se hace una sola corrida matinal que cubre las secuencias armadas el día anterior.</p>
+
+        <h4>Picking de una secuencia individual</h4>
         <ol>
-          <li>Abre <strong>Picking</strong>. Verás una tarjeta por cada secuencia con items B2 pendientes.</li>
-          <li>Entra a la secuencia. El reporte muestra los SKUs B2 con cantidad total a recolectar y cuántos pedidos los necesitan.</li>
-          <li>Recorre con el móvil, marca cada SKU al recolectarlo. El estado se sincroniza en vivo.</li>
-          <li>Cuando termines, toca <strong>Cerrar picking B2</strong>. Ese flujo queda cerrado para esa secuencia.</li>
+          <li>Abrí <strong>Picking</strong>. Vas a ver una tarjeta por cada secuencia con items B2 pendientes.</li>
+          <li>Tocá la tarjeta. El reporte muestra los SKUs B2 con cantidad total y cuántos pedidos los necesitan.</li>
+          <li>Recorré con el móvil, marcá cada SKU al recolectarlo. El estado se sincroniza en vivo entre operadores.</li>
+          <li>Cuando termines, tocá <strong>Cerrar picking B2</strong>. El flujo B2 queda cerrado para esa secuencia.</li>
         </ol>
+
+        <h4>Picking conjunto (varias secuencias a la vez)</h4>
+        <p>Si en la mañana tenés varias secuencias del día anterior y querés evitar entrar y salir de cada una:</p>
+        <ol>
+          <li>En <strong>Picking</strong>, marcá el <em>checkbox</em> al lado de cada secuencia B2 que quieras incluir (debe haber al menos 2).</li>
+          <li>Aparece un botón flotante <strong>"Picking conjunto (N secuencias)"</strong>. Tocalo.</li>
+          <li>Se abre una vista consolidada con todos los SKUs B2 sumados (si dos secuencias piden el mismo SKU, ves la cantidad total).</li>
+          <li>Marcás cada SKU al recolectarlo. Cuando termines, <strong>Cerrar picking conjunto</strong>.</li>
+          <li>El sistema cierra el B2 <em>solo</em> de las secuencias que quedaron 100% pickeadas. Las que tengan items sin marcar quedan abiertas para otra ronda — vas a ver el resumen en pantalla.</li>
+        </ol>
+        <p className="text-slate-600">
+          El batch es <strong>estático</strong>: si mientras estás pickeando se crea una secuencia nueva, queda para una próxima ronda — no se agrega al batch en curso.
+        </p>
         <p className="text-slate-600">
           El cierre B2 es independiente del cierre B1 (packing). Pueden cerrarse en cualquier orden.
         </p>
@@ -250,6 +317,35 @@ const SECTIONS: Section[] = [
     ),
   },
   {
+    id: 'diagnostico',
+    title: 'Diagnóstico de un pedido (supervisores)',
+    icon: Stethoscope,
+    body: (
+      <>
+        <p>Cuando un pedido se comporta raro (falta una ruta, los items aparecen con la bodega vieja, el sync no lo trae), el supervisor tiene una página dedicada en el sidebar: <strong>Diagnóstico</strong>.</p>
+        <ol>
+          <li>Pegá el <code>wpOrderId</code> (el ID de WC, no el número del pedido) y tocá <strong>Consultar</strong>.</li>
+          <li>Vas a ver tres bloques:
+            <ul>
+              <li><strong>Diagnóstico</strong> — mensajes en castellano explicando qué está mal (ej: <em>"Ruta desincronizada: local=null vs WC=R1"</em>).</li>
+              <li><strong>WMS local vs WooCommerce</strong> — comparación lado a lado (estado, ruta, parada, cliente, dirección, items).</li>
+              <li><strong>Items locales</strong> — tabla con timestamps de picking y packing por item.</li>
+            </ul>
+          </li>
+          <li>Si la metadata de WC está OK pero local quedó desactualizado, hay dos vías:
+            <ul>
+              <li>Si el pedido está pendiente o en secuencia abierta → sincronizar con <em>Refrescar metadata de productos</em> activado.</li>
+              <li>Si el pedido está empacado/clasificado/cargado → hay que <strong>eliminar la secuencia</strong> primero (revierte el pedido) y después sincronizar.</li>
+            </ul>
+          </li>
+        </ol>
+        <p className="text-slate-600">
+          También hay un bloque "Toda la metadata de WC" (collapsible) para inspeccionar campo por campo, y "JSON crudo" para copiar y compartir si hace falta soporte técnico.
+        </p>
+      </>
+    ),
+  },
+  {
     id: 'glossary',
     title: 'Glosario · qué significa cada estado y cada término',
     icon: BookOpen,
@@ -258,36 +354,46 @@ const SECTIONS: Section[] = [
         <p>El WMS usa algunos términos que pueden aparecer en mensajes, alertas o el dashboard. Acá los traducimos a lenguaje claro:</p>
         <h4>Estados por los que pasa un pedido</h4>
         <ul>
-          <li><strong>Pendiente</strong> (en el sistema: <code>received</code>) — el pedido llegó al WMS desde la tienda, está pagado, pero todavía nadie lo tocó. Listo para entrar en una secuencia.</li>
-          <li><strong>En secuencia</strong> (<code>sequenced</code>) — fue agrupado con otros pedidos para hacer un solo recorrido de picking. Aún no se recolectó nada.</li>
-          <li><strong>Pickeado</strong> (<code>picked</code>) — todos sus items de Bodega 1 ya fueron recolectados de la estantería.</li>
-          <li><strong>Empacado</strong> (<code>packed</code>) — la bolsa fue armada, sellada y se imprimió el albarán con QR. Listo para clasificación.</li>
+          <li><strong>Recibido</strong> (en el sistema: <code>received</code>) — el pedido llegó al WMS desde WooCommerce, pero todavía no entró a ninguna secuencia. Disponible para reservar.</li>
+          <li><strong>En secuencia</strong> (<code>sequenced</code>) — fue agrupado con otros pedidos. Aún no se recolectó nada.</li>
+          <li><strong>Recolectado</strong> (<code>picked</code>) — todos sus items de Bodega 1 ya fueron recolectados de la estantería (solo aplica en modo <em>Por SKU</em>).</li>
+          <li><strong>Empacado</strong> (<code>packed</code>) — la bolsa fue armada y se imprimió el albarán con QR. Listo para clasificación matinal.</li>
           <li><strong>Clasificado</strong> (<code>classified</code>) — alguien escaneó el QR en la mañana, el sistema le dijo qué ruta y la bolsa se llevó al área de su camioneta.</li>
           <li><strong>Cargado</strong> (<code>loaded</code>) — la bolsa está físicamente arriba del vehículo, lista para salir a reparto.</li>
           <li><strong>Entregado</strong> (<code>delivered</code>) — el sistema externo de entregas confirmó que llegó al cliente. Estado final.</li>
         </ul>
-        <h4>Términos que aparecen en alertas</h4>
+
+        <h4>Términos del sistema</h4>
         <ul>
-          <li><strong>Picking</strong> — el acto de recolectar productos de los estantes de la bodega.</li>
-          <li><strong>Packing / empaque</strong> — armar la bolsa individual del pedido con sus productos y sellarla.</li>
-          <li><strong>Picker</strong> — la persona que hace picking.</li>
-          <li><strong>Packer</strong> — la persona que arma las bolsas. Queda registrado quién cerró cada pedido (trazabilidad).</li>
-          <li><strong>SKU</strong> — código único de cada producto. Distintos colores o tamaños = distintos SKU.</li>
-          <li><strong>Secuencia</strong> — un grupo de pedidos preparados juntos en un solo recorrido. Permite ser eficiente con productos similares.</li>
-          <li><strong>Bodega 1 (B1)</strong> — bodega principal donde se hace el picking y packing.</li>
-          <li><strong>Bodega 2 (B2)</strong> — bodega satélite con stock distinto. Sus productos llegan en camión a primera hora y se reparten a granel en los camiones de reparto.</li>
-          <li><strong>Albarán</strong> — la hoja impresa que va con cada bolsa, con QR + listado de items + (si aplica) marca de Bodega 2 pendiente.</li>
+          <li><strong>Picking</strong> — recolectar productos de los estantes de la bodega.</li>
+          <li><strong>Packing / empaque</strong> — armar la bolsa individual del pedido y sellarla.</li>
+          <li><strong>Picker</strong> — la persona que hace picking. Puede haber pickers de B1 y de B2 (equipos separados).</li>
+          <li><strong>Packer</strong> — la persona que arma las bolsas. Queda registrado quién cerró cada pedido.</li>
+          <li><strong>SKU</strong> — código único de cada producto. Distintos colores o tamaños = distintos SKUs.</li>
+          <li><strong>Secuencia</strong> — un grupo de pedidos preparados juntos. Es <em>agnóstica de bodega</em>: tiene tanto picking B1 como B2 que cierran por separado.</li>
+          <li><strong>Modo por pedido</strong> — el picker B1 recorre pedido por pedido y arma cada bolsa al instante. Un solo paso pick+pack.</li>
+          <li><strong>Modo por SKU (batch)</strong> — primero se recolecta el volumen total agrupado por SKU; en un segundo paso se arman las bolsas individuales.</li>
+          <li><strong>Picking conjunto</strong> — agrupar varias secuencias en una sola corrida de picking B2 (cuando el equipo B2 hace la recolección matinal de todo el día).</li>
+          <li><strong>Bodega 1 (B1)</strong> — bodega principal donde se arman las bolsas individuales.</li>
+          <li><strong>Bodega 2 (B2)</strong> — bodega satélite con stock distinto. Sus productos se recolectan a granel una vez al día y se reparten desde el cargamento de cada camioneta.</li>
+          <li><strong>Flujo B1 cerrado / Flujo B2 cerrado</strong> — cada secuencia tiene dos cierres independientes. La secuencia entera pasa a <em>Cerrada</em> solo cuando ambos están cerrados.</li>
+          <li><strong>Albarán</strong> — la hoja impresa que va con cada bolsa, con QR, ruta destacada (pill azul), listado de items y (si aplica) marca de Bodega 2 pendiente.</li>
+          <li><strong>Ruta</strong> — el reparto al que pertenece el pedido (R1, R2, etc.). Viene de WC en la meta <code>_wdg_route</code>. Sin ruta el pedido no se puede cargar al vehículo.</li>
+          <li><strong>Parada de carga</strong> — posición dentro de la ruta (1, 2, ...). Ayuda al orden de carga del vehículo.</li>
+          <li><strong>Refrescar metadata de productos</strong> — checkbox en el sync que fuerza a re-leer todos los productos desde WC (más lento). Usar cuando cambiaste la bodega de un producto en WC.</li>
+          <li><strong>Pedido bloqueado / saltado</strong> — el sync no toca pedidos que ya estén en estado Recolectado, Empacado, Clasificado, Cargado o Entregado, para no destruir el progreso. Para modificarlos hay que eliminar la secuencia primero.</li>
         </ul>
+
         <h4>"Eliminar la secuencia" — qué se pierde</h4>
-        <p>Si eliminas una secuencia donde ya se hizo picking o empaque:</p>
+        <p>Si eliminás una secuencia donde ya se hizo picking o empaque:</p>
         <ul>
-          <li>Los pedidos vuelven al estado <strong>pendiente</strong> para poder reagruparlos.</li>
+          <li>Los pedidos vuelven al estado <strong>Recibido</strong> para poder reagruparlos.</li>
           <li>Se borra el registro de qué items fueron recolectados.</li>
           <li>Se borra el registro de qué items fueron empacados y quién los empacó.</li>
           <li>Los albaranes ya impresos quedan como papel físico sin reflejo en el sistema. Hay que volver a empacar para imprimir nuevos.</li>
           <li>Los pedidos ya entregados no se tocan: están finalizados.</li>
         </ul>
-        <p className="text-slate-600">Usa esta opción solo cuando claramente te equivocaste de pedidos o de modo de picking — no en operación normal.</p>
+        <p className="text-slate-600">Usá esta opción cuando te equivocaste de pedidos o necesitás cambiar la metadata WC (bodega, ruta) de un pedido bloqueado.</p>
       </>
     ),
   },
