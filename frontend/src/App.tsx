@@ -19,6 +19,7 @@ import { Dispatch } from '@/pages/Dispatch';
 import { Delivery } from '@/pages/Delivery';
 import { Dashboard } from '@/pages/Dashboard';
 import { Help } from '@/pages/Help';
+import { Debug } from '@/pages/Debug';
 import { Scan } from '@/pages/Scan';
 
 const queryClient = new QueryClient({
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="dispatch" element={<Dispatch />} />
               <Route path="delivery" element={<Delivery />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="debug" element={<Debug />} />
               <Route path="help" element={<Help />} />
             </Route>
           </Routes>

@@ -17,7 +17,8 @@
       "Bash(node --check src/services/orders-sync.js)",
       "Bash(node --check src/routes/sync.js)",
       "Bash(node --check src/services/woocommerce.js)",
-      "Bash(node --check src/routes/orders.js)"
+      "Bash(node --check src/routes/orders.js)",
+      "Bash(node -e \"import\\('./src/routes/orders.js'\\).then\\(\\(\\) => console.log\\('imports OK'\\)\\).catch\\(e => console.error\\('ERR:', e.message\\)\\)\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\dsalg\\.claude\\projects\\c--Users-dsalg-OneDrive---Webpremium-Proyectos-Chimuelo-wms-app\\memory"
