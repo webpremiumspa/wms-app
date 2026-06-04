@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, PackageOpen } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
+import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -112,7 +113,7 @@ export function SequenceDetail() {
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-lg font-semibold">Secuencia #{seq.id}</span>
           <Badge variant={seq.status === 'open' ? 'green' : 'gray'}>
-            {seq.status === 'open' ? 'Abierta' : 'Cerrada'}
+            {sequenceStatusLabel(seq.status)}
           </Badge>
           <Badge variant="gray">
             {seq.mode === 'by_order' ? 'Por pedido' : 'Por SKU'}
@@ -269,7 +270,7 @@ export function SequenceDetail() {
                           : 'green'
                       }
                     >
-                      {order.status}
+                      {orderStatusLabel(order.status)}
                     </Badge>
                   </div>
                   <div className="truncate text-xs text-slate-500">

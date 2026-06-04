@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Truck, Printer, CheckCircle2, AlertTriangle, Image as ImageIcon, Home, LogIn } from 'lucide-react';
 import { ordersApi } from '@/lib/sequences';
 import { dispatchApi } from '@/lib/dispatch';
+import { orderStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { B2Alert } from '@/components/B2Alert';
 import { Badge } from '@/components/Badge';
@@ -58,7 +59,7 @@ export function Scan() {
             <span className="text-xl font-bold">#{order.number}</span>
             {order.route && <Badge variant="blue">{order.route}</Badge>}
             {order.stopPosition != null && <Badge variant="gray">Parada {order.stopPosition}</Badge>}
-            <Badge variant={isLoaded ? 'green' : 'gray'}>{order.status}</Badge>
+            <Badge variant={isLoaded ? 'green' : 'gray'}>{orderStatusLabel(order.status)}</Badge>
           </div>
           <div className="text-sm text-slate-700">{order.customerName || '—'}</div>
           {order.customerAddress && (

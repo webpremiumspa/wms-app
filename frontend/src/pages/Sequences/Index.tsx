@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
+import { sequenceStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { useAuth } from '@/hooks/useAuth';
@@ -44,7 +45,7 @@ export function SequencesIndex() {
               <div className="space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">#{s.id}</span>
-                  <Badge variant={s.status === 'open' ? 'green' : 'gray'}>{s.status === 'open' ? 'Abierta' : 'Cerrada'}</Badge>
+                  <Badge variant={s.status === 'open' ? 'green' : 'gray'}>{sequenceStatusLabel(s.status)}</Badge>
                   <Badge variant={s.b1ClosedAt ? 'green' : 'blue'}>
                     B1 {s.b1ClosedAt ? 'cerrado' : 'abierto'}
                   </Badge>

@@ -2,30 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Info, Package, ClipboardList, Truck, CheckCircle2, Activity, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import { dashboardApi, type AlertSeverity } from '@/lib/dashboard';
+import { eventLabel, orderStatusLabelPlural } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
-
-const STATUS_LABELS: Record<string, string> = {
-  received: 'Recibidos',
-  sequenced: 'En secuencia',
-  picked: 'Pickados',
-  packed: 'Empacados',
-  classified: 'Clasificados',
-  loaded: 'Cargados',
-  delivered: 'Entregados',
-};
-
-const EVENT_LABELS: Record<string, string> = {
-  'sequence.created': 'creó secuencia',
-  'sequence.item_picked': 'pickeó item',
-  'sequence.item_unpicked': 'deshizo pick',
-  'sequence.closed': 'cerró secuencia',
-  'order.packed': 'empacó pedido',
-  'picking_b2.item_picked': 'pickeó B2',
-  'picking_b2.item_unpicked': 'deshizo pick B2',
-  'dispatch.classified': 'clasificó pedido',
-  'dispatch.loaded': 'cargó pedido',
-  'delivery.scanned': 'escaneó en entrega',
-};
 
 const SEVERITY_STYLES: Record<AlertSeverity, string> = {
   info: 'bg-brand-50 text-brand-800 ring-brand-200',
@@ -126,9 +104,9 @@ export function Dashboard() {
       <div className="card p-4">
         <h3 className="mb-3 text-sm font-semibold text-slate-700">Pedidos por estado</h3>
         <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-          {Object.entries(STATUS_LABELS).map(([key, label]) => (
+          {(['received', 'sequenced', 'picked', 'packed', 'classified', 'loaded', 'delivered'] as const).map((key) => (
             <div key={key} className="rounded-lg bg-slate-50 px-3 py-2">
-              <div className="text-xs text-slate-500">{label}</div>
+              <div className="text-xs text-slate-500">{orderStatusLabelPlural(key)}</div>
               <div className="text-xl font-bold text-slate-800">{data.orders.byStatus[key] || 0}</div>
             </div>
           ))}
@@ -149,7 +127,7 @@ export function Dashboard() {
               <li key={e.id} className="flex items-start justify-between gap-2 text-sm">
                 <div className="min-w-0">
                   <span className="font-medium">{e.actor || 'sistema'}</span>{' '}
-                  <span className="text-slate-600">{EVENT_LABELS[e.type] || e.type}</span>
+                  <span className="text-slate-600">{eventLabel(e.type)}</span>
                   {e.orderNumber && <span className="text-slate-500"> · pedido #{e.orderNumber}</span>}
                 </div>
                 <span className="shrink-0 text-xs text-slate-400">

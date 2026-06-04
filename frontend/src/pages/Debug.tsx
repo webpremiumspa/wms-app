@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { debugApi, type DebugOrderResponse } from '@/lib/debug';
+import { orderStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 
@@ -107,7 +108,7 @@ export function Debug() {
               {result.local ? (
                 <dl className="space-y-1 text-xs">
                   <Field k="Número" v={`#${result.local.number}`} />
-                  <Field k="Estado" v={result.local.status} />
+                  <Field k="Estado" v={`${orderStatusLabel(result.local.status)} (${result.local.status})`} />
                   <Field k="Ruta" v={result.local.route ?? '— (null)'} highlight={!result.local.route} />
                   <Field k="Posición carga" v={result.local.stopPosition ?? '—'} />
                   <Field k="Cliente" v={result.local.customerName ?? '—'} />

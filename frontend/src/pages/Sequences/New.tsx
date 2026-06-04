@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
 import { syncApi, type SyncResult } from '@/lib/sync';
+import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import type { StockProblem } from '@/lib/types';
@@ -278,7 +279,7 @@ export function SequenceNew() {
                   <div className="mt-2 rounded-md bg-slate-50 px-2 py-1.5 text-xs text-slate-700 ring-1 ring-slate-200">
                     <div className="font-medium">Pedidos bloqueados (no se modificaron):</div>
                     <div className="mt-0.5">
-                      {syncResult.skippedOrders.slice(0, 8).map((o) => `#${o.number} (${o.status})`).join(', ')}
+                      {syncResult.skippedOrders.slice(0, 8).map((o) => `#${o.number} (${orderStatusLabel(o.status)})`).join(', ')}
                       {syncResult.skippedOrders.length > 8 && ` … y ${syncResult.skippedOrders.length - 8} más`}
                     </div>
                     <div className="mt-1 text-slate-500">
@@ -300,7 +301,7 @@ export function SequenceNew() {
                           Secuencia #{s.id}
                         </Link>
                         <span className="text-slate-600">
-                          {' '}({s.status === 'open' ? 'abierta' : 'cerrada'}){': '}
+                          {' '}({sequenceStatusLabel(s.status).toLowerCase()}){': '}
                           {s.orders.map((o) => `#${o.number}`).join(', ')}
                         </span>
                       </div>
