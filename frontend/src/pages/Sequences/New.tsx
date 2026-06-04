@@ -193,6 +193,7 @@ export function SequenceNew() {
               { key: 'on-hold', label: 'En espera' },
               { key: 'completed', label: 'Completado' },
               { key: 'pending', label: 'Pendiente pago' },
+              { key: 'en-ruta', label: 'En ruta' },
             ].map((s) => {
               const active = statuses.includes(s.key);
               return (
