@@ -269,9 +269,22 @@ export function SequenceNew() {
                   WC tenía <strong>{syncResult.total}</strong> pedido{syncResult.total === 1 ? '' : 's'} en el rango.
                 </div>
                 <div className="text-xs">
-                  <strong>{syncResult.created}</strong> nuevo{syncResult.created === 1 ? '' : 's'} · <strong>{syncResult.updated}</strong> ya existía{syncResult.updated === 1 ? '' : 'n'} (actualizado{syncResult.updated === 1 ? '' : 's'})
+                  <strong>{syncResult.created}</strong> nuevo{syncResult.created === 1 ? '' : 's'} · <strong>{syncResult.updated}</strong> actualizado{syncResult.updated === 1 ? '' : 's'}
+                  {syncResult.skipped > 0 && <> · <strong>{syncResult.skipped}</strong> saltado{syncResult.skipped === 1 ? '' : 's'} (ya en picking/packing)</>}
                   {syncResult.failed > 0 && <> · <strong>{syncResult.failed}</strong> fallido{syncResult.failed === 1 ? '' : 's'}</>}
                 </div>
+                {syncResult.skipped > 0 && (
+                  <div className="mt-2 rounded-md bg-slate-50 px-2 py-1.5 text-xs text-slate-700 ring-1 ring-slate-200">
+                    <div className="font-medium">Pedidos bloqueados (no se modificaron):</div>
+                    <div className="mt-0.5">
+                      {syncResult.skippedOrders.slice(0, 8).map((o) => `#${o.number} (${o.status})`).join(', ')}
+                      {syncResult.skippedOrders.length > 8 && ` … y ${syncResult.skippedOrders.length - 8} más`}
+                    </div>
+                    <div className="mt-1 text-slate-500">
+                      Estos pedidos ya tienen progreso (picking, packing o despacho). Para modificarlos hay que eliminar la secuencia primero — vuelven a estar pendientes y podrás sincronizarlos de nuevo.
+                    </div>
+                  </div>
+                )}
                 {syncResult.takenBySequences.length > 0 && (
                   <div className="mt-2 space-y-1 text-xs">
                     <div className="font-medium text-amber-800">

@@ -84,9 +84,11 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
 
     let created = 0;
     let updated = 0;
+    let skipped = 0;
     let failed = 0;
     const errors = [];
     const orders = [];
+    const skippedOrders = [];
 
     for (const wco of wcOrders) {
       try {
@@ -97,8 +99,12 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
           number: order.number,
           status: order.status,
           isNew: !wasExisting,
+          skipped: !!order.skipped,
         });
-        if (wasExisting) updated += 1;
+        if (order.skipped) {
+          skipped += 1;
+          skippedOrders.push({ wpOrderId: order.wpOrderId, number: order.number, status: order.status });
+        } else if (wasExisting) updated += 1;
         else created += 1;
       } catch (err) {
         failed += 1;
@@ -145,9 +151,11 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
       synced,
       created,
       updated,
+      skipped,
       failed,
       errors,
       orders,
+      skippedOrders,
       takenBySequences,
       range: { after, before: before || null },
       statuses,

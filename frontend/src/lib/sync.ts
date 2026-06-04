@@ -5,9 +5,11 @@ export type SyncResult = {
   synced: number;
   created: number;
   updated: number;
+  skipped: number;
   failed: number;
   errors: Array<{ wpOrderId: number; message: string }>;
-  orders: Array<{ wpOrderId: number; number: string; status: string; isNew: boolean }>;
+  orders: Array<{ wpOrderId: number; number: string; status: string; isNew: boolean; skipped: boolean }>;
+  skippedOrders: Array<{ wpOrderId: number; number: string; status: string }>;
   takenBySequences: Array<{
     id: number;
     status: 'open' | 'closed';

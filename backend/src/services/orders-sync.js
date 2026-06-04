@@ -108,9 +108,26 @@ export async function ensureProducts(productIds, { force = false } = {}) {
   }
 }
 
+// Estados en los que el pedido ya tiene progreso operativo (picking o packing
+// hechos, o ya despachado). Re-sincronizar destruiría los timestamps de
+// pickedAt/packedAt, así que el sync los salta. Para modificar un pedido en
+// estos estados hay que eliminar la secuencia primero (revierte el pedido a
+// 'received') y volver a sincronizar.
+const LOCKED_STATUSES = ['picked', 'packed', 'classified', 'loaded', 'delivered'];
+
 // Upsert completo de un pedido WC, incluyendo items. Lee los metas de ruta y
 // posición de carga, y calcula hasB2Pending mirando los items.
+// Si el pedido ya está en un estado "locked", lo devuelve tal cual con
+// `skipped: true` y no toca nada.
 export async function syncOrder(wpOrderId, wcOrder = null) {
+  const existing = await prisma.order.findUnique({
+    where: { wpOrderId },
+    select: { id: true, wpOrderId: true, number: true, status: true },
+  });
+  if (existing && LOCKED_STATUSES.includes(existing.status)) {
+    return { ...existing, skipped: true };
+  }
+
   const data = wcOrder || (await wcGetOrder(wpOrderId));
 
   // 1. Pre-sync de productos FUERA de la transacción (en 1 sola llamada a WC).
