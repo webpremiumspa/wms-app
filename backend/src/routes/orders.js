@@ -6,7 +6,7 @@ import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { renderAlbaranPdf } from '../services/pdf.js';
-import { wcGetProduct } from '../services/woocommerce.js';
+import { wcGetProduct, wcGetOrder, getMeta } from '../services/woocommerce.js';
 import { config } from '../config.js';
 
 const router = Router();
@@ -168,6 +168,117 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
     next(err);
   }
 });
+
+// Diagnóstico de un pedido: muestra qué dice WC vs qué tenemos local.
+// Útil para entender por qué falta una ruta, una posición de carga, o por qué
+// los items aparecen como esperaba.
+router.get('/debug-order/:wpOrderId', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const wpId = Number(req.params.wpOrderId);
+    if (!wpId) throw new HttpError(400, 'Invalid wpOrderId');
+
+    const local = await prisma.order.findUnique({
+      where: { wpOrderId: wpId },
+      include: { items: { include: { product: true } } },
+    });
+
+    let wc = null;
+    let wcError = null;
+    try {
+      const data = await wcGetOrder(wpId);
+      const routeKey = config.meta.orderRoute;
+      const stopKey = config.meta.orderStopPosition;
+      wc = {
+        id: data.id,
+        number: data.number,
+        status: data.status,
+        date_created: data.date_created,
+        billing_name: [data.billing?.first_name, data.billing?.last_name].filter(Boolean).join(' '),
+        shipping_address: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', '),
+        meta_data_count: (data.meta_data || []).length,
+        meta_data: data.meta_data || [],
+        routeMetaKey: routeKey,
+        routeMetaFound: (data.meta_data || []).find((m) => m.key === routeKey) || null,
+        routeResolved: getMeta(data, routeKey) || null,
+        stopPositionMetaKey: stopKey,
+        stopPositionMetaFound: (data.meta_data || []).find((m) => m.key === stopKey) || null,
+        stopPositionResolved: getMeta(data, stopKey) || null,
+        line_items_count: (data.line_items || []).length,
+        line_items: (data.line_items || []).map((li) => ({
+          product_id: li.product_id,
+          name: li.name,
+          quantity: li.quantity,
+          sku: li.sku,
+        })),
+      };
+    } catch (e) {
+      wcError = e.message;
+    }
+
+    res.json({
+      wpOrderId: wpId,
+      configKeys: {
+        orderRoute: config.meta.orderRoute,
+        orderStopPosition: config.meta.orderStopPosition,
+      },
+      local: local
+        ? {
+            id: local.id,
+            wpOrderId: local.wpOrderId,
+            number: local.number,
+            status: local.status,
+            route: local.route,
+            stopPosition: local.stopPosition,
+            customerName: local.customerName,
+            customerAddress: local.customerAddress,
+            hasB2Pending: local.hasB2Pending,
+            createdAt: local.createdAt,
+            packedAt: local.packedAt,
+            items: local.items.map((it) => ({
+              id: it.id,
+              productId: it.productId,
+              productName: it.product?.name,
+              sku: it.product?.sku,
+              qty: it.qty,
+              warehouse: it.warehouse,
+              pickedAt: it.pickedAt,
+              packedAt: it.packedAt,
+            })),
+          }
+        : null,
+      wc,
+      wcError,
+      diagnosis: buildOrderDiagnosis(local, wc),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Genera mensajes interpretables de qué pasa en cada caso, para que el supervisor
+// no tenga que comparar campo por campo manualmente.
+function buildOrderDiagnosis(local, wc) {
+  const notes = [];
+  if (!local) notes.push('El pedido NO está sincronizado en el WMS (no existe localmente).');
+  if (!wc && local) notes.push('No se pudo leer WC — solo datos locales disponibles.');
+  if (local && wc) {
+    if (local.route !== (wc.routeResolved || null)) {
+      notes.push(`Ruta desincronizada: local="${local.route ?? 'null'}" vs WC="${wc.routeResolved ?? 'null'}". Re-sincronizar para refrescar.`);
+    }
+    const wcStop = wc.stopPositionResolved != null ? Number(wc.stopPositionResolved) : null;
+    if (local.stopPosition !== wcStop) {
+      notes.push(`Posición de carga desincronizada: local="${local.stopPosition ?? 'null'}" vs WC="${wcStop ?? 'null'}".`);
+    }
+    if (wc.routeResolved == null) {
+      notes.push(`WC no tiene meta "${wc.routeMetaKey}" — el pedido no tiene ruta asignada en WooCommerce.`);
+    }
+    const lockedStatuses = ['picked', 'packed', 'classified', 'loaded', 'delivered'];
+    if (lockedStatuses.includes(local.status)) {
+      notes.push(`Pedido en estado "${local.status}" — el sync ahora lo saltea. Para refrescar metadata hay que eliminar la secuencia primero.`);
+    }
+  }
+  return notes.length > 0 ? notes : ['Todo coincide entre WC y local.'];
+}
 
 // Diagnóstico de un producto: muestra qué dice WC + qué tenemos local. Útil
 // para entender por qué un item sigue marcado como B1 cuando deberia ser B2.
