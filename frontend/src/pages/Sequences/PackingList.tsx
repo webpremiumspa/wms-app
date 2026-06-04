@@ -50,8 +50,10 @@ export function PackingList() {
               )}
             >
               <div className="min-w-0 space-y-1">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="font-semibold">#{o.number}</span>
+                  {o.route && <Badge variant="blue">{o.route}</Badge>}
+                  {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
                   {o.hasB2Pending && <Badge variant="amber">B2</Badge>}
                   {done && <Badge variant="green">Empacado</Badge>}
                 </div>

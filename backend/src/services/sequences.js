@@ -202,6 +202,8 @@ export async function getPendingPacking(sequenceId) {
       id: o.id,
       number: o.number,
       customerName: o.customerName,
+      route: o.route,
+      stopPosition: o.stopPosition,
       hasB2Pending: o.hasB2Pending,
       status: o.status,
       ready,

@@ -73,6 +73,8 @@ export type PendingPackingOrder = {
   id: number;
   number: string;
   customerName: string | null;
+  route: string | null;
+  stopPosition: number | null;
   hasB2Pending: boolean;
   status: OrderStatus;
   ready: boolean;

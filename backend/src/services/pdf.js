@@ -68,19 +68,41 @@ export async function renderAlbaranPdf(order, stream) {
   doc.font('Helvetica-Bold').fontSize(20).text('Albarán de pedido', 40, 40);
   doc.font('Helvetica').fontSize(11).fillColor('#475569')
     .text(`Pedido #${order.number}`, 40, 70)
-    .text(`Fecha: ${new Date().toLocaleString('es-CL')}`, 40, 86)
-    .text(`Ruta: ${order.route || '—'}${order.stopPosition ? `  ·  Parada ${order.stopPosition}` : ''}`, 40, 102);
+    .text(`Fecha: ${new Date().toLocaleString('es-CL')}`, 40, 86);
+
+  // Ruta destacada: pill azul al lado del número de pedido para que el
+  // operador de clasificación/carga la vea de un vistazo. Si no hay ruta,
+  // imprimimos un texto neutral discreto en su lugar.
+  if (order.route) {
+    const routeText = `RUTA ${order.route}${order.stopPosition ? ` · PARADA ${order.stopPosition}` : ''}`;
+    const padX = 10;
+    const padY = 6;
+    doc.font('Helvetica-Bold').fontSize(14);
+    const textW = doc.widthOfString(routeText);
+    const textH = doc.currentLineHeight();
+    const pillW = textW + padX * 2;
+    const pillH = textH + padY * 2;
+    const pillX = 40;
+    const pillY = 106;
+    doc.save();
+    doc.roundedRect(pillX, pillY, pillW, pillH, 6).fill('#1d4ed8');
+    doc.fillColor('#ffffff').text(routeText, pillX + padX, pillY + padY);
+    doc.restore();
+  } else {
+    doc.font('Helvetica').fontSize(11).fillColor('#94a3b8')
+      .text('Sin ruta asignada', 40, 110);
+  }
 
   // QR arriba a la derecha
   doc.image(qrPng, 410, 35, { width: 140, height: 140 });
   doc.font('Helvetica').fontSize(8).fillColor('#94a3b8')
     .text('Escanea para ver pedido', 410, 180, { width: 140, align: 'center' });
 
-  // Cliente
-  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Cliente', 40, 150);
+  // Cliente — bajamos un poco para no colisionar con la pill de ruta
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Cliente', 40, 158);
   doc.font('Helvetica').fontSize(11).fillColor('#0f172a')
-    .text(order.customerName || '—', 40, 168)
-    .fillColor('#475569').text(order.customerAddress || '', 40, 184);
+    .text(order.customerName || '—', 40, 176)
+    .fillColor('#475569').text(order.customerAddress || '', 40, 192);
 
   let cursorY = 230;
 
