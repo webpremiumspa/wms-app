@@ -37,6 +37,7 @@ export function SequenceNew() {
   const [afterDate, setAfterDate] = useState(yesterdayISO());
   const [beforeDate, setBeforeDate] = useState(todayISO());
   const [statuses, setStatuses] = useState<string[]>(['processing', 'on-hold', 'completed']);
+  const [forceProductRefresh, setForceProductRefresh] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
   function toggleStatus(s: string) {
@@ -59,6 +60,7 @@ export function SequenceNew() {
       after: afterDate || undefined,
       before: beforeDate || undefined,
       statuses: statuses.length > 0 ? statuses : undefined,
+      forceProductRefresh: forceProductRefresh || undefined,
     }),
     onSuccess: (result) => {
       setSyncResult(result);
@@ -211,6 +213,18 @@ export function SequenceNew() {
             })}
           </div>
         </div>
+
+        <label className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 ring-1 ring-amber-200">
+          <input
+            type="checkbox"
+            checked={forceProductRefresh}
+            onChange={(e) => setForceProductRefresh(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-amber-600"
+          />
+          <span className="text-xs text-amber-900">
+            <strong>Refrescar metadata de productos.</strong> Marcá esto si cambiaste la bodega (B1/B2) de algún producto en WooCommerce. Sin esto, el sync reutiliza la bodega cacheada y no detecta el cambio. Más lento (re-fetch de productos), úsalo solo cuando lo necesites.
+          </span>
+        </label>
 
         {pendingTotal > 0 && (
           <div className="flex items-center justify-between rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs">

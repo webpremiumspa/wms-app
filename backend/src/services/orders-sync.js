@@ -55,24 +55,33 @@ export async function syncProduct(wpProductId, wcProduct = null) {
 // Pre-sincroniza un conjunto de productIds: detecta los que faltan, los pide a
 // WC en una sola llamada batch (?include=...) y los upsertea uno por uno (DB
 // writes son rápidos, lo lento era WC). Reduce N llamadas HTTP a 1.
-export async function ensureProducts(productIds) {
+//
+// Con `force: true` ignora la cache local y refresca TODOS los productos
+// desde WC. Útil cuando se cambió la meta de bodega en WP y hay que reflejar
+// el cambio en items ya sincronizados.
+export async function ensureProducts(productIds, { force = false } = {}) {
   const unique = [...new Set(productIds.filter((id) => Number.isInteger(id) && id > 0))];
   if (unique.length === 0) return;
 
-  // Re-fetch tanto los que no existen como los que sí pero con warehouse=null
-  // (posiblemente importados antes con un meta mal interpretado).
-  const existing = await prisma.productMeta.findMany({
-    where: { wpProductId: { in: unique } },
-    select: { wpProductId: true, warehouse: true },
-  });
-  const okIds = new Set(existing.filter((p) => p.warehouse !== null).map((p) => p.wpProductId));
-  const missing = unique.filter((id) => !okIds.has(id));
-  if (missing.length === 0) return;
+  let toFetch;
+  if (force) {
+    toFetch = unique;
+  } else {
+    // Re-fetch los que no existen y los que tienen warehouse=null
+    // (posiblemente importados antes con un meta mal interpretado).
+    const existing = await prisma.productMeta.findMany({
+      where: { wpProductId: { in: unique } },
+      select: { wpProductId: true, warehouse: true },
+    });
+    const okIds = new Set(existing.filter((p) => p.warehouse !== null).map((p) => p.wpProductId));
+    toFetch = unique.filter((id) => !okIds.has(id));
+    if (toFetch.length === 0) return;
+  }
 
-  // Una sola llamada a WC para todos los productos faltantes.
+  // Una sola llamada a WC para todos los productos a refrescar.
   let wcProducts = [];
   try {
-    wcProducts = await wcGetProductsByIds(missing);
+    wcProducts = await wcGetProductsByIds(toFetch);
   } catch {
     // Si WC falla del todo, igual creamos placeholders para no bloquear.
   }
@@ -81,9 +90,21 @@ export async function ensureProducts(productIds) {
   for (const wcp of wcProducts) {
     await syncProduct(wcp.id, wcp);
   }
-  // Lo que WC no devolvió (borrados, sin permisos, etc.) → placeholder
-  for (const id of missing) {
-    if (!returnedIds.has(id)) await syncProduct(id, null);
+  // Lo que WC no devolvió (borrados, sin permisos, etc.) → placeholder.
+  // En modo force, no creamos placeholder si ya existía localmente (no pisamos
+  // datos buenos con un placeholder vacío).
+  for (const id of toFetch) {
+    if (!returnedIds.has(id)) {
+      if (force) {
+        const exists = await prisma.productMeta.findUnique({
+          where: { wpProductId: id },
+          select: { wpProductId: true },
+        });
+        if (!exists) await syncProduct(id, null);
+      } else {
+        await syncProduct(id, null);
+      }
+    }
   }
 }
 

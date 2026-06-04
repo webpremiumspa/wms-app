@@ -21,6 +21,7 @@ export type SyncParams = {
   after?: string; // YYYY-MM-DD o ISO
   before?: string;
   statuses?: string[];
+  forceProductRefresh?: boolean;
 };
 
 export const syncApi = {

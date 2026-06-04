@@ -14,6 +14,10 @@ const syncSchema = z.object({
   after: z.string().optional(), // ISO 8601 o YYYY-MM-DD
   before: z.string().optional(),
   statuses: z.array(z.string()).optional(),
+  // Si true, refresca TODOS los productos desde WC (no solo los nuevos).
+  // Usar cuando se cambió la meta de bodega en WP y los items locales quedaron
+  // con la bodega vieja cacheada.
+  forceProductRefresh: z.boolean().optional(),
 });
 
 // Normaliza fecha a ISO 8601 que WC acepta.
@@ -65,7 +69,7 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
         if (li.product_id > 0) allProductIds.push(li.product_id);
       }
     }
-    await ensureProducts(allProductIds);
+    await ensureProducts(allProductIds, { force: parsed.data.forceProductRefresh === true });
 
     // Detectar cuáles WC orders ya existían en WMS antes del sync para
     // diferenciar "nuevos" de "actualizados" en la respuesta.
