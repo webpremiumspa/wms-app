@@ -15,6 +15,7 @@ import {
   AlertOctagon,
   BookOpen,
   Stethoscope,
+  Theater,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -54,6 +55,105 @@ const SECTIONS: Section[] = [
         <p>
           Un mismo usuario puede combinar varios roles. Las funciones disponibles se muestran u ocultan según los permisos (capabilities) que el administrador asigne en WordPress.
         </p>
+      </>
+    ),
+  },
+  {
+    id: 'use-case',
+    title: 'Caso de uso · un día completo en el WMS',
+    icon: Theater,
+    body: (
+      <>
+        <p>
+          Esta sección sigue un día típico del WMS con personajes concretos, incluyendo los casos de excepción (pedido sin stock, items B2 faltantes, entrega parcial). Sirve para ver cómo se combinan todas las pantallas en la operación real.
+        </p>
+
+        <h4>Personas y permisos</h4>
+        <ul>
+          <li><strong>Carmen</strong> — Encargada de B1 (<code>wms_pack_b1</code>). Crea secuencias, cierra el flujo B1 y aprueba entregas parciales al hablar con el cliente.</li>
+          <li><strong>José</strong> — Picker B1 (<code>wms_pick_b1</code>). Recolecta y arma bolsas.</li>
+          <li><strong>Patricia</strong> — Pickeadora B2 (<code>wms_pick_b2</code>). Recolecta el granel matinal.</li>
+          <li><strong>Diego</strong> — Operador de carga (<code>wms_load</code>). Clasifica y carga a las camionetas.</li>
+          <li><strong>Mauricio</strong> — Repartidor (<code>wms_deliver</code>). Entrega al cliente.</li>
+          <li><strong>Cristian</strong> — Supervisor (<code>wms_supervise</code>). Monitorea, diagnostica, también puede aprobar entregas parciales.</li>
+        </ul>
+
+        <h4>🌆 Día 1 · 18:00 — Carmen prepara las secuencias</h4>
+        <p>
+          Carmen va a <strong>Secuencias → Generar</strong>, sincroniza 50 pedidos del día desde WC. Modo <em>Por pedido</em>. Click <strong>Generar secuencia (50)</strong> → se crea la Secuencia #12.
+        </p>
+
+        <h4>🌃 Día 1 · 18:30 — José hace picking + packing</h4>
+        <p>
+          José abre la app, va a <strong>Picking → Secuencia #12</strong> y empieza a recorrer pedido por pedido.
+        </p>
+        <p>
+          <strong>Caso problema (pedido #1104520):</strong> falta el producto Z en estantería (sin stock B1). No puede cerrar el pedido. En <em>Acciones del operador</em> toca <strong>"Remover de la secuencia"</strong>, elige motivo <em>"Sin stock B1"</em> y agrega un detalle. El pedido pasa a estado <strong>Bloqueado</strong>; la secuencia sigue con 49 pedidos. Aviso a Carmen.
+        </p>
+
+        <h4>🌅 Día 2 · 7:00 — Patricia hace picking B2 conjunto</h4>
+        <p>
+          Patricia abre <strong>Picking</strong> y ve dos tarjetas B2 pendientes: Sec #12 (14 items) y Sec #11 (8 items). Las marca con los checkboxes y arranca el <strong>Picking conjunto</strong> con los 22 SKUs sumados.
+        </p>
+        <p>
+          <strong>No encuentra dos items:</strong> 1× Cargador USB-C (pedido #1104500) y 1× Cable USB-C (pedido #1104530). Cierra el batch parcial. La Sec #11 cierra completa; la Sec #12 sigue abierta con 2 items pendientes. Avisa a Carmen.
+        </p>
+
+        <h4>🌅 Día 2 · 8:00 — Carmen resuelve los faltantes</h4>
+        <p>Carmen abre <strong>Supervisión</strong> y ve las alertas:</p>
+        <ul>
+          <li>🔴 <em>"1 pedido bloqueado esperando reactivación"</em> → #1104520. Stock llega el miércoles, lo deja bloqueado.</li>
+          <li>🟡 <em>"Secuencia #12: 2 items B2 sin recolectar"</em>.</li>
+        </ul>
+        <p>Llama a los 2 clientes afectados:</p>
+        <ul>
+          <li>
+            <strong>Cliente de #1104500</strong>: acepta entrega parcial. Carmen va a <strong>Empacar pedidos → #1104500</strong>, toca <strong>"Aprobar entrega parcial"</strong> y deja la nota <em>"Cliente confirma por WhatsApp 8:05, completar el lunes."</em> El pedido queda con badge verde <em>"Entrega parcial aprobada"</em>.
+          </li>
+          <li>
+            <strong>Cliente de #1104530</strong>: no contesta. Lo deja sin aprobar — el sistema lo bloqueará automáticamente en clasificación.
+          </li>
+        </ul>
+
+        <h4>🌅 Día 2 · 8:15 — Carmen cierra el flujo B1</h4>
+        <p>
+          En <strong>Secuencia #12 → Cerrar flujo B1</strong>: 49/49 empacados (el <code>expectedBags</code> se actualizó solo cuando se removió #1104520). Confirma cierre B1.
+        </p>
+
+        <h4>🌅 Día 2 · 8:30 — Diego clasifica y carga</h4>
+        <p>Diego va escaneando las 49 bolsas. Casos que ve:</p>
+        <ul>
+          <li><strong>Normal</strong>: pantalla con ruta + parada. Carga al vehículo OK.</li>
+          <li><strong>Con B2 normal</strong> (#1104525): banner amarillo <em>"⚠ Contiene productos pendientes de B2"</em>. Carga OK.</li>
+          <li>
+            <strong>Entrega parcial aprobada</strong> (#1104500): banda verde <em>"✓ Entrega parcial aprobada"</em> con la nota de Carmen + banner amarillo normal. Carga OK.
+          </li>
+          <li>
+            <strong>Bloqueado por B2</strong> (#1104530): <strong>banner rojo grande</strong> <em>"⚠ B2 INCOMPLETO — NO CARGAR. Falta: 1× Cable USB-C"</em>. El botón "Confirmar carga" queda deshabilitado. Diego deja la bolsa en el rincón "no cargar" y avisa.
+          </li>
+        </ul>
+        <p>Carmen vuelve a intentar contacto, sin éxito. La bolsa de #1104530 se queda en el local para salir mañana. Las camionetas salen a las 10am con 48 pedidos.</p>
+
+        <h4>🚚 Día 2 · 10:00 — Mauricio entrega</h4>
+        <ul>
+          <li><strong>Cliente normal</strong>: escanea, entrega.</li>
+          <li><strong>Cliente con B2 normal</strong>: 🔔 móvil suena y vibra; banner naranja gigante con items B2 a sacar del granel del vehículo. Los agrega a la bolsa, entrega.</li>
+          <li><strong>Cliente #1104500 (parcial aprobada)</strong>: además ve la <em>banda verde "Entrega parcial aprobada"</em>. Sin sorpresa para Mauricio — el cliente sabe que falta el Cargador. Entrega lo que tiene.</li>
+        </ul>
+
+        <h4>📊 Día 2 · 19:00 — Cierre del día</h4>
+        <p>Cristian revisa el dashboard:</p>
+        <ul>
+          <li><strong>Estados</strong>: 48 cargados/entregados, 2 bloqueados (en rojo).</li>
+          <li><strong>Plan</strong>: cuando llegue el stock del producto Z, reactivar #1104520 (botón en el pedido) → vuelve a <em>Recibido</em> → entra a la próxima secuencia.</li>
+        </ul>
+        <p>
+          Patricia termina de pickear los items B2 que llegaron en la tarde. Cierra el flujo B2 de la Secuencia #12. La secuencia entera pasa a <strong>Cerrada</strong>.
+        </p>
+
+        <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700 ring-1 ring-slate-200">
+          <strong>Lo importante de este caso:</strong> el WMS no obliga a "entregar bien o no entregar". Hay 3 válvulas para excepciones: <em>remover pedido</em> (lo saca de la operación del día), <em>bloqueo automático en dispatch</em> (no carga lo que falta), y <em>aprobar entrega parcial</em> (deja salir al cliente que aceptó). El sistema te avisa, el operador decide.
+        </div>
       </>
     ),
   },
@@ -179,6 +279,17 @@ const SECTIONS: Section[] = [
           <li>El pedido queda en estado <em>Empacado</em> aunque no se armó bolsa física — el repartidor toma todo desde el cargamento B2 al pasar por el cliente.</li>
         </ul>
 
+        <h4>Acciones del operador (excepciones)</h4>
+        <p>Si al empacar te encontrás con un problema, en la parte inferior de la pantalla del pedido hay dos botones:</p>
+        <ul>
+          <li>
+            <strong className="text-red-700">Remover de la secuencia</strong> — usalo cuando no podés cerrar el pedido (sin stock B1, producto dañado, cliente canceló). Se abre un modal donde elegís el motivo. El pedido pasa a estado <em>Bloqueado</em> y sale de esta secuencia. El resto del flujo continúa sin trabarse.
+          </li>
+          <li>
+            <strong className="text-emerald-700">Aprobar entrega parcial</strong> — solo aparece si el pedido tiene B2 pendiente. Usalo cuando hablaste con el cliente y aceptó recibir el pedido aunque falte alguno de los items B2. Dejá una nota explicando el acuerdo. El pedido se "desbloquea" automáticamente en clasificación/carga.
+          </li>
+        </ul>
+
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
           <strong>⚠ Marca de Bodega 2 en el albarán:</strong> si el pedido tiene productos pendientes de B2, el PDF muestra una banda amarilla GRANDE de "BODEGA 2 PENDIENTE" + lista de items a sacar del granel. Es visible al instante al manipular la bolsa.
         </div>
@@ -265,6 +376,22 @@ const SECTIONS: Section[] = [
         <p className="text-slate-600">
           La distinción <em>clasificada</em> vs <em>cargada</em> permite detectar bolsas que quedaron en el piso después de la clasificación.
         </p>
+
+        <h4>Bloqueo automático por B2 incompleto</h4>
+        <p>
+          Si al escanear ves un <strong className="text-red-700">banner rojo grande "⚠ B2 INCOMPLETO — NO CARGAR"</strong> con la lista de items faltantes, significa que la pickeadora B2 no encontró stock para ese pedido y nadie autorizó la entrega parcial. El botón <em>"Confirmar carga al vehículo"</em> queda deshabilitado.
+        </p>
+        <ul>
+          <li>Dejá la bolsa en un rincón "no cargar" hasta que se resuelva.</li>
+          <li>Avisá al encargado de B1 para que llame al cliente o gestione el stock.</li>
+          <li>Si el cliente acepta entrega parcial y tenés el rol <code>wms_pack_b1</code> o <code>wms_supervise</code>, podés autorizarla desde este mismo banner (botón verde <em>"Autorizar entrega parcial"</em>) y cargar al vehículo.</li>
+        </ul>
+
+        <h4>Indicadores especiales en la pantalla del pedido</h4>
+        <ul>
+          <li><strong>Banda verde "✓ Entrega parcial aprobada"</strong>: el pedido se va a cargar aunque le falten items B2 — el cliente ya lo aceptó. Mauricio verá la nota al escanear en la entrega.</li>
+          <li><strong>Banner amarillo "Contiene B2"</strong>: el pedido tiene items B2 completos. Recordatorio para no olvidarse del cargamento a granel.</li>
+        </ul>
       </>
     ),
   },
@@ -361,6 +488,7 @@ const SECTIONS: Section[] = [
           <li><strong>Clasificado</strong> (<code>classified</code>) — alguien escaneó el QR en la mañana, el sistema le dijo qué ruta y la bolsa se llevó al área de su camioneta.</li>
           <li><strong>Cargado</strong> (<code>loaded</code>) — la bolsa está físicamente arriba del vehículo, lista para salir a reparto.</li>
           <li><strong>Entregado</strong> (<code>delivered</code>) — el sistema externo de entregas confirmó que llegó al cliente. Estado final.</li>
+          <li><strong>Bloqueado</strong> (<code>blocked</code>) — el pedido fue removido manualmente de una secuencia (sin stock, cancelación, etc.). Queda esperando a que un encargado lo reactive (botón <em>"Reactivar pedido"</em>) para que entre a una secuencia nueva.</li>
         </ul>
 
         <h4>Términos del sistema</h4>
@@ -382,6 +510,10 @@ const SECTIONS: Section[] = [
           <li><strong>Parada de carga</strong> — posición dentro de la ruta (1, 2, ...). Ayuda al orden de carga del vehículo.</li>
           <li><strong>Refrescar metadata de productos</strong> — checkbox en el sync que fuerza a re-leer todos los productos desde WC (más lento). Usar cuando cambiaste la bodega de un producto en WC.</li>
           <li><strong>Pedido bloqueado / saltado</strong> — el sync no toca pedidos que ya estén en estado Recolectado, Empacado, Clasificado, Cargado o Entregado, para no destruir el progreso. Para modificarlos hay que eliminar la secuencia primero.</li>
+          <li><strong>Remover pedido de secuencia</strong> — botón rojo en el detalle del pedido / packing. Saca el pedido individual de la secuencia (sin eliminar la secuencia entera). El pedido pasa a estado <em>Bloqueado</em>. Requiere motivo (sin stock B1, sin stock B2, dañado, cliente canceló, otro).</li>
+          <li><strong>Entrega parcial aprobada</strong> — cuando un pedido tiene items B2 que no se pudieron pickear y el cliente acepta recibirlo igual, un operador con <code>wms_pack_b1</code> o <code>wms_supervise</code> puede autorizarlo. Se "desbloquea" para clasificación y carga; el albarán y la pantalla de entrega muestran la nota de aprobación. Reversible (botón <em>"Revocar"</em>).</li>
+          <li><strong>Bloqueo automático en dispatch</strong> — si al escanear un pedido en Clasificación tiene items B2 sin pickear y NO está aprobada la entrega parcial, el sistema no permite clasificar ni cargar. Banner rojo grande con el listado de faltantes.</li>
+          <li><strong>Reactivar pedido bloqueado</strong> — el supervisor (o cualquiera con <code>wms_pack_b1</code>) puede pasar un pedido de <em>Bloqueado</em> a <em>Recibido</em> cuando se resuelve el problema (llegó stock, etc.). Vuelve a estar disponible para una nueva secuencia.</li>
         </ul>
 
         <h4>"Eliminar la secuencia" — qué se pierde</h4>
