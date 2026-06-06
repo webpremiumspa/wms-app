@@ -7,6 +7,12 @@ import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { renderAlbaranPdf } from '../services/pdf.js';
 import { wcGetProduct, wcGetOrder, getMeta } from '../services/woocommerce.js';
+import {
+  approvePartialDelivery,
+  revokePartialDelivery,
+  unblockOrder,
+  getOrderLoadability,
+} from '../services/order-actions.js';
 import { config } from '../config.js';
 
 const router = Router();
@@ -99,6 +105,64 @@ const packSchema = z.object({
   // que empacar físicamente desde B1, pero el pedido igual se cierra para
   // imprimir el albarán que lleva los items a sacar del granel).
   itemIds: z.array(z.number().int().positive()),
+});
+
+// Loadability check para un pedido: sirve para la UI de Dispatch (mostrar
+// banner rojo antes de tocar el botón Cargar).
+router.get('/:id/loadability', requireCap(WMS_CAPS.LOAD, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await getOrderLoadability(id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+const partialDeliverySchema = z.object({
+  note: z.string().max(500).optional(),
+});
+
+// Aprueba entrega parcial: el cliente acepta recibir aunque falten items B2.
+router.post('/:id/partial-delivery', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const parsed = partialDeliverySchema.safeParse(req.body ?? {});
+    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
+    const id = Number(req.params.id);
+    const result = await approvePartialDelivery({
+      orderId: id,
+      note: parsed.data.note,
+      actorId: req.user.wpUserId,
+    });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/:id/partial-delivery', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await revokePartialDelivery({
+      orderId: id,
+      actorId: req.user.wpUserId,
+    });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Desbloquea un pedido en estado `blocked` → vuelve a `received` para entrar
+// a una nueva secuencia.
+router.post('/:id/unblock', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await unblockOrder({ orderId: id, actorId: req.user.wpUserId });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Packing: el operador confirma los items B1 introducidos en la bolsa.

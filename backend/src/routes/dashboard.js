@@ -107,6 +107,32 @@ router.get('/summary', async (_req, res, next) => {
       });
     }
 
+    // Pedidos bloqueados (sacados de secuencias por faltante/cancelación).
+    // El supervisor debe decidir si reactivarlos cuando llegue stock.
+    const blockedCount = byStatus.blocked || 0;
+    if (blockedCount > 0) {
+      alerts.push({
+        severity: blockedCount > 5 ? 'warning' : 'info',
+        type: 'orders_blocked',
+        message: `${blockedCount} pedido${blockedCount === 1 ? '' : 's'} bloqueado${blockedCount === 1 ? '' : 's'} esperando reactivación.`,
+      });
+    }
+
+    // Pedidos con entrega parcial aprobada (informativo).
+    const partialApprovedCount = await prisma.order.count({
+      where: {
+        allowPartialDelivery: true,
+        status: { in: ['packed', 'classified', 'loaded'] },
+      },
+    });
+    if (partialApprovedCount > 0) {
+      alerts.push({
+        severity: 'info',
+        type: 'partial_delivery',
+        message: `${partialApprovedCount} pedido${partialApprovedCount === 1 ? '' : 's'} con entrega parcial aprobada.`,
+      });
+    }
+
     // ─── Actividad reciente (últimos 15 eventos) ────────────────────────────
     const recentEvents = await prisma.event.findMany({
       orderBy: { createdAt: 'desc' },

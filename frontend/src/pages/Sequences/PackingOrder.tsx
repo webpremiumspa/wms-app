@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, Image as ImageIcon, Printer, AlertOctagon } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, Printer, AlertOctagon, UserX, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
-import { ordersApi } from '@/lib/sequences';
+import { ordersApi, sequencesApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ProgressBar } from '@/components/ProgressBar';
+import { RemoveOrderModal } from '@/components/RemoveOrderModal';
+import { useAuth } from '@/hooks/useAuth';
+import { CAPS, hasCap } from '@/lib/auth';
 
 export function PackingOrder() {
   const { id, orderId } = useParams();
@@ -14,6 +17,8 @@ export function PackingOrder() {
   const ordId = Number(orderId);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canManage = hasCap(user, CAPS.PACK_B1) || hasCap(user, CAPS.SUPERVISE);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', ordId],
@@ -21,6 +26,38 @@ export function PackingOrder() {
   });
 
   const [checked, setChecked] = useState<Set<number>>(new Set());
+  const [removeOpen, setRemoveOpen] = useState(false);
+  const [removeError, setRemoveError] = useState<string | null>(null);
+  const [partialNote, setPartialNote] = useState('');
+  const [partialError, setPartialError] = useState<string | null>(null);
+  const [showPartialForm, setShowPartialForm] = useState(false);
+
+  const removeOrder = useMutation({
+    mutationFn: ({ reasonCode, reasonText }: { reasonCode: string; reasonText: string }) =>
+      sequencesApi.removeOrder(seqId, ordId, reasonCode, reasonText),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
+      queryClient.invalidateQueries({ queryKey: ['sequences'] });
+      navigate(`/sequences/${seqId}/packing`);
+    },
+    onError: (err: any) => setRemoveError(err.response?.data?.message || 'No se pudo remover el pedido'),
+  });
+
+  const approvePartial = useMutation({
+    mutationFn: (note: string) => ordersApi.approvePartialDelivery(ordId, note),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['order', ordId] });
+      setShowPartialForm(false);
+      setPartialNote('');
+      setPartialError(null);
+    },
+    onError: (err: any) => setPartialError(err.response?.data?.message || 'No se pudo aprobar la entrega parcial'),
+  });
+
+  const revokePartial = useMutation({
+    mutationFn: () => ordersApi.revokePartialDelivery(ordId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['order', ordId] }),
+  });
 
   useEffect(() => {
     if (!order) return;
@@ -74,12 +111,36 @@ export function PackingOrder() {
       <div className="card space-y-2 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-lg font-semibold">Pedido #{order.number}</span>
+          {order.route && <Badge variant="blue">{order.route}</Badge>}
+          {order.stopPosition != null && <Badge variant="gray">Parada {order.stopPosition}</Badge>}
           {order.hasB2Pending && <Badge variant="amber">Bodega 2 pendiente</Badge>}
+          {order.allowPartialDelivery && <Badge variant="green">Entrega parcial aprobada</Badge>}
           {isPacked && <Badge variant="green">Empacado</Badge>}
         </div>
         <div className="text-sm text-slate-600">{order.customerName || '—'}</div>
         {order.customerAddress && <div className="text-xs text-slate-500">{order.customerAddress}</div>}
       </div>
+
+      {order.allowPartialDelivery && (
+        <div className="card flex items-start gap-3 bg-emerald-50 p-3 ring-1 ring-emerald-200">
+          <CheckCircle2 className="shrink-0 text-emerald-700" size={18} />
+          <div className="flex-1 text-sm text-emerald-900">
+            <div className="font-semibold">Entrega parcial aprobada</div>
+            {order.partialDeliveryNote && <div className="text-xs">{order.partialDeliveryNote}</div>}
+            <div className="text-xs">El pedido se puede cargar al vehículo aunque falten items B2 al momento de la entrega.</div>
+          </div>
+          {canManage && !isPacked && (
+            <button
+              type="button"
+              onClick={() => revokePartial.mutate()}
+              disabled={revokePartial.isPending}
+              className="shrink-0 text-xs text-emerald-700 underline"
+            >
+              Revocar
+            </button>
+          )}
+        </div>
+      )}
 
       {order.hasB2Pending && (
         <div className="card flex items-start gap-3 bg-amber-50 p-4 ring-1 ring-amber-200">
@@ -181,6 +242,78 @@ export function PackingOrder() {
           Reimprimir albarán
         </button>
       )}
+
+      {canManage && !isPacked && (
+        <div className="card space-y-3 border-dashed bg-slate-50 p-3">
+          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Acciones del operador</div>
+          <button
+            type="button"
+            onClick={() => { setRemoveError(null); setRemoveOpen(true); }}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 ring-1 ring-red-200 hover:bg-red-100"
+          >
+            <UserX size={14} />
+            Remover de la secuencia (sin stock / dañado / cancelado)
+          </button>
+
+          {order.hasB2Pending && !order.allowPartialDelivery && (
+            <>
+              {!showPartialForm ? (
+                <button
+                  type="button"
+                  onClick={() => { setPartialError(null); setShowPartialForm(true); }}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-100"
+                >
+                  <CheckCircle2 size={14} />
+                  Aprobar entrega parcial (cliente acepta sin items B2)
+                </button>
+              ) : (
+                <div className="space-y-2 rounded-lg bg-white p-3 ring-1 ring-emerald-200">
+                  <div className="text-xs font-medium text-slate-700">
+                    Confirmá la nota (queda registrada en el log)
+                  </div>
+                  <textarea
+                    value={partialNote}
+                    onChange={(e) => setPartialNote(e.target.value)}
+                    placeholder="Ej: Cliente aceptó por WhatsApp 14:30. Faltante se entrega el lunes."
+                    rows={2}
+                    className="input text-sm"
+                    maxLength={500}
+                  />
+                  {partialError && (
+                    <div className="rounded bg-red-50 px-2 py-1 text-xs text-red-700">{partialError}</div>
+                  )}
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setShowPartialForm(false); setPartialNote(''); }}
+                      className="text-xs text-slate-600 hover:underline"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => approvePartial.mutate(partialNote)}
+                      disabled={approvePartial.isPending}
+                      className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {approvePartial.isPending ? 'Aprobando…' : 'Confirmar aprobación'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      <RemoveOrderModal
+        open={removeOpen}
+        orderNumber={order.number}
+        onClose={() => { setRemoveOpen(false); setRemoveError(null); }}
+        onConfirm={(reasonCode, reasonText) => removeOrder.mutate({ reasonCode, reasonText })}
+        isPending={removeOrder.isPending}
+        error={removeError}
+      />
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { parseQrPayload } from '../services/qr.js';
+import { getOrderLoadability } from '../services/order-actions.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -13,6 +14,10 @@ const scanSchema = z.object({ qr: z.string().min(1) });
 
 // Escaneo de QR en la mañana: decodifica, busca el pedido en BD local,
 // devuelve ruta + posición + estado para que el operador clasifique/cargue.
+//
+// Bloqueo B2: si el pedido tiene items B2 sin pickear y NO está aprobado para
+// entrega parcial, NO se marca como clasificado. La respuesta incluye
+// `loadable: false` + `missingB2Items` para que la UI muestre el banner rojo.
 router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const parsed = scanSchema.safeParse(req.body);
@@ -25,9 +30,12 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
     });
     if (!order) throw new HttpError(404, `Pedido ${wpOrderId} no encontrado en el WMS`);
 
-    // Marca implícita de "clasificado" al escanear por primera vez en el ciclo
-    // de carga. Si ya estaba clasificado o más adelante, no retrocede.
-    if (order.status === 'packed') {
+    const loadability = await getOrderLoadability(order.id);
+
+    // Solo marcamos clasificado si está empacado Y es loadable (o tiene entrega
+    // parcial aprobada). Si está bloqueado por B2 incompleto, queda en `packed`.
+    let nextStatus = order.status;
+    if (order.status === 'packed' && loadability.loadable) {
       await prisma.order.update({
         where: { id: order.id },
         data: { status: 'classified', classifiedAt: new Date() },
@@ -35,6 +43,7 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
       await prisma.event.create({
         data: { type: 'dispatch.classified', actorId: req.user.wpUserId, orderId: order.id },
       });
+      nextStatus = 'classified';
     }
 
     res.json({
@@ -42,13 +51,18 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
         id: order.id,
         wpOrderId: order.wpOrderId,
         number: order.number,
-        status: order.status === 'packed' ? 'classified' : order.status,
+        status: nextStatus,
         route: order.route,
         stopPosition: order.stopPosition,
         customerName: order.customerName,
         customerAddress: order.customerAddress,
         hasB2Pending: order.hasB2Pending,
         loadedAt: order.loadedAt,
+        loadable: loadability.loadable,
+        partialApproved: loadability.partialApproved,
+        partialDeliveryNote: order.partialDeliveryNote,
+        missingB2Items: loadability.missingB2Items,
+        blockReason: loadability.reason || null,
       },
     });
   } catch (err) {
@@ -56,8 +70,8 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
   }
 });
 
-// Confirma carga al vehículo (distinto a "clasificada" — la bolsa ya está
-// físicamente arriba del camión). Optimización #10 del PDF.
+// Confirma carga al vehículo. Bloqueo B2 también aplica acá — sin entrega
+// parcial aprobada y con items B2 faltantes, devuelve 409 con detalles.
 router.post('/:orderId/loaded', requireCap(WMS_CAPS.LOAD), async (req, res, next) => {
   try {
     const id = Number(req.params.orderId);
@@ -66,6 +80,14 @@ router.post('/:orderId/loaded', requireCap(WMS_CAPS.LOAD), async (req, res, next
     if (!order.route) throw new HttpError(409, 'Order has no route assigned yet');
     if (order.status === 'loaded' || order.status === 'delivered') {
       return res.json({ ok: true, alreadyLoaded: true });
+    }
+
+    const loadability = await getOrderLoadability(id);
+    if (!loadability.loadable) {
+      throw new HttpError(409, 'Order has B2 items missing and partial delivery is not approved', {
+        missingB2Items: loadability.missingB2Items,
+        blockReason: loadability.reason,
+      });
     }
 
     await prisma.$transaction([

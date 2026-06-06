@@ -7,7 +7,8 @@ export type OrderStatus =
   | 'packed'
   | 'classified'
   | 'loaded'
-  | 'delivered';
+  | 'delivered'
+  | 'blocked';
 
 export type SequenceStatus = 'open' | 'closed';
 
@@ -106,6 +107,8 @@ export type OrderDetail = {
   customerName: string | null;
   customerAddress: string | null;
   hasB2Pending: boolean;
+  allowPartialDelivery: boolean;
+  partialDeliveryNote: string | null;
   packedAt: string | null;
   packedBy: { displayName: string; username: string } | null;
   items: OrderItem[];

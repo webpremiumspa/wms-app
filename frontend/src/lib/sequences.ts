@@ -51,6 +51,31 @@ export const sequencesApi = {
 
   delete: async (id: number): Promise<{ ok: boolean; ordersReverted: number }> =>
     (await api.delete(`/sequences/${id}`)).data,
+
+  removeOrder: async (
+    sequenceId: number,
+    orderId: number,
+    reasonCode: string,
+    reasonText?: string,
+  ): Promise<{ ok: boolean }> =>
+    (await api.delete(`/sequences/${sequenceId}/orders/${orderId}`, {
+      data: { reasonCode, reasonText },
+    })).data,
+};
+
+export type MissingB2Item = {
+  productId: number;
+  sku: string | null;
+  name: string | null;
+  qty: number;
+};
+
+export type OrderLoadability = {
+  loadable: boolean;
+  partialApproved: boolean;
+  partialDeliveryNote?: string | null;
+  missingB2Items: MissingB2Item[];
+  reason?: string;
 };
 
 export const ordersApi = {
@@ -66,6 +91,14 @@ export const ordersApi = {
   pack: async (id: number, itemIds: number[]): Promise<void> => {
     await api.post(`/orders/${id}/pack`, { itemIds });
   },
+  loadability: async (id: number): Promise<OrderLoadability> =>
+    (await api.get(`/orders/${id}/loadability`)).data,
+  approvePartialDelivery: async (id: number, note?: string): Promise<{ ok: boolean }> =>
+    (await api.post(`/orders/${id}/partial-delivery`, { note })).data,
+  revokePartialDelivery: async (id: number): Promise<{ ok: boolean }> =>
+    (await api.delete(`/orders/${id}/partial-delivery`)).data,
+  unblock: async (id: number): Promise<{ ok: boolean }> =>
+    (await api.post(`/orders/${id}/unblock`)).data,
   // Descarga el PDF con el header Authorization (que window.open no enviaría)
   // y lo abre en una nueva pestaña como blob.
   openAlbaran: async (id: number): Promise<void> => {

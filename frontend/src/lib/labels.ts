@@ -12,6 +12,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   classified: 'Clasificado',
   loaded: 'Cargado',
   delivered: 'Entregado',
+  blocked: 'Bloqueado',
 };
 
 // Plural (para KPIs / contadores en dashboards).
@@ -23,6 +24,16 @@ export const ORDER_STATUS_LABELS_PLURAL: Record<OrderStatus, string> = {
   classified: 'Clasificados',
   loaded: 'Cargados',
   delivered: 'Entregados',
+  blocked: 'Bloqueados',
+};
+
+// Motivos válidos para remover un pedido de la secuencia (auditoría).
+export const REMOVE_REASON_LABELS: Record<string, string> = {
+  sin_stock_b1: 'Sin stock B1',
+  sin_stock_b2: 'Sin stock B2',
+  producto_danado: 'Producto dañado',
+  cliente_cancelo: 'Cliente canceló',
+  otro: 'Otro motivo',
 };
 
 export const SEQUENCE_STATUS_LABELS: Record<SequenceStatus, string> = {
@@ -39,7 +50,11 @@ export const EVENT_LABELS: Record<string, string> = {
   'sequence.b2_closed': 'cerró flujo B2',
   'sequence.closed': 'cerró secuencia',
   'sequence.deleted': 'eliminó secuencia',
+  'sequence.order_removed': 'removió pedido de secuencia',
   'order.packed': 'empacó pedido',
+  'order.unblocked': 'reactivó pedido',
+  'order.partial_delivery_approved': 'aprobó entrega parcial',
+  'order.partial_delivery_revoked': 'revocó entrega parcial',
   'picking_b2.item_picked': 'recolectó item B2',
   'picking_b2.item_unpicked': 'deshizo recolección B2',
   'dispatch.classified': 'clasificó pedido',

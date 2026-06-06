@@ -154,6 +154,8 @@ exports.Prisma.OrderScalarFieldEnum = {
   customerAddress: 'customerAddress',
   hasB2Pending: 'hasB2Pending',
   bagsExpected: 'bagsExpected',
+  allowPartialDelivery: 'allowPartialDelivery',
+  partialDeliveryNote: 'partialDeliveryNote',
   packedById: 'packedById',
   packedAt: 'packedAt',
   classifiedAt: 'classifiedAt',
@@ -236,7 +238,8 @@ exports.OrderStatus = exports.$Enums.OrderStatus = {
   packed: 'packed',
   classified: 'classified',
   loaded: 'loaded',
-  delivered: 'delivered'
+  delivered: 'delivered',
+  blocked: 'blocked'
 };
 
 exports.SequenceStatus = exports.$Enums.SequenceStatus = {

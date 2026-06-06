@@ -118,6 +118,20 @@ export async function renderAlbaranPdf(order, stream) {
     cursorY += 80;
   }
 
+  // Banda verde "Entrega parcial aprobada" — informa al repartidor que algunos
+  // items B2 pueden faltar y el cliente ya lo aceptó.
+  if (order.allowPartialDelivery) {
+    doc.save();
+    doc.rect(40, cursorY, 515, 50).fill('#d1fae5');
+    doc.fillColor('#065f46').font('Helvetica-Bold').fontSize(14)
+      .text('✓ ENTREGA PARCIAL APROBADA', 40, cursorY + 10, { width: 515, align: 'center' });
+    const note = order.partialDeliveryNote || 'Cliente acepta recibir aunque falten items B2 al momento de la entrega.';
+    doc.fillColor('#065f46').font('Helvetica').fontSize(9)
+      .text(note, 50, cursorY + 30, { width: 495, align: 'center' });
+    doc.restore();
+    cursorY += 60;
+  }
+
   // Tabla de items B1 (los que van EN la bolsa)
   doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Contenido de la bolsa', 40, cursorY);
   cursorY += 20;

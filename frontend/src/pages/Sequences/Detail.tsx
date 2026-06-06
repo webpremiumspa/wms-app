@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, PackageOpen } from 'lucide-react';
+import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, PackageOpen, UserX } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
 import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 
@@ -63,7 +64,10 @@ export function SequenceDetail() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const canPickB2 = hasCap(user, CAPS.PICK_B2);
+  const canManage = hasCap(user, CAPS.PACK_B1) || hasCap(user, CAPS.SUPERVISE);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [removeTarget, setRemoveTarget] = useState<{ id: number; number: string } | null>(null);
+  const [removeError, setRemoveError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['sequence', seqId],
@@ -76,6 +80,21 @@ export function SequenceDetail() {
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
       navigate('/sequences');
+    },
+  });
+
+  const removeOrder = useMutation({
+    mutationFn: ({ orderId, reasonCode, reasonText }: { orderId: number; reasonCode: string; reasonText: string }) =>
+      sequencesApi.removeOrder(seqId, orderId, reasonCode, reasonText),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sequence', seqId] });
+      queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
+      queryClient.invalidateQueries({ queryKey: ['sequences'] });
+      setRemoveTarget(null);
+      setRemoveError(null);
+    },
+    onError: (err: any) => {
+      setRemoveError(err.response?.data?.message || 'No se pudo remover el pedido');
     },
   });
 
@@ -246,6 +265,7 @@ export function SequenceDetail() {
         </h3>
         {seq.orders.map(({ order }) => {
           const isOpen = expanded.has(order.id);
+          const tooLateToRemove = ['classified', 'loaded', 'delivered'].includes(order.status);
           return (
             <div key={order.id} className="card overflow-hidden">
               <button
@@ -279,12 +299,39 @@ export function SequenceDetail() {
                 </div>
               </button>
               <div className={clsx(isOpen ? 'block' : 'hidden', 'border-t border-slate-200')}>
-                {isOpen && <OrderItems orderId={order.id} />}
+                {isOpen && (
+                  <>
+                    <OrderItems orderId={order.id} />
+                    {canManage && !tooLateToRemove && (
+                      <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => { setRemoveError(null); setRemoveTarget({ id: order.id, number: order.number }); }}
+                          className="flex items-center gap-2 text-sm font-medium text-red-700 hover:underline"
+                        >
+                          <UserX size={14} />
+                          Remover de la secuencia
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           );
         })}
       </div>
+
+      <RemoveOrderModal
+        open={removeTarget !== null}
+        orderNumber={removeTarget?.number || ''}
+        onClose={() => { setRemoveTarget(null); setRemoveError(null); }}
+        onConfirm={(reasonCode, reasonText) => {
+          if (removeTarget) removeOrder.mutate({ orderId: removeTarget.id, reasonCode, reasonText });
+        }}
+        isPending={removeOrder.isPending}
+        error={removeError}
+      />
     </div>
   );
 }

@@ -68,7 +68,8 @@ export const OrderStatus: {
   packed: 'packed',
   classified: 'classified',
   loaded: 'loaded',
-  delivered: 'delivered'
+  delivered: 'delivered',
+  blocked: 'blocked'
 };
 
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
@@ -3544,6 +3545,8 @@ export namespace Prisma {
     customerAddress: string | null
     hasB2Pending: boolean | null
     bagsExpected: number | null
+    allowPartialDelivery: boolean | null
+    partialDeliveryNote: string | null
     packedById: number | null
     packedAt: Date | null
     classifiedAt: Date | null
@@ -3564,6 +3567,8 @@ export namespace Prisma {
     customerAddress: string | null
     hasB2Pending: boolean | null
     bagsExpected: number | null
+    allowPartialDelivery: boolean | null
+    partialDeliveryNote: string | null
     packedById: number | null
     packedAt: Date | null
     classifiedAt: Date | null
@@ -3584,6 +3589,8 @@ export namespace Prisma {
     customerAddress: number
     hasB2Pending: number
     bagsExpected: number
+    allowPartialDelivery: number
+    partialDeliveryNote: number
     packedById: number
     packedAt: number
     classifiedAt: number
@@ -3622,6 +3629,8 @@ export namespace Prisma {
     customerAddress?: true
     hasB2Pending?: true
     bagsExpected?: true
+    allowPartialDelivery?: true
+    partialDeliveryNote?: true
     packedById?: true
     packedAt?: true
     classifiedAt?: true
@@ -3642,6 +3651,8 @@ export namespace Prisma {
     customerAddress?: true
     hasB2Pending?: true
     bagsExpected?: true
+    allowPartialDelivery?: true
+    partialDeliveryNote?: true
     packedById?: true
     packedAt?: true
     classifiedAt?: true
@@ -3662,6 +3673,8 @@ export namespace Prisma {
     customerAddress?: true
     hasB2Pending?: true
     bagsExpected?: true
+    allowPartialDelivery?: true
+    partialDeliveryNote?: true
     packedById?: true
     packedAt?: true
     classifiedAt?: true
@@ -3769,6 +3782,8 @@ export namespace Prisma {
     customerAddress: string | null
     hasB2Pending: boolean
     bagsExpected: number
+    allowPartialDelivery: boolean
+    partialDeliveryNote: string | null
     packedById: number | null
     packedAt: Date | null
     classifiedAt: Date | null
@@ -3808,6 +3823,8 @@ export namespace Prisma {
     customerAddress?: boolean
     hasB2Pending?: boolean
     bagsExpected?: boolean
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: boolean
     packedById?: boolean
     packedAt?: boolean
     classifiedAt?: boolean
@@ -3834,6 +3851,8 @@ export namespace Prisma {
     customerAddress?: boolean
     hasB2Pending?: boolean
     bagsExpected?: boolean
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: boolean
     packedById?: boolean
     packedAt?: boolean
     classifiedAt?: boolean
@@ -3870,6 +3889,8 @@ export namespace Prisma {
       customerAddress: string | null
       hasB2Pending: boolean
       bagsExpected: number
+      allowPartialDelivery: boolean
+      partialDeliveryNote: string | null
       packedById: number | null
       packedAt: Date | null
       classifiedAt: Date | null
@@ -4260,6 +4281,8 @@ export namespace Prisma {
     readonly customerAddress: FieldRef<"Order", 'String'>
     readonly hasB2Pending: FieldRef<"Order", 'Boolean'>
     readonly bagsExpected: FieldRef<"Order", 'Int'>
+    readonly allowPartialDelivery: FieldRef<"Order", 'Boolean'>
+    readonly partialDeliveryNote: FieldRef<"Order", 'String'>
     readonly packedById: FieldRef<"Order", 'Int'>
     readonly packedAt: FieldRef<"Order", 'DateTime'>
     readonly classifiedAt: FieldRef<"Order", 'DateTime'>
@@ -8514,6 +8537,8 @@ export namespace Prisma {
     customerAddress: 'customerAddress',
     hasB2Pending: 'hasB2Pending',
     bagsExpected: 'bagsExpected',
+    allowPartialDelivery: 'allowPartialDelivery',
+    partialDeliveryNote: 'partialDeliveryNote',
     packedById: 'packedById',
     packedAt: 'packedAt',
     classifiedAt: 'classifiedAt',
@@ -8845,6 +8870,8 @@ export namespace Prisma {
     customerAddress?: StringNullableFilter<"Order"> | string | null
     hasB2Pending?: BoolFilter<"Order"> | boolean
     bagsExpected?: IntFilter<"Order"> | number
+    allowPartialDelivery?: BoolFilter<"Order"> | boolean
+    partialDeliveryNote?: StringNullableFilter<"Order"> | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -8869,6 +8896,8 @@ export namespace Prisma {
     customerAddress?: SortOrderInput | SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
+    allowPartialDelivery?: SortOrder
+    partialDeliveryNote?: SortOrderInput | SortOrder
     packedById?: SortOrderInput | SortOrder
     packedAt?: SortOrderInput | SortOrder
     classifiedAt?: SortOrderInput | SortOrder
@@ -8896,6 +8925,8 @@ export namespace Prisma {
     customerAddress?: StringNullableFilter<"Order"> | string | null
     hasB2Pending?: BoolFilter<"Order"> | boolean
     bagsExpected?: IntFilter<"Order"> | number
+    allowPartialDelivery?: BoolFilter<"Order"> | boolean
+    partialDeliveryNote?: StringNullableFilter<"Order"> | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -8920,6 +8951,8 @@ export namespace Prisma {
     customerAddress?: SortOrderInput | SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
+    allowPartialDelivery?: SortOrder
+    partialDeliveryNote?: SortOrderInput | SortOrder
     packedById?: SortOrderInput | SortOrder
     packedAt?: SortOrderInput | SortOrder
     classifiedAt?: SortOrderInput | SortOrder
@@ -8948,6 +8981,8 @@ export namespace Prisma {
     customerAddress?: StringNullableWithAggregatesFilter<"Order"> | string | null
     hasB2Pending?: BoolWithAggregatesFilter<"Order"> | boolean
     bagsExpected?: IntWithAggregatesFilter<"Order"> | number
+    allowPartialDelivery?: BoolWithAggregatesFilter<"Order"> | boolean
+    partialDeliveryNote?: StringNullableWithAggregatesFilter<"Order"> | string | null
     packedById?: IntNullableWithAggregatesFilter<"Order"> | number | null
     packedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
@@ -9396,6 +9431,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -9419,6 +9456,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -9441,6 +9480,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9464,6 +9505,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9487,6 +9530,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -9506,6 +9551,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9525,6 +9572,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10164,6 +10213,8 @@ export namespace Prisma {
     customerAddress?: SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
+    allowPartialDelivery?: SortOrder
+    partialDeliveryNote?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
     classifiedAt?: SortOrder
@@ -10192,6 +10243,8 @@ export namespace Prisma {
     customerAddress?: SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
+    allowPartialDelivery?: SortOrder
+    partialDeliveryNote?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
     classifiedAt?: SortOrder
@@ -10212,6 +10265,8 @@ export namespace Prisma {
     customerAddress?: SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
+    allowPartialDelivery?: SortOrder
+    partialDeliveryNote?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
     classifiedAt?: SortOrder
@@ -11389,6 +11444,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -11411,6 +11468,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -11519,6 +11578,8 @@ export namespace Prisma {
     customerAddress?: StringNullableFilter<"Order"> | string | null
     hasB2Pending?: BoolFilter<"Order"> | boolean
     bagsExpected?: IntFilter<"Order"> | number
+    allowPartialDelivery?: BoolFilter<"Order"> | boolean
+    partialDeliveryNote?: StringNullableFilter<"Order"> | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -11820,6 +11881,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -11842,6 +11905,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -11902,6 +11967,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11924,6 +11991,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12110,6 +12179,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -12132,6 +12203,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -12205,6 +12278,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12227,6 +12302,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12281,6 +12358,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -12303,6 +12382,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -12379,6 +12460,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12401,6 +12484,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12435,6 +12520,8 @@ export namespace Prisma {
     customerAddress?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -12498,6 +12585,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12520,6 +12609,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12542,6 +12633,8 @@ export namespace Prisma {
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null

@@ -12,6 +12,7 @@ import {
   getPendingPacking,
   closeSequenceB1,
 } from '../services/sequences.js';
+import { removeOrderFromSequence, REMOVE_REASONS } from '../services/order-actions.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -242,6 +243,30 @@ router.post('/:id/close-b1', requireCap(WMS_CAPS.PACK_B1), async (req, res, next
       actualBags: parsed.data.actualBags,
     });
     res.json({ sequence: seq });
+  } catch (err) {
+    next(err);
+  }
+});
+
+const removeOrderSchema = z.object({
+  reasonCode: z.enum(REMOVE_REASONS),
+  reasonText: z.string().max(500).optional(),
+});
+
+// Remueve un pedido individual de la secuencia. El pedido pasa a estado
+// 'blocked' para destacarlo del resto. Requiere motivo (auditoría).
+router.delete('/:sequenceId/orders/:orderId', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const parsed = removeOrderSchema.safeParse(req.body ?? {});
+    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
+    const result = await removeOrderFromSequence({
+      sequenceId: Number(req.params.sequenceId),
+      orderId: Number(req.params.orderId),
+      reasonCode: parsed.data.reasonCode,
+      reasonText: parsed.data.reasonText,
+      actorId: req.user.wpUserId,
+    });
+    res.json(result);
   } catch (err) {
     next(err);
   }

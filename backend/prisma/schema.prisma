@@ -58,6 +58,12 @@ model Order {
   customerAddress String?  @map("customer_address") @db.VarChar(500)
   hasB2Pending    Boolean  @default(false) @map("has_b2_pending")
   bagsExpected    Int      @default(1) @map("bags_expected")
+  // Entrega parcial aprobada: si el cliente acepta recibir el pedido aunque
+  // falten items B2 (sin stock), un operador con cap pack_b1 puede autorizar.
+  // Cuando es true, el chequeo de bloqueo en dispatch se omite y el albarán
+  // muestra qué items NO van en esta entrega.
+  allowPartialDelivery Boolean @default(false) @map("allow_partial_delivery")
+  partialDeliveryNote  String? @map("partial_delivery_note") @db.VarChar(500)
   packedById      Int?     @map("packed_by_id")
   packedAt        DateTime? @map("packed_at")
   classifiedAt    DateTime? @map("classified_at")
@@ -159,6 +165,7 @@ enum OrderStatus {
   classified     // QR escaneado en la mañana, ruta confirmada
   loaded         // subido a la camioneta
   delivered      // entregado (lo escribe el repartidor o el sistema externo)
+  blocked        // sacado de secuencia por faltante (B1/B2) o cancelación
 }
 
 enum SequenceStatus {

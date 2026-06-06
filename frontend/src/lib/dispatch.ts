@@ -49,6 +49,11 @@ export type DispatchOrder = {
   customerAddress: string | null;
   hasB2Pending: boolean;
   loadedAt: string | null;
+  loadable: boolean;
+  partialApproved: boolean;
+  partialDeliveryNote: string | null;
+  missingB2Items: Array<{ productId: number; sku: string | null; name: string | null; qty: number }>;
+  blockReason: string | null;
 };
 
 export type DeliveryItem = {
