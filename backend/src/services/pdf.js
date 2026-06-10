@@ -45,10 +45,9 @@ async function fetchImageBuffer(url) {
   }
 }
 
-export async function renderAlbaranPdf(order, stream) {
-  const doc = new PDFDocument({ size: 'A4', margin: 40 });
-  doc.pipe(stream);
-
+// Helper: dibuja UN albarán completo en el documento actual (sin pipe, sin end).
+// Útil para reusarlo tanto en el endpoint single como en el batch.
+async function drawAlbaran(doc, order, opts = {}) {
   // QR
   const qrPng = await QRCode.toBuffer(buildQrPayload(order), {
     errorCorrectionLevel: 'M',
@@ -56,23 +55,23 @@ export async function renderAlbaranPdf(order, stream) {
     width: 220,
   });
 
-  // Pre-fetch thumbnails en paralelo (con tope de concurrencia).
-  const itemImages = new Map();
-  const urls = [...new Set(order.items.map((i) => i.product?.thumbnailUrl).filter(Boolean))];
-  const buffers = await Promise.all(urls.map(fetchImageBuffer));
-  urls.forEach((url, idx) => {
-    if (buffers[idx]) itemImages.set(url, buffers[idx]);
-  });
+  // Pre-fetch thumbnails (delegado al caller en el batch para no duplicar).
+  let itemImages = opts.itemImages;
+  if (!itemImages) {
+    itemImages = new Map();
+    const urls = [...new Set(order.items.map((i) => i.product?.thumbnailUrl).filter(Boolean))];
+    const buffers = await Promise.all(urls.map(fetchImageBuffer));
+    urls.forEach((url, idx) => {
+      if (buffers[idx]) itemImages.set(url, buffers[idx]);
+    });
+  }
 
   // Header
-  doc.font('Helvetica-Bold').fontSize(20).text('Albarán de pedido', 40, 40);
+  doc.font('Helvetica-Bold').fontSize(20).fillColor('#0f172a').text('Albarán de pedido', 40, 40);
   doc.font('Helvetica').fontSize(11).fillColor('#475569')
     .text(`Pedido #${order.number}`, 40, 70)
     .text(`Fecha: ${new Date().toLocaleString('es-CL')}`, 40, 86);
 
-  // Ruta destacada: pill azul al lado del número de pedido para que el
-  // operador de clasificación/carga la vea de un vistazo. Si no hay ruta,
-  // imprimimos un texto neutral discreto en su lugar.
   if (order.route) {
     const routeText = `RUTA ${order.route}${order.stopPosition ? ` · PARADA ${order.stopPosition}` : ''}`;
     const padX = 10;
@@ -82,23 +81,19 @@ export async function renderAlbaranPdf(order, stream) {
     const textH = doc.currentLineHeight();
     const pillW = textW + padX * 2;
     const pillH = textH + padY * 2;
-    const pillX = 40;
-    const pillY = 106;
     doc.save();
-    doc.roundedRect(pillX, pillY, pillW, pillH, 6).fill('#1d4ed8');
-    doc.fillColor('#ffffff').text(routeText, pillX + padX, pillY + padY);
+    doc.roundedRect(40, 106, pillW, pillH, 6).fill('#1d4ed8');
+    doc.fillColor('#ffffff').text(routeText, 40 + padX, 106 + padY);
     doc.restore();
   } else {
     doc.font('Helvetica').fontSize(11).fillColor('#94a3b8')
       .text('Sin ruta asignada', 40, 110);
   }
 
-  // QR arriba a la derecha
   doc.image(qrPng, 410, 35, { width: 140, height: 140 });
   doc.font('Helvetica').fontSize(8).fillColor('#94a3b8')
-    .text('Escanea para ver pedido', 410, 180, { width: 140, align: 'center' });
+    .text('Escanea para empacar / ver pedido', 410, 180, { width: 140, align: 'center' });
 
-  // Cliente — bajamos un poco para no colisionar con la pill de ruta
   doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Cliente', 40, 158);
   doc.font('Helvetica').fontSize(11).fillColor('#0f172a')
     .text(order.customerName || '—', 40, 176)
@@ -106,7 +101,6 @@ export async function renderAlbaranPdf(order, stream) {
 
   let cursorY = 230;
 
-  // Marca destacada Bodega 2 (optimización #6)
   if (order.hasB2Pending) {
     doc.save();
     doc.rect(40, cursorY, 515, 60).fill('#fef3c7');
@@ -118,8 +112,6 @@ export async function renderAlbaranPdf(order, stream) {
     cursorY += 80;
   }
 
-  // Banda verde "Entrega parcial aprobada" — informa al repartidor que algunos
-  // items B2 pueden faltar y el cliente ya lo aceptó.
   if (order.allowPartialDelivery) {
     doc.save();
     doc.rect(40, cursorY, 515, 50).fill('#d1fae5');
@@ -132,7 +124,6 @@ export async function renderAlbaranPdf(order, stream) {
     cursorY += 60;
   }
 
-  // Tabla de items B1 (los que van EN la bolsa)
   doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Contenido de la bolsa', 40, cursorY);
   cursorY += 20;
 
@@ -140,7 +131,6 @@ export async function renderAlbaranPdf(order, stream) {
   drawTable(doc, b1Items, cursorY, itemImages);
   cursorY = doc.y + 10;
 
-  // Listado de items B2 (los que NO van en la bolsa, se entregan a granel)
   const b2Items = order.items.filter((i) => i.warehouse === 'B2');
   if (b2Items.length > 0) {
     cursorY += 10;
@@ -149,7 +139,41 @@ export async function renderAlbaranPdf(order, stream) {
     cursorY += 20;
     drawTable(doc, b2Items, cursorY, itemImages, '#fffbeb');
   }
+}
 
+// Genera un PDF con los albaranes de TODAS las pedidos pasados, uno por página.
+// Útil para imprimir en batch al armar una secuencia (los pickers escanean
+// el QR de cada albarán para empezar a empacar).
+export async function renderSequenceAlbaranesPdf(orders, stream) {
+  const doc = new PDFDocument({ size: 'A4', margin: 40, autoFirstPage: false });
+  doc.pipe(stream);
+
+  // Pre-fetch UNA vez todos los thumbnails de todos los pedidos.
+  const allUrls = new Set();
+  for (const o of orders) {
+    for (const it of o.items || []) {
+      if (it.product?.thumbnailUrl) allUrls.add(it.product.thumbnailUrl);
+    }
+  }
+  const urlList = [...allUrls];
+  const buffers = await Promise.all(urlList.map(fetchImageBuffer));
+  const itemImages = new Map();
+  urlList.forEach((url, idx) => {
+    if (buffers[idx]) itemImages.set(url, buffers[idx]);
+  });
+
+  for (const order of orders) {
+    doc.addPage();
+    await drawAlbaran(doc, order, { itemImages });
+  }
+
+  doc.end();
+}
+
+export async function renderAlbaranPdf(order, stream) {
+  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  doc.pipe(stream);
+  await drawAlbaran(doc, order);
   doc.end();
 }
 

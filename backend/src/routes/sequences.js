@@ -7,12 +7,11 @@ import { prisma } from '../db/prisma.js';
 import {
   createSequence,
   validateStock,
-  getPickingReport,
-  markPicked,
   getPendingPacking,
   closeSequenceB1,
 } from '../services/sequences.js';
 import { removeOrderFromSequence, REMOVE_REASONS } from '../services/order-actions.js';
+import { renderSequenceAlbaranesPdf } from '../services/pdf.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -40,7 +39,6 @@ router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.PICK_B2,
       const b2 = items.filter((i) => i.warehouse === 'B2');
       return {
         id: s.id,
-        mode: s.mode,
         status: s.status,
         expectedBags: s.expectedBags,
         actualBags: s.actualBags,
@@ -91,6 +89,8 @@ router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (r
           status: 'received',
           packedAt: null,
           packedById: null,
+          pickedById: null,
+          claimedAt: null,
           classifiedAt: null,
           loadedAt: null,
         },
@@ -171,7 +171,6 @@ router.post('/validate-stock', requireCap(WMS_CAPS.PACK_B1), async (req, res, ne
 
 const createSchema = z.object({
   orderIds: z.array(z.number().int().positive()).min(1),
-  mode: z.enum(['by_sku', 'by_order']).optional(),
 });
 
 router.post('/', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
@@ -180,40 +179,9 @@ router.post('/', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
     if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
     const seq = await createSequence({
       orderIds: parsed.data.orderIds,
-      mode: parsed.data.mode || 'by_order',
       createdById: req.user.wpUserId,
     });
     res.status(201).json({ sequence: seq });
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/:id/picking-report', requireCap(WMS_CAPS.PICK_B1, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
-  try {
-    const report = await getPickingReport(Number(req.params.id));
-    res.json(report);
-  } catch (err) {
-    next(err);
-  }
-});
-
-const pickSchema = z.object({
-  productId: z.number().int().positive(),
-  picked: z.boolean(),
-});
-
-router.patch('/:id/picking', requireCap(WMS_CAPS.PICK_B1), async (req, res, next) => {
-  try {
-    const parsed = pickSchema.safeParse(req.body);
-    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
-    await markPicked({
-      sequenceId: Number(req.params.id),
-      productId: parsed.data.productId,
-      picked: parsed.data.picked,
-      actorId: req.user.wpUserId,
-    });
-    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
@@ -243,6 +211,37 @@ router.post('/:id/close-b1', requireCap(WMS_CAPS.PACK_B1), async (req, res, next
       actualBags: parsed.data.actualBags,
     });
     res.json({ sequence: seq });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Genera un PDF con TODOS los albaranes de los pedidos vivos de la secuencia,
+// uno por página. Los pickers escanean el QR del albarán impreso para empezar
+// a empacar el pedido correspondiente.
+router.get('/:id/albaranes.pdf', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const seq = await prisma.sequence.findUnique({ where: { id } });
+    if (!seq) throw new HttpError(404, 'Sequence not found');
+
+    // Excluimos pedidos ya removidos/bloqueados y los ya entregados.
+    const orders = await prisma.order.findMany({
+      where: {
+        sequenceLinks: { some: { sequenceId: id } },
+        status: { in: ['sequenced', 'packed', 'classified', 'loaded'] },
+      },
+      include: { items: { include: { product: true } } },
+      orderBy: { id: 'asc' },
+    });
+
+    if (orders.length === 0) {
+      throw new HttpError(409, 'No printable orders in this sequence');
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="secuencia-${id}-albaranes.pdf"`);
+    await renderSequenceAlbaranesPdf(orders, res);
   } catch (err) {
     next(err);
   }

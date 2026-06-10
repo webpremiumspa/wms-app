@@ -80,15 +80,21 @@ const SECTIONS: Section[] = [
 
         <h4>🌆 Día 1 · 18:00 — Carmen prepara las secuencias</h4>
         <p>
-          Carmen va a <strong>Secuencias → Generar</strong>, sincroniza 50 pedidos del día desde WC. Modo <em>Por pedido</em>. Click <strong>Generar secuencia (50)</strong> → se crea la Secuencia #12.
+          Carmen va a <strong>Secuencias → Generar</strong>, sincroniza 50 pedidos del día desde WC. Click <strong>Generar secuencia (50)</strong> → se crea la Secuencia #12.
+        </p>
+        <p>
+          Después va a <strong>Secuencia #12 → Empacar pedidos</strong> y toca <strong>"Imprimir todos"</strong>. Se genera un PDF con 50 páginas (un albarán por pedido). Lo manda a la impresora. Las hojas salen y las deja apiladas en el área de picking.
         </p>
 
         <h4>🌃 Día 1 · 18:30 — José hace picking + packing</h4>
         <p>
-          José abre la app, va a <strong>Picking → Secuencia #12</strong> y empieza a recorrer pedido por pedido.
+          José abre la app en el móvil. Toma una hoja del montón (#1104500). Apunta la cámara al QR del albarán → la app abre el pedido y lo <strong>asigna a José</strong> (claim). Empieza a meter los items B1 en la bolsa y los va marcando. Toca <strong>"Cerrar pedido"</strong>. Vuelve al montón, toma otra hoja, escanea, repite.
         </p>
         <p>
-          <strong>Caso problema (pedido #1104520):</strong> falta el producto Z en estantería (sin stock B1). No puede cerrar el pedido. En <em>Acciones del operador</em> toca <strong>"Remover de la secuencia"</strong>, elige motivo <em>"Sin stock B1"</em> y agrega un detalle. El pedido pasa a estado <strong>Bloqueado</strong>; la secuencia sigue con 49 pedidos. Aviso a Carmen.
+          <strong>Caso problema (pedido #1104520):</strong> escanea el QR, abre el pedido. Falta el producto Z en estantería (sin stock B1). No puede cerrar el pedido. En <em>Acciones del operador</em> toca <strong>"Remover de la secuencia"</strong>, elige motivo <em>"Sin stock B1"</em> y agrega un detalle. El pedido pasa a estado <strong>Bloqueado</strong>; la secuencia sigue con 49 pedidos. Aviso a Carmen.
+        </p>
+        <p>
+          <strong>Caso "ya tomado":</strong> Joaquín (otro picker) por error toma la misma hoja de un pedido que José ya estaba empacando. Escanea, abre la app → banner rojo: <em>"Pedido tomado por José hace 5 min"</em>. Joaquín devuelve la hoja y toma otra.
         </p>
 
         <h4>🌅 Día 2 · 7:00 — Patricia hace picking B2 conjunto</h4>
@@ -193,61 +199,63 @@ const SECTIONS: Section[] = [
         <ol>
           <li>Elegí un rango de fechas (presets: <em>Hoy</em>, <em>Ayer</em>, <em>Últimos 2 días</em>, o calendario manual).</li>
           <li>Marcá los estados de WC a incluir: <em>Procesando</em>, <em>En espera</em>, <em>Completado</em>, <em>Pendiente pago</em>, <em>En ruta</em>.</li>
-          <li>Si cambiaste la <strong>bodega</strong> de algún producto en WC y querés que el WMS lo refleje, marcá <em>Refrescar metadata de productos</em> (más lento, sólo cuando lo necesites — sin esto, el sync reutiliza la bodega cacheada localmente).</li>
+          <li>Si cambiaste la <strong>bodega</strong> de algún producto en WC y querés que el WMS lo refleje, marcá <em>Refrescar metadata de productos</em>.</li>
           <li>Click <strong>Sincronizar</strong>.</li>
         </ol>
-        <p className="text-slate-600">
-          El sistema reporta: cuántos pedidos vino WC, cuántos son nuevos, cuántos se actualizaron, cuántos se <strong>saltaron</strong> (pedidos ya en picking/packing — no se tocan para no destruir progreso), y cuáles están tomados por otras secuencias.
-        </p>
 
-        <h4>Paso 2 · Elegir el modo de picking</h4>
-        <ul>
-          <li><strong>Por pedido</strong> (recomendado, default) — el picker recorre <em>pedido por pedido</em>, va metiendo los productos B1 en la bolsa al instante e imprime el albarán al cerrar cada uno. Un solo paso de pick + pack. Mejor cuando los pedidos tienen pocos items distintos.</li>
-          <li><strong>Por SKU (batch)</strong> — se agrupan los SKUs de todos los pedidos y el picker hace <em>un solo recorrido</em> tomando el volumen total. Después, en un segundo paso, otro operador arma las bolsas individuales. Más eficiente con muchos pedidos similares.</li>
-        </ul>
-
-        <h4>Paso 3 · Seleccionar pedidos y generar</h4>
+        <h4>Paso 2 · Seleccionar pedidos y generar</h4>
         <ol>
           <li>Marcá los pedidos pendientes que entran en esta secuencia (o usá <em>Seleccionar todos</em>).</li>
-          <li>Click <strong>Validar stock</strong>: el sistema consulta WC y avisa si algún SKU no tiene unidades suficientes — quitá esos pedidos o repón antes de continuar.</li>
-          <li>Click <strong>Generar secuencia</strong>. Los pedidos quedan reservados y no pueden incluirse en otra secuencia.</li>
+          <li>Click <strong>Validar stock</strong>: el sistema consulta WC y avisa si algún SKU no tiene unidades suficientes.</li>
+          <li>Click <strong>Generar secuencia</strong>. Los pedidos quedan reservados.</li>
         </ol>
+
+        <h4>Paso 3 · Imprimir todos los albaranes</h4>
+        <p>
+          Desde <strong>Secuencia → Empacar pedidos</strong>, tocá el botón <strong>"Imprimir todos"</strong> en el bloque superior. Se genera un único PDF con N páginas (una por pedido), cada una con su QR. Imprimís de una vez y dejás las hojas en la zona de picking.
+        </p>
         <p className="text-slate-600">
-          La secuencia queda <em>Abierta</em> y visible en la página <strong>Picking</strong> para los equipos B1 y B2.
+          Los pickers van tomando hojas y escaneando el QR con su móvil para "tomar" (claim) el pedido y empezar a empacarlo. El sistema registra quién lo preparó.
         </p>
       </>
     ),
   },
   {
     id: 'picking',
-    title: 'Picking B1: recorrer y recolectar',
+    title: 'Picking B1: recorrer y empacar',
     icon: Package,
     body: (
       <>
-        <p>La página <strong>Picking</strong> muestra <em>solo trabajo pendiente</em>. Activá el toggle <em>"Mostrar cerradas"</em> arriba a la derecha si querés ver las secuencias ya cerradas (útil para auditar lo del día sin ir al historial).</p>
-        <p>Verás dos secciones:</p>
-        <ul>
-          <li><strong>Picking Bodega 2 · pendiente</strong>: una tarjeta por cada secuencia con items B2 a granel pendientes.</li>
-          <li><strong>Picking Bodega 1 · pendiente</strong>: una tarjeta por cada secuencia con flujo B1 abierto.</li>
-        </ul>
+        <p>El flujo de picking B1 arranca con los <strong>albaranes impresos</strong>. Cada hoja tiene su QR — el picker lo escanea con el móvil para "tomar" el pedido y armar la bolsa.</p>
 
-        <h4>Modo "Por pedido" (default)</h4>
-        <p>La tarjeta dice <em>"Picking + Packing"</em>. Al tocarla vas directo a la <strong>lista de pedidos</strong>:</p>
+        <h4>Para arrancar — el encargado (cap pack_b1)</h4>
         <ol>
-          <li>Tocá un pedido pendiente. Vas a ver los items B1 (que van en la bolsa) y, si aplica, los B2 listados aparte (no van — se entregan a granel desde B2).</li>
-          <li>Por cada item B1 que metas en la bolsa, marcá su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
-          <li>Tocá <strong>Cerrar pedido e imprimir albarán</strong>. Se abre el PDF en una nueva pestaña y queda registrado quién armó el pedido.</li>
-          <li>Volvés a la lista, elegís el siguiente pedido, repetís.</li>
+          <li>Va a <strong>Secuencia → Empacar pedidos</strong>.</li>
+          <li>Click <strong>"Imprimir todos"</strong> → se genera un único PDF con todos los albaranes.</li>
+          <li>Imprime el PDF (sale una hoja por pedido). Deja las hojas en el área de picking.</li>
         </ol>
 
-        <h4>Modo "Por SKU" (batch)</h4>
-        <p>La tarjeta dice <em>"Picking B1"</em>. Al tocarla vas al <strong>reporte agrupado</strong>:</p>
+        <h4>Para el picker</h4>
         <ol>
-          <li>Cada fila es un SKU con foto, cantidad total a recolectar y cuántos pedidos lo necesitan.</li>
-          <li>Hacés un solo recorrido por la bodega tomando el volumen total de cada SKU.</li>
-          <li>Marcás cada SKU al recolectarlo — el progreso se sincroniza en vivo (varios pickers pueden trabajar la misma secuencia).</li>
-          <li>Cuando aparece <em>"Picking completo"</em>, otro operador entra a <strong>Empacar pedidos</strong> y arma las bolsas individuales con lo recolectado.</li>
+          <li>Toma una hoja del montón.</li>
+          <li>Abre la app y escanea el QR de la hoja con la cámara.</li>
+          <li>La primera vez le pedirá <strong>iniciar sesión</strong>. Después de loguearse vuelve automáticamente al pedido escaneado.</li>
+          <li>El sistema <strong>"toma" (claim)</strong> el pedido a nombre del picker. Si otro ya lo tomó, ve un banner rojo: <em>"Pedido tomado por X"</em> y no puede continuar.</li>
+          <li>Si todo OK: ve los items B1 (que van en la bolsa) y los B2 (listados aparte — los entrega el granel).</li>
+          <li>Marca cada item B1 al meterlo en la bolsa. El sistema bloquea el cierre hasta que todos estén marcados.</li>
+          <li>Toca <strong>"Cerrar pedido"</strong> (sin imprimir nada — el albarán ya está). El pedido queda registrado como empacado por ese picker.</li>
+          <li>Vuelve a la lista (o agarra el siguiente albarán y escanea).</li>
         </ol>
+
+        <h4>Acceso alternativo desde la lista</h4>
+        <p>
+          Si el albarán se rompió o no está disponible, también podés entrar a un pedido tocando su tarjeta en <strong>Empacar pedidos</strong>. El claim se aplica igual al entrar al pedido.
+        </p>
+
+        <h4>Si un pedido ya lo tiene otro</h4>
+        <p>
+          La tarjeta del pedido aparece con badge amarillo <em>"Tomado por X"</em>. No es clickeable salvo que el supervisor libere el claim manualmente. Esto evita que dos pickers empaquen el mismo pedido a la vez.
+        </p>
 
         <p className="text-amber-800">
           Tip: si dos productos se parecen mucho, mirá la foto antes de tomar — es la causa #1 de errores en picking.
@@ -257,19 +265,22 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'packing',
-    title: 'Packing: armar bolsas e imprimir albarán',
+    title: 'Packing: armar la bolsa',
     icon: ClipboardCheck,
     body: (
       <>
-        <p>En modo <strong>Por pedido</strong> esto es parte del mismo flujo de picking. En modo <strong>Por SKU</strong> es el segundo paso después de recolectar todo el batch.</p>
+        <p>El packing va integrado con el picking — el mismo picker que escaneó el albarán arma la bolsa, marca los checkboxes y cierra el pedido.</p>
         <ol>
-          <li>Desde la secuencia, entrá a <strong>Empacar pedidos</strong> (o <em>Picking + Packing</em> según el modo).</li>
-          <li>Elegí un pedido de la lista. Cada tarjeta muestra <strong>ruta</strong> (badge azul), <em>parada de carga</em> y aviso si tiene B2 pendiente.</li>
-          <li>Vas a ver los items B1 (que van en la bolsa) y, si aplica, los B2 (que NO van — se entregan a granel desde Bodega 2).</li>
-          <li>Por cada item B1 que metas en la bolsa, marcá su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
-          <li>Tocá <strong>Cerrar pedido e imprimir albarán</strong>. Se abre un PDF para imprimir y se registra quién armó el pedido (trazabilidad).</li>
-          <li>Colocá el albarán visible al lado o dentro de la bolsa, asegurando que el QR quede legible.</li>
+          <li>Después de escanear el QR (o entrar desde la lista), el pedido queda <strong>asignado a ese picker</strong>.</li>
+          <li>Cada tarjeta muestra <strong>ruta</strong> (badge azul), <em>parada de carga</em> y aviso si tiene B2 pendiente.</li>
+          <li>Se ven los items B1 (van en la bolsa) y, si aplica, los B2 (que NO van — se entregan a granel desde Bodega 2).</li>
+          <li>Por cada item B1 que se mete en la bolsa, marcá su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
+          <li>Tocá <strong>Cerrar pedido</strong>. El albarán YA está impreso (se imprimió en batch al armar la secuencia) — se coloca en la bolsa visible.</li>
+          <li>Queda registrado quién empacó el pedido (trazabilidad).</li>
         </ol>
+        <p className="text-slate-600">
+          <strong>Reimprimir albarán</strong>: si la hoja original se rompió o se manchó, podés reimprimirla desde el pedido empacado. Cada reimpresión genera el albarán nuevo con la info actualizada.
+        </p>
 
         <h4>Pedidos solo de Bodega 2</h4>
         <p>Si un pedido <strong>no tiene items B1</strong> (todo es de B2), igual lo cerrás desde la lista de empacar:</p>
@@ -499,8 +510,9 @@ const SECTIONS: Section[] = [
           <li><strong>Packer</strong> — la persona que arma las bolsas. Queda registrado quién cerró cada pedido.</li>
           <li><strong>SKU</strong> — código único de cada producto. Distintos colores o tamaños = distintos SKUs.</li>
           <li><strong>Secuencia</strong> — un grupo de pedidos preparados juntos. Es <em>agnóstica de bodega</em>: tiene tanto picking B1 como B2 que cierran por separado.</li>
-          <li><strong>Modo por pedido</strong> — el picker B1 recorre pedido por pedido y arma cada bolsa al instante. Un solo paso pick+pack.</li>
-          <li><strong>Modo por SKU (batch)</strong> — primero se recolecta el volumen total agrupado por SKU; en un segundo paso se arman las bolsas individuales.</li>
+          <li><strong>Imprimir todos los albaranes</strong> — un único PDF de N páginas que se genera al armar la secuencia. Cada hoja tiene su QR — los pickers escanean para "tomar" el pedido.</li>
+          <li><strong>Claim / Tomar pedido</strong> — al escanear el QR (o entrar al pedido desde la lista), el sistema lo asigna a ese picker. Otros pickers ven "Tomado por X" y no pueden modificarlo. Bloqueo automático para evitar trabajo duplicado.</li>
+          <li><strong>Liberar claim</strong> — un supervisor puede sacarle el claim a un pedido (por ejemplo si el picker se enfermó). El pedido queda disponible para que otro lo tome.</li>
           <li><strong>Picking conjunto</strong> — agrupar varias secuencias en una sola corrida de picking B2 (cuando el equipo B2 hace la recolección matinal de todo el día).</li>
           <li><strong>Bodega 1 (B1)</strong> — bodega principal donde se arman las bolsas individuales.</li>
           <li><strong>Bodega 2 (B2)</strong> — bodega satélite con stock distinto. Sus productos se recolectan a granel una vez al día y se reparten desde el cargamento de cada camioneta.</li>

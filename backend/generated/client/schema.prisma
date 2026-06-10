@@ -25,6 +25,7 @@ model UserMeta {
 
   sequencesCreated Sequence[] @relation("SequenceCreator")
   packedOrders     Order[]    @relation("OrderPacker")
+  pickedOrders     Order[]    @relation("OrderPicker")
   events           Event[]
 
   @@map("users_meta")
@@ -64,6 +65,10 @@ model Order {
   // muestra qué items NO van en esta entrega.
   allowPartialDelivery Boolean     @default(false) @map("allow_partial_delivery")
   partialDeliveryNote  String?     @map("partial_delivery_note") @db.VarChar(500)
+  // Claim del picker: se setea al escanear el QR del albarán para empezar
+  // a preparar el pedido. Bloquea a otros pickers de tomar el mismo pedido.
+  pickedById           Int?        @map("picked_by_id")
+  claimedAt            DateTime?   @map("claimed_at")
   packedById           Int?        @map("packed_by_id")
   packedAt             DateTime?   @map("packed_at")
   classifiedAt         DateTime?   @map("classified_at")
@@ -73,6 +78,7 @@ model Order {
   updatedAt            DateTime    @updatedAt @map("updated_at")
 
   packedBy      UserMeta?       @relation("OrderPacker", fields: [packedById], references: [wpUserId])
+  pickedBy      UserMeta?       @relation("OrderPicker", fields: [pickedById], references: [wpUserId])
   items         OrderItem[]
   sequenceLinks SequenceOrder[]
   events        Event[]
@@ -104,11 +110,12 @@ model OrderItem {
 // los pickea el equipo de Bodega 2 (a granel para el día). Cada flujo cierra
 // por separado (b1ClosedAt / b2ClosedAt); status global pasa a 'closed' cuando
 // ambos están cerrados.
+//
+// Modelo simplificado: solo existe el flujo "por pedido" (cada picker escanea
+// el QR del albarán impreso y empaca un pedido completo). El modo "por SKU"
+// fue eliminado del modelo (era poco usado y agregaba complejidad).
 model Sequence {
   id           Int            @id @default(autoincrement())
-  // Modo de picking B1: by_sku (agrupado por SKU) o by_order (recorre pedido
-  // por pedido y mete a la bolsa en el camino). El picking B2 siempre es by_sku.
-  mode         String         @default("by_order") @db.VarChar(20)
   createdById  Int            @map("created_by_id")
   createdAt    DateTime       @default(now()) @map("created_at")
   closedAt     DateTime?      @map("closed_at")

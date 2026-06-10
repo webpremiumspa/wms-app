@@ -12,6 +12,8 @@ import {
   revokePartialDelivery,
   unblockOrder,
   getOrderLoadability,
+  claimOrder,
+  releaseOrderClaim,
 } from '../services/order-actions.js';
 import { config } from '../config.js';
 
@@ -73,7 +75,9 @@ router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.DELIVER, WMS_
       where: { wpOrderId },
       include: {
         items: { include: { product: true } },
-        packedBy: { select: { displayName: true, username: true } },
+        packedBy: { select: { wpUserId: true, displayName: true, username: true } },
+        pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
+        sequenceLinks: { select: { sequenceId: true } },
       },
     });
     if (!order) throw new HttpError(404, `Pedido ${wpOrderId} no encontrado en el WMS`);
@@ -90,7 +94,9 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.SUPER
       where: { id },
       include: {
         items: { include: { product: true } },
-        packedBy: { select: { displayName: true, username: true } },
+        packedBy: { select: { wpUserId: true, displayName: true, username: true } },
+        pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
+        sequenceLinks: { select: { sequenceId: true } },
       },
     });
     if (!order) throw new HttpError(404, 'Order not found');
@@ -147,6 +153,30 @@ router.delete('/:id/partial-delivery', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUP
       orderId: id,
       actorId: req.user.wpUserId,
     });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Claim: el picker toma el pedido al escanear el QR (o entrar desde la lista).
+// Bloquea a otros pickers de tomar el mismo pedido.
+router.post('/:id/claim', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await claimOrder({ orderId: id, actorId: req.user.wpUserId });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Release: el supervisor o el mismo picker libera el claim (si se enfermó,
+// o quedó tomado por error y nadie cerró).
+router.delete('/:id/claim', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await releaseOrderClaim({ orderId: id, actorId: req.user.wpUserId });
     res.json(result);
   } catch (err) {
     next(err);

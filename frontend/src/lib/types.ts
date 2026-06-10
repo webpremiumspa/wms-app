@@ -12,8 +12,6 @@ export type OrderStatus =
 
 export type SequenceStatus = 'open' | 'closed';
 
-export type SequenceMode = 'by_sku' | 'by_order';
-
 export type PendingOrder = {
   id: number;
   wpOrderId: number;
@@ -29,7 +27,6 @@ export type FlowProgress = { total: number; pending: number };
 
 export type Sequence = {
   id: number;
-  mode: SequenceMode;
   status: SequenceStatus;
   expectedBags: number;
   actualBags: number;
@@ -41,6 +38,12 @@ export type Sequence = {
   b2?: FlowProgress;
   _count?: { orders: number };
   createdBy?: { displayName: string; username: string };
+};
+
+export type Picker = {
+  wpUserId: number;
+  displayName: string;
+  username: string;
 };
 
 export type SequenceDetail = Sequence & {
@@ -55,21 +58,6 @@ export type SequenceOrderInfo = {
   hasB2Pending: boolean;
 };
 
-export type PickingReportItem = {
-  productId: number;
-  sku: string | null;
-  name: string;
-  thumbnailUrl: string | null;
-  qty: number;
-  picked: boolean;
-};
-
-export type PickingReport = {
-  sequence: Sequence;
-  items: PickingReportItem[];
-  allPicked: boolean;
-};
-
 export type PendingPackingOrder = {
   id: number;
   number: string;
@@ -78,8 +66,9 @@ export type PendingPackingOrder = {
   stopPosition: number | null;
   hasB2Pending: boolean;
   status: OrderStatus;
-  ready: boolean;
   itemCount: number;
+  claimedAt: string | null;
+  pickedBy: Picker | null;
 };
 
 export type OrderItem = {
@@ -110,7 +99,12 @@ export type OrderDetail = {
   allowPartialDelivery: boolean;
   partialDeliveryNote: string | null;
   packedAt: string | null;
-  packedBy: { displayName: string; username: string } | null;
+  packedBy: Picker | null;
+  pickedBy: Picker | null;
+  claimedAt: string | null;
+  sequenceLinks?: Array<{ sequenceId: number }>;
+  packable?: boolean;
+  openSequenceId?: number | null;
   items: OrderItem[];
 };
 

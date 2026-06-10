@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, Image as ImageIcon, Printer, AlertOctagon, UserX, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, Printer, AlertOctagon, UserX, CheckCircle2, Lock, User } from 'lucide-react';
 import clsx from 'clsx';
 import { ordersApi, sequencesApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
@@ -31,6 +31,52 @@ export function PackingOrder() {
   const [partialNote, setPartialNote] = useState('');
   const [partialError, setPartialError] = useState<string | null>(null);
   const [showPartialForm, setShowPartialForm] = useState(false);
+  const [claimBlock, setClaimBlock] = useState<{ pickedBy?: { displayName?: string; username?: string }; claimedAt?: string } | null>(null);
+
+  // Intentamos tomar (claim) el pedido al entrar a esta pantalla. Si ya está
+  // tomado por otro picker, el backend devuelve 409 y mostramos el bloqueo.
+  // Si está empacado/clasificado/cargado/entregado, el claim no aplica.
+  const claim = useMutation({
+    mutationFn: () => ordersApi.claim(ordId),
+    onSuccess: () => {
+      setClaimBlock(null);
+      queryClient.invalidateQueries({ queryKey: ['order', ordId] });
+      queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
+    },
+    onError: (err: any) => {
+      const details = err.response?.data?.details;
+      if (err.response?.status === 409 && details?.claimedBy) {
+        setClaimBlock({ pickedBy: details.claimedBy, claimedAt: details.claimedAt });
+      }
+    },
+  });
+
+  // Solo claim si el pedido está en 'sequenced' (estado claim-able). El backend
+  // valida también, pero evitamos llamadas innecesarias.
+  useEffect(() => {
+    if (!order) return;
+    if (order.status !== 'sequenced') return;
+    // Si ya es del propio usuario o nadie lo tiene, llamamos al claim (es
+    // idempotente y registra evento solo si cambia el estado).
+    if (order.pickedBy && order.pickedBy.wpUserId !== user?.id) {
+      // ya tomado por otro — mostramos bloqueo sin intentar claim.
+      setClaimBlock({
+        pickedBy: { displayName: order.pickedBy.displayName, username: order.pickedBy.username },
+        claimedAt: order.claimedAt || undefined,
+      });
+      return;
+    }
+    claim.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order?.id, order?.status, order?.pickedBy?.wpUserId]);
+
+  const releaseClaim = useMutation({
+    mutationFn: () => ordersApi.releaseClaim(ordId),
+    onSuccess: () => {
+      setClaimBlock(null);
+      claim.mutate();
+    },
+  });
 
   const removeOrder = useMutation({
     mutationFn: ({ reasonCode, reasonText }: { reasonCode: string; reasonText: string }) =>
@@ -69,15 +115,9 @@ export function PackingOrder() {
 
   const pack = useMutation({
     mutationFn: () => ordersApi.pack(ordId, [...checked]),
-    onSuccess: async () => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', ordId] });
       queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
-      // Abre el albarán en nueva pestaña (descarga con auth y abre como blob).
-      try {
-        await ordersApi.openAlbaran(ordId);
-      } catch (e) {
-        console.error('No se pudo abrir el albarán', e);
-      }
       navigate(`/sequences/${seqId}/packing`);
     },
   });
@@ -120,6 +160,46 @@ export function PackingOrder() {
         <div className="text-sm text-slate-600">{order.customerName || '—'}</div>
         {order.customerAddress && <div className="text-xs text-slate-500">{order.customerAddress}</div>}
       </div>
+
+      {/* Bloqueo por claim: si el pedido ya está tomado por OTRO picker,
+          mostramos quién y desactivamos la UI. Supervisor puede liberar. */}
+      {claimBlock && (
+        <div className="card flex items-start gap-3 bg-red-50 p-4 ring-2 ring-red-300">
+          <Lock className="shrink-0 text-red-700" size={22} />
+          <div className="flex-1 text-sm text-red-900">
+            <div className="font-bold uppercase">Pedido tomado por otro picker</div>
+            <div className="mt-1">
+              Lo está preparando <strong>{claimBlock.pickedBy?.displayName || claimBlock.pickedBy?.username || 'otro usuario'}</strong>
+              {claimBlock.claimedAt && (
+                <> desde las {new Date(claimBlock.claimedAt).toLocaleTimeString('es-CL')}</>
+              )}.
+            </div>
+            <div className="mt-1 text-xs">
+              No podés modificar este pedido hasta que el picker lo cierre o un supervisor libere el claim.
+            </div>
+            {canManage && hasCap(user, CAPS.SUPERVISE) && (
+              <button
+                type="button"
+                onClick={() => releaseClaim.mutate()}
+                disabled={releaseClaim.isPending}
+                className="mt-2 rounded-lg bg-red-100 px-3 py-1 text-xs font-medium text-red-800 hover:bg-red-200"
+              >
+                {releaseClaim.isPending ? 'Liberando…' : 'Liberar claim (supervisor)'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {order.pickedBy && order.pickedBy.wpUserId === user?.id && order.status === 'sequenced' && !claimBlock && (
+        <div className="card flex items-start gap-3 bg-emerald-50 p-3 ring-1 ring-emerald-200">
+          <User className="shrink-0 text-emerald-700" size={16} />
+          <div className="flex-1 text-xs text-emerald-900">
+            <span className="font-semibold">Tomaste este pedido</span>
+            {order.claimedAt && <> a las {new Date(order.claimedAt).toLocaleTimeString('es-CL')}</>}. Empacalo y cerralo; queda registrado a tu nombre.
+          </div>
+        </div>
+      )}
 
       {order.allowPartialDelivery && (
         <div className="card flex items-start gap-3 bg-emerald-50 p-3 ring-1 ring-emerald-200">
@@ -186,7 +266,7 @@ export function PackingOrder() {
               checked={checked.has(it.id)}
               onChange={() => toggle(it.id)}
               className="ml-2 h-6 w-6 accent-brand-600"
-              disabled={isPacked}
+              disabled={isPacked || !!claimBlock}
             />
           </label>
         ))}
@@ -223,11 +303,11 @@ export function PackingOrder() {
           )}
           <button
             onClick={() => pack.mutate()}
-            disabled={!allChecked || pack.isPending}
+            disabled={!allChecked || pack.isPending || !!claimBlock}
             className="btn-primary w-full"
           >
-            <Printer size={18} />
-            {pack.isPending ? 'Cerrando…' : onlyB2 ? 'Imprimir albarán y cerrar' : 'Cerrar pedido e imprimir albarán'}
+            <CheckCircle2 size={18} />
+            {pack.isPending ? 'Cerrando…' : 'Cerrar pedido'}
           </button>
         </div>
       )}

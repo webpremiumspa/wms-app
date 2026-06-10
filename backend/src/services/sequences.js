@@ -45,11 +45,9 @@ export async function validateStock(orderIds) {
 // Crea una secuencia agnóstica de bodega con la lista de pedidos dada.
 // Cada secuencia arrastra dos flujos de picking (B1 y B2) que cierran por
 // separado. Marca los pedidos como 'sequenced' para que no entren en una
-// segunda secuencia.
-// mode: 'by_sku' (agrupado por SKU) o 'by_order' (recorre pedido por pedido).
-//       Aplica solo al picking B1 — el B2 siempre es agrupado por SKU.
-export async function createSequence({ orderIds, createdById, mode = 'by_order' }) {
-  if (!['by_sku', 'by_order'].includes(mode)) throw new HttpError(400, 'Invalid mode');
+// segunda secuencia. El flujo de picking es siempre "por pedido": cada
+// picker escanea el QR del albarán para tomar el pedido y empacarlo.
+export async function createSequence({ orderIds, createdById }) {
   if (!Array.isArray(orderIds) || orderIds.length === 0) {
     throw new HttpError(400, 'orderIds required');
   }
@@ -64,7 +62,6 @@ export async function createSequence({ orderIds, createdById, mode = 'by_order' 
 
     const seq = await tx.sequence.create({
       data: {
-        mode,
         createdById,
         expectedBags: orders.length,
         orders: {
@@ -90,97 +87,10 @@ export async function createSequence({ orderIds, createdById, mode = 'by_order' 
   });
 }
 
-// Reporte agrupado por SKU para el picking B1 de una secuencia.
-export async function getPickingReport(sequenceId) {
-  const seq = await prisma.sequence.findUnique({ where: { id: sequenceId } });
-  if (!seq) throw new HttpError(404, 'Sequence not found');
-
-  const items = await prisma.orderItem.findMany({
-    where: {
-      order: { sequenceLinks: { some: { sequenceId } } },
-      warehouse: 'B1',
-    },
-    include: { product: true },
-  });
-
-  // Agrupamos por productId. Marcamos como picked si TODOS los order_items del
-  // SKU en la secuencia ya tienen pickedAt.
-  const groups = new Map();
-  for (const it of items) {
-    const g = groups.get(it.productId) || {
-      productId: it.productId,
-      sku: it.product?.sku,
-      name: it.product?.name,
-      thumbnailUrl: it.product?.thumbnailUrl,
-      qty: 0,
-      pickedCount: 0,
-      totalCount: 0,
-    };
-    g.qty += it.qty;
-    g.totalCount += 1;
-    if (it.pickedAt) g.pickedCount += 1;
-    groups.set(it.productId, g);
-  }
-
-  const rows = Array.from(groups.values()).map((g) => ({
-    productId: g.productId,
-    sku: g.sku,
-    name: g.name,
-    thumbnailUrl: g.thumbnailUrl,
-    qty: g.qty,
-    picked: g.pickedCount === g.totalCount && g.totalCount > 0,
-  }));
-
-  const allPicked = rows.length > 0 && rows.every((r) => r.picked);
-
-  return { sequence: seq, items: rows, allPicked };
-}
-
-// Marca un SKU B1 como recolectado dentro de la secuencia: propaga pickedAt a
-// todos los order_items B1 correspondientes.
-export async function markPicked({ sequenceId, productId, actorId, picked }) {
-  const seq = await prisma.sequence.findUnique({ where: { id: sequenceId } });
-  if (!seq) throw new HttpError(404, 'Sequence not found');
-  if (seq.b1ClosedAt) throw new HttpError(409, 'B1 picking is already closed for this sequence');
-
-  const at = picked ? new Date() : null;
-  await prisma.orderItem.updateMany({
-    where: {
-      productId,
-      warehouse: 'B1',
-      order: { sequenceLinks: { some: { sequenceId } } },
-    },
-    data: { pickedAt: at },
-  });
-
-  await prisma.event.create({
-    data: {
-      type: picked ? 'sequence.item_picked' : 'sequence.item_unpicked',
-      actorId,
-      payload: { sequenceId, productId, warehouse: 'B1' },
-    },
-  });
-
-  // Si todos los items B1 de un pedido están pickeados, marcamos el pedido picked.
-  if (picked) {
-    const orders = await prisma.order.findMany({
-      where: { sequenceLinks: { some: { sequenceId } }, status: 'sequenced' },
-      include: { items: true },
-    });
-    for (const o of orders) {
-      const b1Items = o.items.filter((i) => i.warehouse === 'B1');
-      const allPicked = b1Items.length > 0 && b1Items.every((i) => i.pickedAt);
-      if (allPicked) {
-        await prisma.order.update({ where: { id: o.id }, data: { status: 'picked' } });
-      }
-    }
-  }
-}
-
 // Lista TODOS los pedidos de la secuencia con su estado actual. La UI los
 // muestra ordenados (no empacados arriba) y usa el conteo total para la barra
-// de progreso. En modo 'by_order' el picker recoge y empaca en un solo paso,
-// por eso `ready` siempre es true (no requiere picking previo).
+// de progreso. Incluye el claim del picker (pickedBy + claimedAt) para
+// mostrar "tomado por X" en la lista.
 export async function getPendingPacking(sequenceId) {
   const seq = await prisma.sequence.findUnique({ where: { id: sequenceId } });
   if (!seq) throw new HttpError(404, 'Sequence not found');
@@ -190,14 +100,15 @@ export async function getPendingPacking(sequenceId) {
       sequenceLinks: { some: { sequenceId } },
       status: { in: ['sequenced', 'picked', 'packed', 'classified', 'loaded'] },
     },
-    include: { items: { include: { product: true } } },
+    include: {
+      items: { select: { id: true, warehouse: true } },
+      pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
+    },
     orderBy: { id: 'asc' },
   });
 
   return orders.map((o) => {
     const b1 = o.items.filter((i) => i.warehouse === 'B1');
-    const allPicked = b1.length > 0 && b1.every((i) => i.pickedAt);
-    const ready = seq.mode === 'by_order' ? true : allPicked;
     return {
       id: o.id,
       number: o.number,
@@ -206,8 +117,13 @@ export async function getPendingPacking(sequenceId) {
       stopPosition: o.stopPosition,
       hasB2Pending: o.hasB2Pending,
       status: o.status,
-      ready,
       itemCount: b1.length,
+      claimedAt: o.claimedAt,
+      pickedBy: o.pickedBy ? {
+        wpUserId: o.pickedBy.wpUserId,
+        displayName: o.pickedBy.displayName,
+        username: o.pickedBy.username,
+      } : null,
     };
   });
 }

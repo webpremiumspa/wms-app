@@ -8,7 +8,6 @@ import { Home } from '@/pages/Home';
 import { SequencesIndex } from '@/pages/Sequences/Index';
 import { SequenceNew } from '@/pages/Sequences/New';
 import { SequenceDetail } from '@/pages/Sequences/Detail';
-import { SequencePicking } from '@/pages/Sequences/Picking';
 import { PackingList } from '@/pages/Sequences/PackingList';
 import { PackingOrder } from '@/pages/Sequences/PackingOrder';
 import { SequenceClose } from '@/pages/Sequences/Close';
@@ -45,7 +44,6 @@ export default function App() {
               <Route path="sequences" element={<SequencesIndex />} />
               <Route path="sequences/new" element={<SequenceNew />} />
               <Route path="sequences/:id" element={<SequenceDetail />} />
-              <Route path="sequences/:id/picking" element={<SequencePicking />} />
               <Route path="sequences/:id/packing" element={<PackingList />} />
               <Route path="sequences/:id/packing/:orderId" element={<PackingOrder />} />
               <Route path="sequences/:id/close" element={<SequenceClose />} />

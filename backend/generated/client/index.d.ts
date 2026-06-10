@@ -1380,12 +1380,14 @@ export namespace Prisma {
   export type UserMetaCountOutputType = {
     sequencesCreated: number
     packedOrders: number
+    pickedOrders: number
     events: number
   }
 
   export type UserMetaCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sequencesCreated?: boolean | UserMetaCountOutputTypeCountSequencesCreatedArgs
     packedOrders?: boolean | UserMetaCountOutputTypeCountPackedOrdersArgs
+    pickedOrders?: boolean | UserMetaCountOutputTypeCountPickedOrdersArgs
     events?: boolean | UserMetaCountOutputTypeCountEventsArgs
   }
 
@@ -1411,6 +1413,13 @@ export namespace Prisma {
    * UserMetaCountOutputType without action
    */
   export type UserMetaCountOutputTypeCountPackedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrderWhereInput
+  }
+
+  /**
+   * UserMetaCountOutputType without action
+   */
+  export type UserMetaCountOutputTypeCountPickedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: OrderWhereInput
   }
 
@@ -1765,6 +1774,7 @@ export namespace Prisma {
     updatedAt?: boolean
     sequencesCreated?: boolean | UserMeta$sequencesCreatedArgs<ExtArgs>
     packedOrders?: boolean | UserMeta$packedOrdersArgs<ExtArgs>
+    pickedOrders?: boolean | UserMeta$pickedOrdersArgs<ExtArgs>
     events?: boolean | UserMeta$eventsArgs<ExtArgs>
     _count?: boolean | UserMetaCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["userMeta"]>
@@ -1785,6 +1795,7 @@ export namespace Prisma {
   export type UserMetaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     sequencesCreated?: boolean | UserMeta$sequencesCreatedArgs<ExtArgs>
     packedOrders?: boolean | UserMeta$packedOrdersArgs<ExtArgs>
+    pickedOrders?: boolean | UserMeta$pickedOrdersArgs<ExtArgs>
     events?: boolean | UserMeta$eventsArgs<ExtArgs>
     _count?: boolean | UserMetaCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -1794,6 +1805,7 @@ export namespace Prisma {
     objects: {
       sequencesCreated: Prisma.$SequencePayload<ExtArgs>[]
       packedOrders: Prisma.$OrderPayload<ExtArgs>[]
+      pickedOrders: Prisma.$OrderPayload<ExtArgs>[]
       events: Prisma.$EventPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -2148,6 +2160,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     sequencesCreated<T extends UserMeta$sequencesCreatedArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$sequencesCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SequencePayload<ExtArgs>, T, "findMany"> | Null>
     packedOrders<T extends UserMeta$packedOrdersArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$packedOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany"> | Null>
+    pickedOrders<T extends UserMeta$pickedOrdersArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$pickedOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany"> | Null>
     events<T extends UserMeta$eventsArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2509,6 +2522,26 @@ export namespace Prisma {
    * UserMeta.packedOrders
    */
   export type UserMeta$packedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Order
+     */
+    select?: OrderSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrderInclude<ExtArgs> | null
+    where?: OrderWhereInput
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
+    cursor?: OrderWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OrderScalarFieldEnum | OrderScalarFieldEnum[]
+  }
+
+  /**
+   * UserMeta.pickedOrders
+   */
+  export type UserMeta$pickedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the Order
      */
@@ -3523,6 +3556,7 @@ export namespace Prisma {
     wpOrderId: number | null
     stopPosition: number | null
     bagsExpected: number | null
+    pickedById: number | null
     packedById: number | null
   }
 
@@ -3531,6 +3565,7 @@ export namespace Prisma {
     wpOrderId: number | null
     stopPosition: number | null
     bagsExpected: number | null
+    pickedById: number | null
     packedById: number | null
   }
 
@@ -3547,6 +3582,8 @@ export namespace Prisma {
     bagsExpected: number | null
     allowPartialDelivery: boolean | null
     partialDeliveryNote: string | null
+    pickedById: number | null
+    claimedAt: Date | null
     packedById: number | null
     packedAt: Date | null
     classifiedAt: Date | null
@@ -3569,6 +3606,8 @@ export namespace Prisma {
     bagsExpected: number | null
     allowPartialDelivery: boolean | null
     partialDeliveryNote: string | null
+    pickedById: number | null
+    claimedAt: Date | null
     packedById: number | null
     packedAt: Date | null
     classifiedAt: Date | null
@@ -3591,6 +3630,8 @@ export namespace Prisma {
     bagsExpected: number
     allowPartialDelivery: number
     partialDeliveryNote: number
+    pickedById: number
+    claimedAt: number
     packedById: number
     packedAt: number
     classifiedAt: number
@@ -3607,6 +3648,7 @@ export namespace Prisma {
     wpOrderId?: true
     stopPosition?: true
     bagsExpected?: true
+    pickedById?: true
     packedById?: true
   }
 
@@ -3615,6 +3657,7 @@ export namespace Prisma {
     wpOrderId?: true
     stopPosition?: true
     bagsExpected?: true
+    pickedById?: true
     packedById?: true
   }
 
@@ -3631,6 +3674,8 @@ export namespace Prisma {
     bagsExpected?: true
     allowPartialDelivery?: true
     partialDeliveryNote?: true
+    pickedById?: true
+    claimedAt?: true
     packedById?: true
     packedAt?: true
     classifiedAt?: true
@@ -3653,6 +3698,8 @@ export namespace Prisma {
     bagsExpected?: true
     allowPartialDelivery?: true
     partialDeliveryNote?: true
+    pickedById?: true
+    claimedAt?: true
     packedById?: true
     packedAt?: true
     classifiedAt?: true
@@ -3675,6 +3722,8 @@ export namespace Prisma {
     bagsExpected?: true
     allowPartialDelivery?: true
     partialDeliveryNote?: true
+    pickedById?: true
+    claimedAt?: true
     packedById?: true
     packedAt?: true
     classifiedAt?: true
@@ -3784,6 +3833,8 @@ export namespace Prisma {
     bagsExpected: number
     allowPartialDelivery: boolean
     partialDeliveryNote: string | null
+    pickedById: number | null
+    claimedAt: Date | null
     packedById: number | null
     packedAt: Date | null
     classifiedAt: Date | null
@@ -3825,6 +3876,8 @@ export namespace Prisma {
     bagsExpected?: boolean
     allowPartialDelivery?: boolean
     partialDeliveryNote?: boolean
+    pickedById?: boolean
+    claimedAt?: boolean
     packedById?: boolean
     packedAt?: boolean
     classifiedAt?: boolean
@@ -3833,6 +3886,7 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     packedBy?: boolean | Order$packedByArgs<ExtArgs>
+    pickedBy?: boolean | Order$pickedByArgs<ExtArgs>
     items?: boolean | Order$itemsArgs<ExtArgs>
     sequenceLinks?: boolean | Order$sequenceLinksArgs<ExtArgs>
     events?: boolean | Order$eventsArgs<ExtArgs>
@@ -3853,6 +3907,8 @@ export namespace Prisma {
     bagsExpected?: boolean
     allowPartialDelivery?: boolean
     partialDeliveryNote?: boolean
+    pickedById?: boolean
+    claimedAt?: boolean
     packedById?: boolean
     packedAt?: boolean
     classifiedAt?: boolean
@@ -3864,6 +3920,7 @@ export namespace Prisma {
 
   export type OrderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     packedBy?: boolean | Order$packedByArgs<ExtArgs>
+    pickedBy?: boolean | Order$pickedByArgs<ExtArgs>
     items?: boolean | Order$itemsArgs<ExtArgs>
     sequenceLinks?: boolean | Order$sequenceLinksArgs<ExtArgs>
     events?: boolean | Order$eventsArgs<ExtArgs>
@@ -3874,6 +3931,7 @@ export namespace Prisma {
     name: "Order"
     objects: {
       packedBy: Prisma.$UserMetaPayload<ExtArgs> | null
+      pickedBy: Prisma.$UserMetaPayload<ExtArgs> | null
       items: Prisma.$OrderItemPayload<ExtArgs>[]
       sequenceLinks: Prisma.$SequenceOrderPayload<ExtArgs>[]
       events: Prisma.$EventPayload<ExtArgs>[]
@@ -3891,6 +3949,8 @@ export namespace Prisma {
       bagsExpected: number
       allowPartialDelivery: boolean
       partialDeliveryNote: string | null
+      pickedById: number | null
+      claimedAt: Date | null
       packedById: number | null
       packedAt: Date | null
       classifiedAt: Date | null
@@ -4239,6 +4299,7 @@ export namespace Prisma {
   export interface Prisma__OrderClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     packedBy<T extends Order$packedByArgs<ExtArgs> = {}>(args?: Subset<T, Order$packedByArgs<ExtArgs>>): Prisma__UserMetaClient<$Result.GetResult<Prisma.$UserMetaPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
+    pickedBy<T extends Order$pickedByArgs<ExtArgs> = {}>(args?: Subset<T, Order$pickedByArgs<ExtArgs>>): Prisma__UserMetaClient<$Result.GetResult<Prisma.$UserMetaPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     items<T extends Order$itemsArgs<ExtArgs> = {}>(args?: Subset<T, Order$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany"> | Null>
     sequenceLinks<T extends Order$sequenceLinksArgs<ExtArgs> = {}>(args?: Subset<T, Order$sequenceLinksArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SequenceOrderPayload<ExtArgs>, T, "findMany"> | Null>
     events<T extends Order$eventsArgs<ExtArgs> = {}>(args?: Subset<T, Order$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findMany"> | Null>
@@ -4283,6 +4344,8 @@ export namespace Prisma {
     readonly bagsExpected: FieldRef<"Order", 'Int'>
     readonly allowPartialDelivery: FieldRef<"Order", 'Boolean'>
     readonly partialDeliveryNote: FieldRef<"Order", 'String'>
+    readonly pickedById: FieldRef<"Order", 'Int'>
+    readonly claimedAt: FieldRef<"Order", 'DateTime'>
     readonly packedById: FieldRef<"Order", 'Int'>
     readonly packedAt: FieldRef<"Order", 'DateTime'>
     readonly classifiedAt: FieldRef<"Order", 'DateTime'>
@@ -4592,6 +4655,21 @@ export namespace Prisma {
    * Order.packedBy
    */
   export type Order$packedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserMeta
+     */
+    select?: UserMetaSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserMetaInclude<ExtArgs> | null
+    where?: UserMetaWhereInput
+  }
+
+  /**
+   * Order.pickedBy
+   */
+  export type Order$pickedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the UserMeta
      */
@@ -5657,7 +5735,6 @@ export namespace Prisma {
 
   export type SequenceMinAggregateOutputType = {
     id: number | null
-    mode: string | null
     createdById: number | null
     createdAt: Date | null
     closedAt: Date | null
@@ -5670,7 +5747,6 @@ export namespace Prisma {
 
   export type SequenceMaxAggregateOutputType = {
     id: number | null
-    mode: string | null
     createdById: number | null
     createdAt: Date | null
     closedAt: Date | null
@@ -5683,7 +5759,6 @@ export namespace Prisma {
 
   export type SequenceCountAggregateOutputType = {
     id: number
-    mode: number
     createdById: number
     createdAt: number
     closedAt: number
@@ -5712,7 +5787,6 @@ export namespace Prisma {
 
   export type SequenceMinAggregateInputType = {
     id?: true
-    mode?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -5725,7 +5799,6 @@ export namespace Prisma {
 
   export type SequenceMaxAggregateInputType = {
     id?: true
-    mode?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -5738,7 +5811,6 @@ export namespace Prisma {
 
   export type SequenceCountAggregateInputType = {
     id?: true
-    mode?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -5838,7 +5910,6 @@ export namespace Prisma {
 
   export type SequenceGroupByOutputType = {
     id: number
-    mode: string
     createdById: number
     createdAt: Date
     closedAt: Date | null
@@ -5870,7 +5941,6 @@ export namespace Prisma {
 
   export type SequenceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    mode?: boolean
     createdById?: boolean
     createdAt?: boolean
     closedAt?: boolean
@@ -5887,7 +5957,6 @@ export namespace Prisma {
 
   export type SequenceSelectScalar = {
     id?: boolean
-    mode?: boolean
     createdById?: boolean
     createdAt?: boolean
     closedAt?: boolean
@@ -5912,7 +5981,6 @@ export namespace Prisma {
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
-      mode: string
       createdById: number
       createdAt: Date
       closedAt: Date | null
@@ -6293,7 +6361,6 @@ export namespace Prisma {
    */ 
   interface SequenceFieldRefs {
     readonly id: FieldRef<"Sequence", 'Int'>
-    readonly mode: FieldRef<"Sequence", 'String'>
     readonly createdById: FieldRef<"Sequence", 'Int'>
     readonly createdAt: FieldRef<"Sequence", 'DateTime'>
     readonly closedAt: FieldRef<"Sequence", 'DateTime'>
@@ -8539,6 +8606,8 @@ export namespace Prisma {
     bagsExpected: 'bagsExpected',
     allowPartialDelivery: 'allowPartialDelivery',
     partialDeliveryNote: 'partialDeliveryNote',
+    pickedById: 'pickedById',
+    claimedAt: 'claimedAt',
     packedById: 'packedById',
     packedAt: 'packedAt',
     classifiedAt: 'classifiedAt',
@@ -8566,7 +8635,6 @@ export namespace Prisma {
 
   export const SequenceScalarFieldEnum: {
     id: 'id',
-    mode: 'mode',
     createdById: 'createdById',
     createdAt: 'createdAt',
     closedAt: 'closedAt',
@@ -8726,6 +8794,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"UserMeta"> | Date | string
     sequencesCreated?: SequenceListRelationFilter
     packedOrders?: OrderListRelationFilter
+    pickedOrders?: OrderListRelationFilter
     events?: EventListRelationFilter
   }
 
@@ -8741,6 +8810,7 @@ export namespace Prisma {
     updatedAt?: SortOrder
     sequencesCreated?: SequenceOrderByRelationAggregateInput
     packedOrders?: OrderOrderByRelationAggregateInput
+    pickedOrders?: OrderOrderByRelationAggregateInput
     events?: EventOrderByRelationAggregateInput
   }
 
@@ -8759,6 +8829,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"UserMeta"> | Date | string
     sequencesCreated?: SequenceListRelationFilter
     packedOrders?: OrderListRelationFilter
+    pickedOrders?: OrderListRelationFilter
     events?: EventListRelationFilter
   }, "wpUserId">
 
@@ -8872,6 +8943,8 @@ export namespace Prisma {
     bagsExpected?: IntFilter<"Order"> | number
     allowPartialDelivery?: BoolFilter<"Order"> | boolean
     partialDeliveryNote?: StringNullableFilter<"Order"> | string | null
+    pickedById?: IntNullableFilter<"Order"> | number | null
+    claimedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -8880,6 +8953,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
     packedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
+    pickedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
     items?: OrderItemListRelationFilter
     sequenceLinks?: SequenceOrderListRelationFilter
     events?: EventListRelationFilter
@@ -8898,6 +8972,8 @@ export namespace Prisma {
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
     partialDeliveryNote?: SortOrderInput | SortOrder
+    pickedById?: SortOrderInput | SortOrder
+    claimedAt?: SortOrderInput | SortOrder
     packedById?: SortOrderInput | SortOrder
     packedAt?: SortOrderInput | SortOrder
     classifiedAt?: SortOrderInput | SortOrder
@@ -8906,6 +8982,7 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     packedBy?: UserMetaOrderByWithRelationInput
+    pickedBy?: UserMetaOrderByWithRelationInput
     items?: OrderItemOrderByRelationAggregateInput
     sequenceLinks?: SequenceOrderOrderByRelationAggregateInput
     events?: EventOrderByRelationAggregateInput
@@ -8927,6 +9004,8 @@ export namespace Prisma {
     bagsExpected?: IntFilter<"Order"> | number
     allowPartialDelivery?: BoolFilter<"Order"> | boolean
     partialDeliveryNote?: StringNullableFilter<"Order"> | string | null
+    pickedById?: IntNullableFilter<"Order"> | number | null
+    claimedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -8935,6 +9014,7 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
     packedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
+    pickedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
     items?: OrderItemListRelationFilter
     sequenceLinks?: SequenceOrderListRelationFilter
     events?: EventListRelationFilter
@@ -8953,6 +9033,8 @@ export namespace Prisma {
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
     partialDeliveryNote?: SortOrderInput | SortOrder
+    pickedById?: SortOrderInput | SortOrder
+    claimedAt?: SortOrderInput | SortOrder
     packedById?: SortOrderInput | SortOrder
     packedAt?: SortOrderInput | SortOrder
     classifiedAt?: SortOrderInput | SortOrder
@@ -8983,6 +9065,8 @@ export namespace Prisma {
     bagsExpected?: IntWithAggregatesFilter<"Order"> | number
     allowPartialDelivery?: BoolWithAggregatesFilter<"Order"> | boolean
     partialDeliveryNote?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    pickedById?: IntNullableWithAggregatesFilter<"Order"> | number | null
+    claimedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
     packedById?: IntNullableWithAggregatesFilter<"Order"> | number | null
     packedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
@@ -9067,7 +9151,6 @@ export namespace Prisma {
     OR?: SequenceWhereInput[]
     NOT?: SequenceWhereInput | SequenceWhereInput[]
     id?: IntFilter<"Sequence"> | number
-    mode?: StringFilter<"Sequence"> | string
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -9082,7 +9165,6 @@ export namespace Prisma {
 
   export type SequenceOrderByWithRelationInput = {
     id?: SortOrder
-    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrderInput | SortOrder
@@ -9100,7 +9182,6 @@ export namespace Prisma {
     AND?: SequenceWhereInput | SequenceWhereInput[]
     OR?: SequenceWhereInput[]
     NOT?: SequenceWhereInput | SequenceWhereInput[]
-    mode?: StringFilter<"Sequence"> | string
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -9115,7 +9196,6 @@ export namespace Prisma {
 
   export type SequenceOrderByWithAggregationInput = {
     id?: SortOrder
-    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrderInput | SortOrder
@@ -9136,7 +9216,6 @@ export namespace Prisma {
     OR?: SequenceScalarWhereWithAggregatesInput[]
     NOT?: SequenceScalarWhereWithAggregatesInput | SequenceScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Sequence"> | number
-    mode?: StringWithAggregatesFilter<"Sequence"> | string
     createdById?: IntWithAggregatesFilter<"Sequence"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableWithAggregatesFilter<"Sequence"> | Date | string | null
@@ -9270,6 +9349,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
     events?: EventCreateNestedManyWithoutActorInput
   }
 
@@ -9285,6 +9365,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
     events?: EventUncheckedCreateNestedManyWithoutActorInput
   }
 
@@ -9300,6 +9381,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
     events?: EventUpdateManyWithoutActorNestedInput
   }
 
@@ -9315,6 +9397,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
     events?: EventUncheckedUpdateManyWithoutActorNestedInput
   }
 
@@ -9433,6 +9516,7 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -9440,6 +9524,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
+    pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
@@ -9458,6 +9543,8 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -9482,6 +9569,7 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9489,6 +9577,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
+    pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
@@ -9507,6 +9596,8 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9532,6 +9623,8 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -9553,6 +9646,7 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9574,6 +9668,8 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9649,7 +9745,6 @@ export namespace Prisma {
   }
 
   export type SequenceCreateInput = {
-    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     b1ClosedAt?: Date | string | null
@@ -9663,7 +9758,6 @@ export namespace Prisma {
 
   export type SequenceUncheckedCreateInput = {
     id?: number
-    mode?: string
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -9676,7 +9770,6 @@ export namespace Prisma {
   }
 
   export type SequenceUpdateInput = {
-    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9690,7 +9783,6 @@ export namespace Prisma {
 
   export type SequenceUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
-    mode?: StringFieldUpdateOperationsInput | string
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9704,7 +9796,6 @@ export namespace Prisma {
 
   export type SequenceCreateManyInput = {
     id?: number
-    mode?: string
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -9716,7 +9807,6 @@ export namespace Prisma {
   }
 
   export type SequenceUpdateManyMutationInput = {
-    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9728,7 +9818,6 @@ export namespace Prisma {
 
   export type SequenceUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
-    mode?: StringFieldUpdateOperationsInput | string
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10215,6 +10304,8 @@ export namespace Prisma {
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
     partialDeliveryNote?: SortOrder
+    pickedById?: SortOrder
+    claimedAt?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
     classifiedAt?: SortOrder
@@ -10229,6 +10320,7 @@ export namespace Prisma {
     wpOrderId?: SortOrder
     stopPosition?: SortOrder
     bagsExpected?: SortOrder
+    pickedById?: SortOrder
     packedById?: SortOrder
   }
 
@@ -10245,6 +10337,8 @@ export namespace Prisma {
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
     partialDeliveryNote?: SortOrder
+    pickedById?: SortOrder
+    claimedAt?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
     classifiedAt?: SortOrder
@@ -10267,6 +10361,8 @@ export namespace Prisma {
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
     partialDeliveryNote?: SortOrder
+    pickedById?: SortOrder
+    claimedAt?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
     classifiedAt?: SortOrder
@@ -10281,6 +10377,7 @@ export namespace Prisma {
     wpOrderId?: SortOrder
     stopPosition?: SortOrder
     bagsExpected?: SortOrder
+    pickedById?: SortOrder
     packedById?: SortOrder
   }
 
@@ -10395,7 +10492,6 @@ export namespace Prisma {
 
   export type SequenceCountOrderByAggregateInput = {
     id?: SortOrder
-    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -10415,7 +10511,6 @@ export namespace Prisma {
 
   export type SequenceMaxOrderByAggregateInput = {
     id?: SortOrder
-    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -10428,7 +10523,6 @@ export namespace Prisma {
 
   export type SequenceMinOrderByAggregateInput = {
     id?: SortOrder
-    mode?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -10594,6 +10688,13 @@ export namespace Prisma {
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
   }
 
+  export type OrderCreateNestedManyWithoutPickedByInput = {
+    create?: XOR<OrderCreateWithoutPickedByInput, OrderUncheckedCreateWithoutPickedByInput> | OrderCreateWithoutPickedByInput[] | OrderUncheckedCreateWithoutPickedByInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutPickedByInput | OrderCreateOrConnectWithoutPickedByInput[]
+    createMany?: OrderCreateManyPickedByInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+  }
+
   export type EventCreateNestedManyWithoutActorInput = {
     create?: XOR<EventCreateWithoutActorInput, EventUncheckedCreateWithoutActorInput> | EventCreateWithoutActorInput[] | EventUncheckedCreateWithoutActorInput[]
     connectOrCreate?: EventCreateOrConnectWithoutActorInput | EventCreateOrConnectWithoutActorInput[]
@@ -10612,6 +10713,13 @@ export namespace Prisma {
     create?: XOR<OrderCreateWithoutPackedByInput, OrderUncheckedCreateWithoutPackedByInput> | OrderCreateWithoutPackedByInput[] | OrderUncheckedCreateWithoutPackedByInput[]
     connectOrCreate?: OrderCreateOrConnectWithoutPackedByInput | OrderCreateOrConnectWithoutPackedByInput[]
     createMany?: OrderCreateManyPackedByInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+  }
+
+  export type OrderUncheckedCreateNestedManyWithoutPickedByInput = {
+    create?: XOR<OrderCreateWithoutPickedByInput, OrderUncheckedCreateWithoutPickedByInput> | OrderCreateWithoutPickedByInput[] | OrderUncheckedCreateWithoutPickedByInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutPickedByInput | OrderCreateOrConnectWithoutPickedByInput[]
+    createMany?: OrderCreateManyPickedByInputEnvelope
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
   }
 
@@ -10678,6 +10786,20 @@ export namespace Prisma {
     deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
+  export type OrderUpdateManyWithoutPickedByNestedInput = {
+    create?: XOR<OrderCreateWithoutPickedByInput, OrderUncheckedCreateWithoutPickedByInput> | OrderCreateWithoutPickedByInput[] | OrderUncheckedCreateWithoutPickedByInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutPickedByInput | OrderCreateOrConnectWithoutPickedByInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutPickedByInput | OrderUpsertWithWhereUniqueWithoutPickedByInput[]
+    createMany?: OrderCreateManyPickedByInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutPickedByInput | OrderUpdateWithWhereUniqueWithoutPickedByInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutPickedByInput | OrderUpdateManyWithWhereWithoutPickedByInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
+  }
+
   export type EventUpdateManyWithoutActorNestedInput = {
     create?: XOR<EventCreateWithoutActorInput, EventUncheckedCreateWithoutActorInput> | EventCreateWithoutActorInput[] | EventUncheckedCreateWithoutActorInput[]
     connectOrCreate?: EventCreateOrConnectWithoutActorInput | EventCreateOrConnectWithoutActorInput[]
@@ -10717,6 +10839,20 @@ export namespace Prisma {
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
     update?: OrderUpdateWithWhereUniqueWithoutPackedByInput | OrderUpdateWithWhereUniqueWithoutPackedByInput[]
     updateMany?: OrderUpdateManyWithWhereWithoutPackedByInput | OrderUpdateManyWithWhereWithoutPackedByInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
+  }
+
+  export type OrderUncheckedUpdateManyWithoutPickedByNestedInput = {
+    create?: XOR<OrderCreateWithoutPickedByInput, OrderUncheckedCreateWithoutPickedByInput> | OrderCreateWithoutPickedByInput[] | OrderUncheckedCreateWithoutPickedByInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutPickedByInput | OrderCreateOrConnectWithoutPickedByInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutPickedByInput | OrderUpsertWithWhereUniqueWithoutPickedByInput[]
+    createMany?: OrderCreateManyPickedByInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutPickedByInput | OrderUpdateWithWhereUniqueWithoutPickedByInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutPickedByInput | OrderUpdateManyWithWhereWithoutPickedByInput[]
     deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
@@ -10786,6 +10922,12 @@ export namespace Prisma {
     connect?: UserMetaWhereUniqueInput
   }
 
+  export type UserMetaCreateNestedOneWithoutPickedOrdersInput = {
+    create?: XOR<UserMetaCreateWithoutPickedOrdersInput, UserMetaUncheckedCreateWithoutPickedOrdersInput>
+    connectOrCreate?: UserMetaCreateOrConnectWithoutPickedOrdersInput
+    connect?: UserMetaWhereUniqueInput
+  }
+
   export type OrderItemCreateNestedManyWithoutOrderInput = {
     create?: XOR<OrderItemCreateWithoutOrderInput, OrderItemUncheckedCreateWithoutOrderInput> | OrderItemCreateWithoutOrderInput[] | OrderItemUncheckedCreateWithoutOrderInput[]
     connectOrCreate?: OrderItemCreateOrConnectWithoutOrderInput | OrderItemCreateOrConnectWithoutOrderInput[]
@@ -10848,6 +10990,16 @@ export namespace Prisma {
     delete?: UserMetaWhereInput | boolean
     connect?: UserMetaWhereUniqueInput
     update?: XOR<XOR<UserMetaUpdateToOneWithWhereWithoutPackedOrdersInput, UserMetaUpdateWithoutPackedOrdersInput>, UserMetaUncheckedUpdateWithoutPackedOrdersInput>
+  }
+
+  export type UserMetaUpdateOneWithoutPickedOrdersNestedInput = {
+    create?: XOR<UserMetaCreateWithoutPickedOrdersInput, UserMetaUncheckedCreateWithoutPickedOrdersInput>
+    connectOrCreate?: UserMetaCreateOrConnectWithoutPickedOrdersInput
+    upsert?: UserMetaUpsertWithoutPickedOrdersInput
+    disconnect?: UserMetaWhereInput | boolean
+    delete?: UserMetaWhereInput | boolean
+    connect?: UserMetaWhereUniqueInput
+    update?: XOR<XOR<UserMetaUpdateToOneWithWhereWithoutPickedOrdersInput, UserMetaUpdateWithoutPickedOrdersInput>, UserMetaUncheckedUpdateWithoutPickedOrdersInput>
   }
 
   export type OrderItemUpdateManyWithoutOrderNestedInput = {
@@ -11400,7 +11552,6 @@ export namespace Prisma {
   }
 
   export type SequenceCreateWithoutCreatedByInput = {
-    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     b1ClosedAt?: Date | string | null
@@ -11413,7 +11564,6 @@ export namespace Prisma {
 
   export type SequenceUncheckedCreateWithoutCreatedByInput = {
     id?: number
-    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     b1ClosedAt?: Date | string | null
@@ -11446,12 +11596,14 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
@@ -11470,6 +11622,8 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -11488,6 +11642,67 @@ export namespace Prisma {
 
   export type OrderCreateManyPackedByInputEnvelope = {
     data: OrderCreateManyPackedByInput | OrderCreateManyPackedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OrderCreateWithoutPickedByInput = {
+    wpOrderId: number
+    number: string
+    status?: $Enums.OrderStatus
+    route?: string | null
+    stopPosition?: number | null
+    customerName?: string | null
+    customerAddress?: string | null
+    hasB2Pending?: boolean
+    bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
+    packedAt?: Date | string | null
+    classifiedAt?: Date | string | null
+    loadedAt?: Date | string | null
+    deliveredAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
+    items?: OrderItemCreateNestedManyWithoutOrderInput
+    sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
+    events?: EventCreateNestedManyWithoutOrderInput
+  }
+
+  export type OrderUncheckedCreateWithoutPickedByInput = {
+    id?: number
+    wpOrderId: number
+    number: string
+    status?: $Enums.OrderStatus
+    route?: string | null
+    stopPosition?: number | null
+    customerName?: string | null
+    customerAddress?: string | null
+    hasB2Pending?: boolean
+    bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
+    packedById?: number | null
+    packedAt?: Date | string | null
+    classifiedAt?: Date | string | null
+    loadedAt?: Date | string | null
+    deliveredAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    items?: OrderItemUncheckedCreateNestedManyWithoutOrderInput
+    sequenceLinks?: SequenceOrderUncheckedCreateNestedManyWithoutOrderInput
+    events?: EventUncheckedCreateNestedManyWithoutOrderInput
+  }
+
+  export type OrderCreateOrConnectWithoutPickedByInput = {
+    where: OrderWhereUniqueInput
+    create: XOR<OrderCreateWithoutPickedByInput, OrderUncheckedCreateWithoutPickedByInput>
+  }
+
+  export type OrderCreateManyPickedByInputEnvelope = {
+    data: OrderCreateManyPickedByInput | OrderCreateManyPickedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -11537,7 +11752,6 @@ export namespace Prisma {
     OR?: SequenceScalarWhereInput[]
     NOT?: SequenceScalarWhereInput | SequenceScalarWhereInput[]
     id?: IntFilter<"Sequence"> | number
-    mode?: StringFilter<"Sequence"> | string
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -11580,6 +11794,8 @@ export namespace Prisma {
     bagsExpected?: IntFilter<"Order"> | number
     allowPartialDelivery?: BoolFilter<"Order"> | boolean
     partialDeliveryNote?: StringNullableFilter<"Order"> | string | null
+    pickedById?: IntNullableFilter<"Order"> | number | null
+    claimedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -11587,6 +11803,22 @@ export namespace Prisma {
     deliveredAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     createdAt?: DateTimeFilter<"Order"> | Date | string
     updatedAt?: DateTimeFilter<"Order"> | Date | string
+  }
+
+  export type OrderUpsertWithWhereUniqueWithoutPickedByInput = {
+    where: OrderWhereUniqueInput
+    update: XOR<OrderUpdateWithoutPickedByInput, OrderUncheckedUpdateWithoutPickedByInput>
+    create: XOR<OrderCreateWithoutPickedByInput, OrderUncheckedCreateWithoutPickedByInput>
+  }
+
+  export type OrderUpdateWithWhereUniqueWithoutPickedByInput = {
+    where: OrderWhereUniqueInput
+    data: XOR<OrderUpdateWithoutPickedByInput, OrderUncheckedUpdateWithoutPickedByInput>
+  }
+
+  export type OrderUpdateManyWithWhereWithoutPickedByInput = {
+    where: OrderScalarWhereInput
+    data: XOR<OrderUpdateManyMutationInput, OrderUncheckedUpdateManyWithoutPickedByInput>
   }
 
   export type EventUpsertWithWhereUniqueWithoutActorInput = {
@@ -11684,6 +11916,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
+    pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
     events?: EventCreateNestedManyWithoutActorInput
   }
 
@@ -11698,12 +11931,48 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
+    pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
     events?: EventUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserMetaCreateOrConnectWithoutPackedOrdersInput = {
     where: UserMetaWhereUniqueInput
     create: XOR<UserMetaCreateWithoutPackedOrdersInput, UserMetaUncheckedCreateWithoutPackedOrdersInput>
+  }
+
+  export type UserMetaCreateWithoutPickedOrdersInput = {
+    wpUserId: number
+    username: string
+    displayName: string
+    email?: string | null
+    capabilities: JsonNullValueInput | InputJsonValue
+    active?: boolean
+    lastLoginAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
+    packedOrders?: OrderCreateNestedManyWithoutPackedByInput
+    events?: EventCreateNestedManyWithoutActorInput
+  }
+
+  export type UserMetaUncheckedCreateWithoutPickedOrdersInput = {
+    wpUserId: number
+    username: string
+    displayName: string
+    email?: string | null
+    capabilities: JsonNullValueInput | InputJsonValue
+    active?: boolean
+    lastLoginAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
+    packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
+    events?: EventUncheckedCreateNestedManyWithoutActorInput
+  }
+
+  export type UserMetaCreateOrConnectWithoutPickedOrdersInput = {
+    where: UserMetaWhereUniqueInput
+    create: XOR<UserMetaCreateWithoutPickedOrdersInput, UserMetaUncheckedCreateWithoutPickedOrdersInput>
   }
 
   export type OrderItemCreateWithoutOrderInput = {
@@ -11798,6 +12067,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
+    pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
     events?: EventUpdateManyWithoutActorNestedInput
   }
 
@@ -11812,6 +12082,48 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
+    pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
+    events?: EventUncheckedUpdateManyWithoutActorNestedInput
+  }
+
+  export type UserMetaUpsertWithoutPickedOrdersInput = {
+    update: XOR<UserMetaUpdateWithoutPickedOrdersInput, UserMetaUncheckedUpdateWithoutPickedOrdersInput>
+    create: XOR<UserMetaCreateWithoutPickedOrdersInput, UserMetaUncheckedCreateWithoutPickedOrdersInput>
+    where?: UserMetaWhereInput
+  }
+
+  export type UserMetaUpdateToOneWithWhereWithoutPickedOrdersInput = {
+    where?: UserMetaWhereInput
+    data: XOR<UserMetaUpdateWithoutPickedOrdersInput, UserMetaUncheckedUpdateWithoutPickedOrdersInput>
+  }
+
+  export type UserMetaUpdateWithoutPickedOrdersInput = {
+    wpUserId?: IntFieldUpdateOperationsInput | number
+    username?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    capabilities?: JsonNullValueInput | InputJsonValue
+    active?: BoolFieldUpdateOperationsInput | boolean
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
+    packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
+    events?: EventUpdateManyWithoutActorNestedInput
+  }
+
+  export type UserMetaUncheckedUpdateWithoutPickedOrdersInput = {
+    wpUserId?: IntFieldUpdateOperationsInput | number
+    username?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    capabilities?: JsonNullValueInput | InputJsonValue
+    active?: BoolFieldUpdateOperationsInput | boolean
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
+    packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     events?: EventUncheckedUpdateManyWithoutActorNestedInput
   }
 
@@ -11883,6 +12195,7 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -11890,6 +12203,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
+    pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
   }
@@ -11907,6 +12221,8 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -11969,6 +12285,7 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -11976,6 +12293,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
+    pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
   }
@@ -11993,6 +12311,8 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12044,6 +12364,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
     events?: EventCreateNestedManyWithoutActorInput
   }
 
@@ -12058,6 +12379,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
     events?: EventUncheckedCreateNestedManyWithoutActorInput
   }
 
@@ -12106,6 +12428,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
     events?: EventUpdateManyWithoutActorNestedInput
   }
 
@@ -12120,6 +12443,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
     events?: EventUncheckedUpdateManyWithoutActorNestedInput
   }
 
@@ -12140,7 +12464,6 @@ export namespace Prisma {
   }
 
   export type SequenceCreateWithoutOrdersInput = {
-    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     b1ClosedAt?: Date | string | null
@@ -12153,7 +12476,6 @@ export namespace Prisma {
 
   export type SequenceUncheckedCreateWithoutOrdersInput = {
     id?: number
-    mode?: string
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -12181,6 +12503,7 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -12188,6 +12511,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
+    pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
   }
@@ -12205,6 +12529,8 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -12233,7 +12559,6 @@ export namespace Prisma {
   }
 
   export type SequenceUpdateWithoutOrdersInput = {
-    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12246,7 +12571,6 @@ export namespace Prisma {
 
   export type SequenceUncheckedUpdateWithoutOrdersInput = {
     id?: IntFieldUpdateOperationsInput | number
-    mode?: StringFieldUpdateOperationsInput | string
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12280,6 +12604,7 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12287,6 +12612,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
+    pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
   }
@@ -12304,6 +12630,8 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12327,6 +12655,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
   }
 
   export type UserMetaUncheckedCreateWithoutEventsInput = {
@@ -12341,6 +12670,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
   }
 
   export type UserMetaCreateOrConnectWithoutEventsInput = {
@@ -12360,6 +12690,7 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -12367,6 +12698,7 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
+    pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
   }
@@ -12384,6 +12716,8 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
@@ -12423,6 +12757,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
   }
 
   export type UserMetaUncheckedUpdateWithoutEventsInput = {
@@ -12437,6 +12772,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
   }
 
   export type OrderUpsertWithoutEventsInput = {
@@ -12462,6 +12798,7 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12469,6 +12806,7 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
+    pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
   }
@@ -12486,6 +12824,8 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12499,7 +12839,6 @@ export namespace Prisma {
 
   export type SequenceCreateManyCreatedByInput = {
     id?: number
-    mode?: string
     createdAt?: Date | string
     closedAt?: Date | string | null
     b1ClosedAt?: Date | string | null
@@ -12522,6 +12861,31 @@ export namespace Prisma {
     bagsExpected?: number
     allowPartialDelivery?: boolean
     partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
+    packedAt?: Date | string | null
+    classifiedAt?: Date | string | null
+    loadedAt?: Date | string | null
+    deliveredAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrderCreateManyPickedByInput = {
+    id?: number
+    wpOrderId: number
+    number: string
+    status?: $Enums.OrderStatus
+    route?: string | null
+    stopPosition?: number | null
+    customerName?: string | null
+    customerAddress?: string | null
+    hasB2Pending?: boolean
+    bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
+    packedById?: number | null
     packedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
@@ -12539,7 +12903,6 @@ export namespace Prisma {
   }
 
   export type SequenceUpdateWithoutCreatedByInput = {
-    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12552,7 +12915,6 @@ export namespace Prisma {
 
   export type SequenceUncheckedUpdateWithoutCreatedByInput = {
     id?: IntFieldUpdateOperationsInput | number
-    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12565,7 +12927,6 @@ export namespace Prisma {
 
   export type SequenceUncheckedUpdateManyWithoutCreatedByInput = {
     id?: IntFieldUpdateOperationsInput | number
-    mode?: StringFieldUpdateOperationsInput | string
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12587,12 +12948,14 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
@@ -12611,6 +12974,8 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12635,6 +13000,82 @@ export namespace Prisma {
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderUpdateWithoutPickedByInput = {
+    wpOrderId?: IntFieldUpdateOperationsInput | number
+    number?: StringFieldUpdateOperationsInput | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    route?: NullableStringFieldUpdateOperationsInput | string | null
+    stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
+    customerName?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
+    bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
+    items?: OrderItemUpdateManyWithoutOrderNestedInput
+    sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
+    events?: EventUpdateManyWithoutOrderNestedInput
+  }
+
+  export type OrderUncheckedUpdateWithoutPickedByInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    wpOrderId?: IntFieldUpdateOperationsInput | number
+    number?: StringFieldUpdateOperationsInput | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    route?: NullableStringFieldUpdateOperationsInput | string | null
+    stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
+    customerName?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
+    bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    packedById?: NullableIntFieldUpdateOperationsInput | number | null
+    packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    items?: OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+    sequenceLinks?: SequenceOrderUncheckedUpdateManyWithoutOrderNestedInput
+    events?: EventUncheckedUpdateManyWithoutOrderNestedInput
+  }
+
+  export type OrderUncheckedUpdateManyWithoutPickedByInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    wpOrderId?: IntFieldUpdateOperationsInput | number
+    number?: StringFieldUpdateOperationsInput | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    route?: NullableStringFieldUpdateOperationsInput | string | null
+    stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
+    customerName?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
+    bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null

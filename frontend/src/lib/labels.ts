@@ -51,6 +51,8 @@ export const EVENT_LABELS: Record<string, string> = {
   'sequence.closed': 'cerró secuencia',
   'sequence.deleted': 'eliminó secuencia',
   'sequence.order_removed': 'removió pedido de secuencia',
+  'order.claimed': 'tomó pedido para empacar',
+  'order.claim_released': 'liberó claim de pedido',
   'order.packed': 'empacó pedido',
   'order.unblocked': 'reactivó pedido',
   'order.partial_delivery_approved': 'aprobó entrega parcial',

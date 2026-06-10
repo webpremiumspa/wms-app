@@ -3,7 +3,6 @@ import type {
   PendingOrder,
   Sequence,
   SequenceDetail,
-  PickingReport,
   PendingPackingOrder,
   StockProblem,
   OrderDetail,
@@ -13,9 +12,6 @@ export const sequencesApi = {
   list: async (): Promise<Sequence[]> => (await api.get('/sequences')).data.sequences,
 
   get: async (id: number): Promise<SequenceDetail> => (await api.get(`/sequences/${id}`)).data.sequence,
-
-  pickingReport: async (id: number): Promise<PickingReport> =>
-    (await api.get(`/sequences/${id}/picking-report`)).data,
 
   pendingPacking: async (id: number): Promise<PendingPackingOrder[]> =>
     (await api.get(`/sequences/${id}/pending-packing`)).data.orders,
@@ -36,18 +32,20 @@ export const sequencesApi = {
   validateStock: async (orderIds: number[]): Promise<StockProblem[]> =>
     (await api.post('/sequences/validate-stock', { orderIds })).data.problems,
 
-  create: async (
-    orderIds: number[],
-    mode: 'by_sku' | 'by_order' = 'by_order',
-  ): Promise<Sequence> =>
-    (await api.post('/sequences', { orderIds, mode })).data.sequence,
-
-  markPicked: async (id: number, productId: number, picked: boolean): Promise<void> => {
-    await api.patch(`/sequences/${id}/picking`, { productId, picked });
-  },
+  create: async (orderIds: number[]): Promise<Sequence> =>
+    (await api.post('/sequences', { orderIds })).data.sequence,
 
   closeB1: async (id: number, actualBags?: number): Promise<Sequence> =>
     (await api.post(`/sequences/${id}/close-b1`, actualBags !== undefined ? { actualBags } : {})).data.sequence,
+
+  // Descarga el PDF con TODOS los albaranes de la secuencia y lo abre en una
+  // pestaña nueva. Cada albarán es una página (los pickers escanean el QR).
+  openAlbaranesBatch: async (id: number): Promise<void> => {
+    const res = await api.get(`/sequences/${id}/albaranes.pdf`, { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data);
+    window.open(url, '_blank', 'noopener');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
 
   delete: async (id: number): Promise<{ ok: boolean; ordersReverted: number }> =>
     (await api.delete(`/sequences/${id}`)).data,
@@ -99,6 +97,12 @@ export const ordersApi = {
     (await api.delete(`/orders/${id}/partial-delivery`)).data,
   unblock: async (id: number): Promise<{ ok: boolean }> =>
     (await api.post(`/orders/${id}/unblock`)).data,
+  // Claim: el picker toma el pedido para empacarlo.
+  claim: async (id: number): Promise<{ ok: boolean; alreadyClaimed?: boolean; claimedAt?: string }> =>
+    (await api.post(`/orders/${id}/claim`)).data,
+  // Release: libera el claim (admin/supervisor o el mismo picker).
+  releaseClaim: async (id: number): Promise<{ ok: boolean }> =>
+    (await api.delete(`/orders/${id}/claim`)).data,
   // Descarga el PDF con el header Authorization (que window.open no enviaría)
   // y lo abre en una nueva pestaña como blob.
   openAlbaran: async (id: number): Promise<void> => {

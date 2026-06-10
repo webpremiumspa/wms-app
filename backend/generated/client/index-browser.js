@@ -156,6 +156,8 @@ exports.Prisma.OrderScalarFieldEnum = {
   bagsExpected: 'bagsExpected',
   allowPartialDelivery: 'allowPartialDelivery',
   partialDeliveryNote: 'partialDeliveryNote',
+  pickedById: 'pickedById',
+  claimedAt: 'claimedAt',
   packedById: 'packedById',
   packedAt: 'packedAt',
   classifiedAt: 'classifiedAt',
@@ -177,7 +179,6 @@ exports.Prisma.OrderItemScalarFieldEnum = {
 
 exports.Prisma.SequenceScalarFieldEnum = {
   id: 'id',
-  mode: 'mode',
   createdById: 'createdById',
   createdAt: 'createdAt',
   closedAt: 'closedAt',

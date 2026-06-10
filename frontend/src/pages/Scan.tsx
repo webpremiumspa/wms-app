@@ -1,6 +1,6 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Truck, Printer, CheckCircle2, AlertTriangle, Image as ImageIcon, Home, LogIn } from 'lucide-react';
+import { Truck, Printer, CheckCircle2, AlertTriangle, Image as ImageIcon, Home, LogIn, ClipboardCheck } from 'lucide-react';
 import { ordersApi } from '@/lib/sequences';
 import { dispatchApi } from '@/lib/dispatch';
 import { orderStatusLabel } from '@/lib/labels';
@@ -14,9 +14,11 @@ export function Scan() {
   const { wpOrderId } = useParams();
   const idNum = Number(wpOrderId);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const canLoad = hasCap(user, CAPS.LOAD);
+  const canPack = hasCap(user, CAPS.PACK_B1);
 
   // Endpoint público: no requiere auth, devuelve datos del pedido + items.
   const { data: order, isLoading, error } = useQuery({
@@ -110,6 +112,15 @@ export function Scan() {
         <div className="space-y-2">
           {user ? (
             <>
+              {canPack && order.packable && order.openSequenceId && (
+                <button
+                  onClick={() => navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`)}
+                  className="btn-primary w-full"
+                >
+                  <ClipboardCheck size={18} />
+                  Empacar este pedido
+                </button>
+              )}
               {canLoad && order.status === 'packed' && (
                 <button
                   onClick={() => markLoaded.mutate()}

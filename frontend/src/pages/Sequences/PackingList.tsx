@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronLeft, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Printer, User } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
@@ -10,6 +11,8 @@ import { ProgressBar } from '@/components/ProgressBar';
 export function PackingList() {
   const { id } = useParams();
   const seqId = Number(id);
+  const [printError, setPrintError] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['sequence', seqId, 'pending-packing'],
     queryFn: () => sequencesApi.pendingPacking(seqId),
@@ -19,12 +22,25 @@ export function PackingList() {
   if (isLoading || !data) return <Spinner />;
 
   const packed = data.filter((o) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.status)).length;
+  const printable = data.filter((o) => ['sequenced', 'packed', 'classified', 'loaded'].includes(o.status)).length;
   // Pendientes primero, empacados al final (mejor flujo visual del picker).
   const sorted = [...data].sort((a, b) => {
     const aDone = ['packed', 'classified', 'loaded', 'delivered'].includes(a.status) ? 1 : 0;
     const bDone = ['packed', 'classified', 'loaded', 'delivered'].includes(b.status) ? 1 : 0;
     return aDone - bDone;
   });
+
+  async function printAll() {
+    setPrintError(null);
+    setPrinting(true);
+    try {
+      await sequencesApi.openAlbaranesBatch(seqId);
+    } catch (e: any) {
+      setPrintError(e.response?.data?.message || 'No se pudieron generar los albaranes');
+    } finally {
+      setPrinting(false);
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -35,9 +51,33 @@ export function PackingList() {
       <h2 className="text-xl font-semibold">Selección de pedido a empacar</h2>
       <ProgressBar value={packed} total={data.length} label="Pedidos empacados" />
 
+      {printable > 0 && (
+        <div className="card flex items-center justify-between gap-3 p-3 ring-1 ring-brand-100">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-slate-800">Imprimir albaranes de la secuencia</div>
+            <div className="text-xs text-slate-500">
+              Genera un único PDF con los {printable} albaranes ({sorted.filter(o => !['packed', 'classified', 'loaded', 'delivered'].includes(o.status)).length} pendientes). Cada hoja trae su QR — los pickers la escanean para tomar el pedido.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={printAll}
+            disabled={printing}
+            className="btn-primary shrink-0"
+          >
+            <Printer size={16} />
+            {printing ? 'Generando…' : 'Imprimir todos'}
+          </button>
+        </div>
+      )}
+      {printError && (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{printError}</div>
+      )}
+
       <div className="space-y-2">
         {sorted.map((o) => {
           const done = o.status === 'packed' || o.status === 'classified' || o.status === 'loaded' || o.status === 'delivered';
+          const claimed = !!o.pickedBy && !done;
           return (
             <Link
               key={o.id}
@@ -45,8 +85,9 @@ export function PackingList() {
               onClick={(e) => done && e.preventDefault()}
               className={clsx(
                 'card flex items-center justify-between p-3',
-                done ? 'opacity-60' : 'hover:shadow-md',
-                !o.ready && !done && 'ring-1 ring-amber-200',
+                done && 'opacity-60',
+                !done && !claimed && 'hover:shadow-md',
+                claimed && 'ring-1 ring-amber-200',
               )}
             >
               <div className="min-w-0 space-y-1">
@@ -61,10 +102,10 @@ export function PackingList() {
                   {o.customerName || '—'} · {o.itemCount} items B1
                 </div>
               </div>
-              {!o.ready && !done && (
+              {claimed && (
                 <div className="ml-3 flex items-center gap-1 text-xs text-amber-700">
-                  <AlertTriangle size={14} />
-                  Picking incompleto
+                  <User size={14} />
+                  Tomado por {o.pickedBy!.displayName || o.pickedBy!.username}
                 </div>
               )}
             </Link>

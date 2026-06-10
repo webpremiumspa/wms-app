@@ -55,6 +55,8 @@ export async function removeOrderFromSequence({
         status: 'blocked',
         packedAt: null,
         packedById: null,
+        pickedById: null,
+        claimedAt: null,
         classifiedAt: null,
         loadedAt: null,
         allowPartialDelivery: false,
@@ -163,6 +165,78 @@ export async function revokePartialDelivery({ orderId, actorId }) {
         orderId,
         payload: {},
       },
+    }),
+  ]);
+  return { ok: true };
+}
+
+// Toma (claim) un pedido para que un picker empiece a empacarlo. Se llama
+// cuando el picker escanea el QR del albarán impreso (o cuando entra al
+// pedido desde la lista). Si ya está tomado por otro usuario, lanza 409 con
+// los datos del actual claimer para que el frontend muestre el bloqueo.
+// Idempotente: si ya lo tiene el mismo usuario, devuelve OK.
+export async function claimOrder({ orderId, actorId }) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { pickedBy: { select: { wpUserId: true, displayName: true, username: true } } },
+  });
+  if (!order) throw new HttpError(404, 'Order not found');
+
+  // Estados en los que el claim aplica (todavía no se cerró el packing).
+  const CLAIMABLE_STATUSES = ['sequenced'];
+  // Si ya fue empacado/clasificado/cargado, no hay nada que tomar.
+  if (!CLAIMABLE_STATUSES.includes(order.status)) {
+    throw new HttpError(409, 'Order is not in a claimable state', {
+      currentStatus: order.status,
+    });
+  }
+
+  if (order.pickedById && order.pickedById !== actorId) {
+    throw new HttpError(409, 'Order already claimed by another picker', {
+      claimedBy: {
+        wpUserId: order.pickedBy?.wpUserId,
+        displayName: order.pickedBy?.displayName,
+        username: order.pickedBy?.username,
+      },
+      claimedAt: order.claimedAt,
+    });
+  }
+
+  // Idempotente: si ya es del mismo actor, no hace falta UPDATE.
+  if (order.pickedById === actorId) {
+    return { ok: true, alreadyClaimed: true, claimedAt: order.claimedAt };
+  }
+
+  const now = new Date();
+  await prisma.$transaction([
+    prisma.order.update({
+      where: { id: orderId },
+      data: { pickedById: actorId, claimedAt: now },
+    }),
+    prisma.event.create({
+      data: { type: 'order.claimed', actorId, orderId, payload: {} },
+    }),
+  ]);
+  return { ok: true, claimedAt: now };
+}
+
+// Libera el claim (lo toma cualquiera con cap pack_b1 o supervise — útil si
+// el picker se enferma y otro lo tiene que tomar, o si quedó "tomado" por
+// error y nunca se cerró).
+export async function releaseOrderClaim({ orderId, actorId }) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new HttpError(404, 'Order not found');
+  if (!order.pickedById) {
+    return { ok: true, alreadyReleased: true };
+  }
+
+  await prisma.$transaction([
+    prisma.order.update({
+      where: { id: orderId },
+      data: { pickedById: null, claimedAt: null },
+    }),
+    prisma.event.create({
+      data: { type: 'order.claim_released', actorId, orderId, payload: { previousPickerId: order.pickedById } },
     }),
   ]);
   return { ok: true };

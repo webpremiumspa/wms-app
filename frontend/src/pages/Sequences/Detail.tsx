@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, Package, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, PackageOpen, UserX } from 'lucide-react';
+import { ChevronLeft, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, PackageOpen, UserX } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
 import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
@@ -134,9 +134,6 @@ export function SequenceDetail() {
           <Badge variant={seq.status === 'open' ? 'green' : 'gray'}>
             {sequenceStatusLabel(seq.status)}
           </Badge>
-          <Badge variant="gray">
-            {seq.mode === 'by_order' ? 'Por pedido' : 'Por SKU'}
-          </Badge>
         </div>
         <div className="mt-2 text-sm text-slate-600">
           {orderCount} pedidos · {packed} empacados
@@ -169,30 +166,15 @@ export function SequenceDetail() {
         </div>
       </div>
 
-      <div className={`grid gap-3 ${seq.mode === 'by_order' ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
-        {seq.mode === 'by_sku' && (
-          <Link to={`/sequences/${seq.id}/picking`} className="card flex items-center gap-3 p-4 hover:shadow-md">
-            <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
-              <Package size={22} />
-            </div>
-            <div>
-              <div className="font-medium">Picking B1</div>
-              <div className="text-xs text-slate-500">Recolectar SKUs en bodega</div>
-            </div>
-          </Link>
-        )}
+      <div className="grid gap-3 md:grid-cols-2">
         <Link to={`/sequences/${seq.id}/packing`} className="card flex items-center gap-3 p-4 hover:shadow-md">
           <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
             <ClipboardCheck size={22} />
           </div>
           <div>
-            <div className="font-medium">
-              {seq.mode === 'by_order' ? 'Picking + Packing' : 'Empacar pedidos'}
-            </div>
+            <div className="font-medium">Empacar pedidos</div>
             <div className="text-xs text-slate-500">
-              {seq.mode === 'by_order'
-                ? 'Recorrer pedido por pedido, armar bolsa, imprimir albarán'
-                : 'Armar bolsas individuales'}
+              Imprimir todos los albaranes y empacar pedido por pedido escaneando el QR
             </div>
           </div>
         </Link>
