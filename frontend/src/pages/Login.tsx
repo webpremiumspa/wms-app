@@ -1,14 +1,19 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export function Login() {
   const { user, login, loading } = useAuth();
+  const [params] = useSearchParams();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  if (user) return <Navigate to="/" replace />;
+  // Después del login, volver a la URL que pasaron por ?from=...
+  // Restringido a paths absolutos del propio dominio para evitar open redirect.
+  const rawFrom = params.get('from') || '/';
+  const safeFrom = rawFrom.startsWith('/') && !rawFrom.startsWith('//') ? rawFrom : '/';
+  if (user) return <Navigate to={safeFrom} replace />;
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();

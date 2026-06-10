@@ -155,10 +155,17 @@ export function Scan() {
               <div className="flex items-start gap-2 text-amber-800">
                 <AlertTriangle size={18} className="mt-0.5 shrink-0" />
                 <div className="text-sm">
-                  Inicia sesión para confirmar carga al vehículo o reimprimir el albarán.
+                  {order.packable
+                    ? 'Iniciá sesión para empacar este pedido (queda registrado a tu nombre).'
+                    : order.status === 'packed'
+                    ? 'Iniciá sesión para confirmar carga al vehículo o reimprimir el albarán.'
+                    : 'Iniciá sesión para acceder a este pedido.'}
                 </div>
               </div>
-              <Link to="/login" className="btn-primary w-full">
+              <Link
+                to={`/login?from=${encodeURIComponent(`/scan/${wpOrderId}`)}`}
+                className="btn-primary w-full"
+              >
                 <LogIn size={16} />
                 Ingresar
               </Link>
