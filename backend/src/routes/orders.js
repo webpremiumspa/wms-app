@@ -13,7 +13,6 @@ import {
   unblockOrder,
   getOrderLoadability,
   claimOrder,
-  releaseOrderClaim,
 } from '../services/order-actions.js';
 import { config } from '../config.js';
 
@@ -87,7 +86,7 @@ router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.DELIVER, WMS_
   }
 });
 
-router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.DELIVER, WMS_CAPS.LOAD), async (req, res, next) => {
+router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.DELIVER, WMS_CAPS.LOAD), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const order = await prisma.order.findUnique({
@@ -160,23 +159,13 @@ router.delete('/:id/partial-delivery', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUP
 });
 
 // Claim: el picker toma el pedido al escanear el QR (o entrar desde la lista).
-// Bloquea a otros pickers de tomar el mismo pedido.
+// Modelo "último escaneo gana": si ya estaba tomado por otro, se reasigna a
+// este actor. Solo el último claimer puede cerrar el pedido — el anterior
+// recibe error 403 al intentar el pack si otro lo tomó después.
 router.post('/:id/claim', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const result = await claimOrder({ orderId: id, actorId: req.user.wpUserId });
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-});
-
-// Release: el supervisor o el mismo picker libera el claim (si se enfermó,
-// o quedó tomado por error y nadie cerró).
-router.delete('/:id/claim', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
-  try {
-    const id = Number(req.params.id);
-    const result = await releaseOrderClaim({ orderId: id, actorId: req.user.wpUserId });
     res.json(result);
   } catch (err) {
     next(err);
@@ -209,6 +198,15 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
     });
     if (!order) throw new HttpError(404, 'Order not found');
     if (order.status === 'packed') throw new HttpError(409, 'Order already packed');
+
+    // Validación de claim: solo el último picker que escaneó puede cerrar.
+    // Si otro picker escaneó después, este usuario debe recargar — el pedido
+    // ya no es suyo.
+    if (order.pickedById && order.pickedById !== req.user.wpUserId) {
+      throw new HttpError(403, 'Este pedido fue reasignado a otro picker. Recargá para continuar.', {
+        currentPickerId: order.pickedById,
+      });
+    }
 
     const b1Items = order.items.filter((i) => i.warehouse === 'B1');
     const required = new Set(b1Items.map((i) => i.id));

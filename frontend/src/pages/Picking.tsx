@@ -12,7 +12,7 @@ import { CAPS, hasCap } from '@/lib/auth';
 export function Picking() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const canPickB1 = hasCap(user, CAPS.PICK_B1);
+  const canPackB1 = hasCap(user, CAPS.PACK_B1);
   const canPickB2 = hasCap(user, CAPS.PICK_B2);
   const [batchSel, setBatchSel] = useState<Set<number>>(new Set());
   // Por defecto la vista solo muestra trabajo pendiente. El toggle deja ver
@@ -22,7 +22,7 @@ export function Picking() {
   const { data: sequences, isLoading } = useQuery({
     queryKey: ['sequences'],
     queryFn: sequencesApi.list,
-    enabled: canPickB1 || canPickB2,
+    enabled: canPackB1 || canPickB2,
     refetchInterval: 5000,
   });
 
@@ -161,7 +161,7 @@ export function Picking() {
         </div>
       )}
 
-      {canPickB1 && (
+      {canPackB1 && (
         <div className="space-y-2">
           <h3 className="text-sm font-semibold text-slate-700">Picking Bodega 1 · pendiente</h3>
           {isLoading ? (
@@ -218,7 +218,7 @@ export function Picking() {
         </div>
       )}
 
-      {!canPickB1 && !canPickB2 && (
+      {!canPackB1 && !canPickB2 && (
         <div className="card p-6 text-center text-slate-500">
           No tienes capabilities de picking asignadas.
         </div>

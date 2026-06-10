@@ -97,12 +97,16 @@ export const ordersApi = {
     (await api.delete(`/orders/${id}/partial-delivery`)).data,
   unblock: async (id: number): Promise<{ ok: boolean }> =>
     (await api.post(`/orders/${id}/unblock`)).data,
-  // Claim: el picker toma el pedido para empacarlo.
-  claim: async (id: number): Promise<{ ok: boolean; alreadyClaimed?: boolean; claimedAt?: string }> =>
-    (await api.post(`/orders/${id}/claim`)).data,
-  // Release: libera el claim (admin/supervisor o el mismo picker).
-  releaseClaim: async (id: number): Promise<{ ok: boolean }> =>
-    (await api.delete(`/orders/${id}/claim`)).data,
+  // Claim: el picker toma el pedido para empacarlo. Modelo "último escaneo
+  // gana" — siempre reasigna al actor que llama.
+  claim: async (
+    id: number,
+  ): Promise<{
+    ok: boolean;
+    alreadyClaimed?: boolean;
+    claimedAt?: string;
+    reassignedFrom?: { wpUserId: number; displayName: string; username: string } | null;
+  }> => (await api.post(`/orders/${id}/claim`)).data,
   // Descarga el PDF con el header Authorization (que window.open no enviaría)
   // y lo abre en una nueva pestaña como blob.
   openAlbaran: async (id: number): Promise<void> => {

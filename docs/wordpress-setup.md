@@ -48,12 +48,11 @@ add_action('init', function () {
     }
 
     $caps = [
-        'wms_pick_b1',
-        'wms_pack_b1',
-        'wms_pick_b2',
-        'wms_load',
-        'wms_deliver',
-        'wms_supervise',
+        'wms_pack_b1',   // picker B1: tomar pedido (claim), marcar items, cerrar pedido, imprimir albaranes
+        'wms_pick_b2',   // picker B2: granel matinal
+        'wms_load',      // operador de carga: clasificar + cargar al vehículo
+        'wms_deliver',   // repartidor: escaneo en destino con alerta B2
+        'wms_supervise', // supervisor: dashboard, diagnóstico, aprobar/liberar/desbloquear
     ];
 
     // Damos las caps al admin para pruebas; en producción se asignan
@@ -131,5 +130,5 @@ Verificar en el código del plugin propio los nombres exactos:
 
 1. `wp-admin → Usuarios → Añadir nuevo`.
 2. Rol: `WMS Operario`.
-3. Con User Role Editor, marcar al menos `wms_pack_b1` para probar el ciclo completo.
+3. Con User Role Editor, marcar al menos `wms_pack_b1` para probar el ciclo completo. (`wms_pick_b1` fue eliminada — se unificó con `wms_pack_b1`.)
 4. Probar login en `https://wms.chimuelo.cl` (o `http://localhost:5173` en dev).

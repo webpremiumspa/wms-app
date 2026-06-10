@@ -85,8 +85,7 @@ export function PackingList() {
               onClick={(e) => done && e.preventDefault()}
               className={clsx(
                 'card flex items-center justify-between p-3',
-                done && 'opacity-60',
-                !done && !claimed && 'hover:shadow-md',
+                done ? 'opacity-60' : 'hover:shadow-md',
                 claimed && 'ring-1 ring-amber-200',
               )}
             >
@@ -103,7 +102,10 @@ export function PackingList() {
                 </div>
               </div>
               {claimed && (
-                <div className="ml-3 flex items-center gap-1 text-xs text-amber-700">
+                <div
+                  className="ml-3 flex items-center gap-1 text-xs text-amber-700"
+                  title="Está siendo trabajado por este picker. Si entrás, se reasigna a vos."
+                >
                   <User size={14} />
                   Tomado por {o.pickedBy!.displayName || o.pickedBy!.username}
                 </div>

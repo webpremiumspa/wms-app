@@ -71,7 +71,7 @@ const SECTIONS: Section[] = [
         <h4>Personas y permisos</h4>
         <ul>
           <li><strong>Carmen</strong> — Encargada de B1 (<code>wms_pack_b1</code>). Crea secuencias, cierra el flujo B1 y aprueba entregas parciales al hablar con el cliente.</li>
-          <li><strong>José</strong> — Picker B1 (<code>wms_pick_b1</code>). Recolecta y arma bolsas.</li>
+          <li><strong>José</strong> — Picker B1 (<code>wms_pack_b1</code>). Escanea el QR del albarán para tomar el pedido, arma la bolsa y cierra.</li>
           <li><strong>Patricia</strong> — Pickeadora B2 (<code>wms_pick_b2</code>). Recolecta el granel matinal.</li>
           <li><strong>Diego</strong> — Operador de carga (<code>wms_load</code>). Clasifica y carga a las camionetas.</li>
           <li><strong>Mauricio</strong> — Repartidor (<code>wms_deliver</code>). Entrega al cliente.</li>
@@ -94,7 +94,7 @@ const SECTIONS: Section[] = [
           <strong>Caso problema (pedido #1104520):</strong> escanea el QR, abre el pedido. Falta el producto Z en estantería (sin stock B1). No puede cerrar el pedido. En <em>Acciones del operador</em> toca <strong>"Remover de la secuencia"</strong>, elige motivo <em>"Sin stock B1"</em> y agrega un detalle. El pedido pasa a estado <strong>Bloqueado</strong>; la secuencia sigue con 49 pedidos. Aviso a Carmen.
         </p>
         <p>
-          <strong>Caso "ya tomado":</strong> Joaquín (otro picker) por error toma la misma hoja de un pedido que José ya estaba empacando. Escanea, abre la app → banner rojo: <em>"Pedido tomado por José hace 5 min"</em>. Joaquín devuelve la hoja y toma otra.
+          <strong>Caso "ya tomado":</strong> Joaquín (otro picker) por error toma la misma hoja de un pedido que José ya estaba empacando. Escanea, abre la app → ve banner amarillo <em>"Tomaste este pedido — antes lo tenía José"</em>. El pedido queda reasignado a Joaquín. Cuando José intente cerrarlo verá error <em>"Este pedido fue reasignado a otro picker"</em> y tendrá que devolver su hoja al montón.
         </p>
 
         <h4>🌅 Día 2 · 7:00 — Patricia hace picking B2 conjunto</h4>
@@ -240,8 +240,8 @@ const SECTIONS: Section[] = [
           <li>Toma una hoja del montón.</li>
           <li>Abre la app y escanea el QR de la hoja con la cámara.</li>
           <li>La primera vez le pedirá <strong>iniciar sesión</strong>. Después de loguearse vuelve automáticamente al pedido escaneado.</li>
-          <li>El sistema <strong>"toma" (claim)</strong> el pedido a nombre del picker. Si otro ya lo tomó, ve un banner rojo: <em>"Pedido tomado por X"</em> y no puede continuar.</li>
-          <li>Si todo OK: ve los items B1 (que van en la bolsa) y los B2 (listados aparte — los entrega el granel).</li>
+          <li>El sistema <strong>"toma" (claim)</strong> el pedido a nombre del picker (modelo "último escaneo gana": si otro lo había tomado antes, se reasigna).</li>
+          <li>Ve los items B1 (que van en la bolsa) y los B2 (listados aparte — los entrega el granel).</li>
           <li>Marca cada item B1 al meterlo en la bolsa. El sistema bloquea el cierre hasta que todos estén marcados.</li>
           <li>Toca <strong>"Cerrar pedido"</strong> (sin imprimir nada — el albarán ya está). El pedido queda registrado como empacado por ese picker.</li>
           <li>Vuelve a la lista (o agarra el siguiente albarán y escanea).</li>
@@ -249,12 +249,15 @@ const SECTIONS: Section[] = [
 
         <h4>Acceso alternativo desde la lista</h4>
         <p>
-          Si el albarán se rompió o no está disponible, también podés entrar a un pedido tocando su tarjeta en <strong>Empacar pedidos</strong>. El claim se aplica igual al entrar al pedido.
+          Si el albarán se rompió o no está disponible, también podés entrar a un pedido tocando su tarjeta en <strong>Empacar pedidos</strong>. El claim se aplica igual (se reasigna a vos).
         </p>
 
         <h4>Si un pedido ya lo tiene otro</h4>
         <p>
-          La tarjeta del pedido aparece con badge amarillo <em>"Tomado por X"</em>. No es clickeable salvo que el supervisor libere el claim manualmente. Esto evita que dos pickers empaquen el mismo pedido a la vez.
+          La tarjeta muestra badge amarillo <em>"Tomado por X"</em> — es informativo. Si entrás igual, el pedido se reasigna a vos. Pero importante: <strong>solo el último picker que escaneó puede cerrar el pedido</strong>. Si X tiene la pantalla abierta y vos escaneás después, X verá un error al intentar cerrar (<em>"Este pedido fue reasignado a otro picker. Recargá para continuar."</em>).
+        </p>
+        <p className="text-slate-600">
+          En la práctica: respeta el badge "Tomado por X" salvo que sepas que X ya no está trabajando ese pedido.
         </p>
 
         <p className="text-amber-800">
@@ -511,8 +514,7 @@ const SECTIONS: Section[] = [
           <li><strong>SKU</strong> — código único de cada producto. Distintos colores o tamaños = distintos SKUs.</li>
           <li><strong>Secuencia</strong> — un grupo de pedidos preparados juntos. Es <em>agnóstica de bodega</em>: tiene tanto picking B1 como B2 que cierran por separado.</li>
           <li><strong>Imprimir todos los albaranes</strong> — un único PDF de N páginas que se genera al armar la secuencia. Cada hoja tiene su QR — los pickers escanean para "tomar" el pedido.</li>
-          <li><strong>Claim / Tomar pedido</strong> — al escanear el QR (o entrar al pedido desde la lista), el sistema lo asigna a ese picker. Otros pickers ven "Tomado por X" y no pueden modificarlo. Bloqueo automático para evitar trabajo duplicado.</li>
-          <li><strong>Liberar claim</strong> — un supervisor puede sacarle el claim a un pedido (por ejemplo si el picker se enfermó). El pedido queda disponible para que otro lo tome.</li>
+          <li><strong>Claim / Tomar pedido</strong> — al escanear el QR (o entrar al pedido desde la lista), el sistema lo asigna a ese picker. Modelo "último escaneo gana": si otro lo había tomado, se reasigna. Pero solo el último claimer puede cerrar — si dos están trabajando el mismo, el anterior verá error al cerrar.</li>
           <li><strong>Picking conjunto</strong> — agrupar varias secuencias en una sola corrida de picking B2 (cuando el equipo B2 hace la recolección matinal de todo el día).</li>
           <li><strong>Bodega 1 (B1)</strong> — bodega principal donde se arman las bolsas individuales.</li>
           <li><strong>Bodega 2 (B2)</strong> — bodega satélite con stock distinto. Sus productos se recolectan a granel una vez al día y se reparten desde el cargamento de cada camioneta.</li>

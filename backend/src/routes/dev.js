@@ -39,7 +39,6 @@ router.post('/seed', async (req, res, next) => {
         displayName: 'Seed Admin',
         email: null,
         capabilities: {
-          wms_pick_b1: true,
           wms_pack_b1: true,
           wms_pick_b2: true,
           wms_load: true,

@@ -1,7 +1,6 @@
 import { HttpError } from './error.js';
 
 export const WMS_CAPS = Object.freeze({
-  PICK_B1: 'wms_pick_b1',
   PACK_B1: 'wms_pack_b1',
   PICK_B2: 'wms_pick_b2',
   LOAD: 'wms_load',

@@ -4,20 +4,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import clsx from 'clsx';
 
-type Item = { to: string; label: string; icon: typeof Home; cap?: string };
+type Item = { to: string; label: string; icon: typeof Home; caps?: string[] };
 
 const ITEMS: Item[] = [
   { to: '/', label: 'Inicio', icon: Home },
-  { to: '/picking', label: 'Picking', icon: Package, cap: CAPS.PICK_B1 },
-  { to: '/dispatch', label: 'Cargar', icon: Scan, cap: CAPS.LOAD },
-  { to: '/delivery', label: 'Entrega', icon: Truck, cap: CAPS.DELIVER },
-  { to: '/dashboard', label: 'Super.', icon: BarChart3, cap: CAPS.SUPERVISE },
+  { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PICK_B2] },
+  { to: '/dispatch', label: 'Cargar', icon: Scan, caps: [CAPS.LOAD] },
+  { to: '/delivery', label: 'Entrega', icon: Truck, caps: [CAPS.DELIVER] },
+  { to: '/dashboard', label: 'Super.', icon: BarChart3, caps: [CAPS.SUPERVISE] },
 ];
 
 export function BottomNav() {
   const { user } = useAuth();
   // Mostramos máximo 5 items, priorizando los que el usuario puede usar.
-  const visible = ITEMS.filter((i) => !i.cap || hasCap(user, i.cap)).slice(0, 5);
+  const visible = ITEMS.filter((i) => !i.caps || i.caps.some((c) => hasCap(user, c))).slice(0, 5);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)] md:hidden">
