@@ -1,11 +1,10 @@
 import { HttpError } from './error.js';
 
 export const WMS_CAPS = Object.freeze({
-  PACK_B1: 'wms_pack_b1',
-  PICK_B2: 'wms_pick_b2',
-  LOAD: 'wms_load',
-  DELIVER: 'wms_deliver',
-  SUPERVISE: 'wms_supervise',
+  PACK_B1: 'wms_pack_b1', // picker + packer B1
+  PACK_B2: 'wms_pack_b2', // picker + packer B2 (renombrado desde wms_pick_b2)
+  LOAD: 'wms_load',       // operador de carga (clasificación + carga al vehículo)
+  SUPERVISE: 'wms_supervise', // supervisor (dashboard + diagnóstico)
 });
 
 export function hasCap(user, cap) {

@@ -32,8 +32,7 @@ export function Scan() {
 
   const canLoad = hasCap(user, CAPS.LOAD);
   const canPack = hasCap(user, CAPS.PACK_B1);
-  const canPickB2 = hasCap(user, CAPS.PICK_B2);
-  const canDeliver = hasCap(user, CAPS.DELIVER);
+  const canPickB2 = hasCap(user, CAPS.PACK_B2);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
 
@@ -208,7 +207,9 @@ export function Scan() {
               {/* Para repartidores y operadores de carga: cámara embebida para
                   escanear el siguiente pedido sin volver a abrir la cámara
                   externa cada vez. */}
-              {(canDeliver || canLoad) && !showScanner && (
+              {/* Cualquier usuario logueado puede usar el escáner embebido —
+                  útil para repartidores que no tienen un cap específico. */}
+              {!showScanner && (
                 <button
                   type="button"
                   onClick={() => { setShowScanner(true); setScanError(null); }}

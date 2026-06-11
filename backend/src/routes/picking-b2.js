@@ -11,7 +11,7 @@ router.use(requireAuth);
 // Resumen de picking B2 por secuencia: una entrada por cada secuencia con
 // flujo B2 abierto que tenga al menos un pedido con B2 pendiente.
 // La página /picking lo usa para listar las tarjetas pendientes.
-router.get('/summary', requireCap(WMS_CAPS.PICK_B2, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
+router.get('/summary', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
   try {
     const sequences = await prisma.sequence.findMany({
       where: { b2ClosedAt: null },
@@ -55,7 +55,7 @@ router.get('/summary', requireCap(WMS_CAPS.PICK_B2, WMS_CAPS.SUPERVISE), async (
 });
 
 // Lista de pedidos B2 pendientes en una secuencia (uno a uno, no agrupado).
-router.get('/sequences/:id', requireCap(WMS_CAPS.PICK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+router.get('/sequences/:id', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     if (!id) throw new HttpError(400, 'Invalid sequence id');

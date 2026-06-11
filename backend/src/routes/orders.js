@@ -67,7 +67,7 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
 });
 
 // Lookup por wpOrderId (el ID que viene del QR escaneado).
-router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.DELIVER, WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (req, res, next) => {
+router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (req, res, next) => {
   try {
     const wpOrderId = Number(req.params.wpOrderId);
     if (!wpOrderId) throw new HttpError(400, 'Invalid wpOrderId');
@@ -89,7 +89,7 @@ router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.DELIVER, WMS_
   }
 });
 
-router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.DELIVER, WMS_CAPS.LOAD, WMS_CAPS.PICK_B2), async (req, res, next) => {
+router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.LOAD, WMS_CAPS.PACK_B2), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const order = await prisma.order.findUnique({
@@ -130,7 +130,7 @@ const packB2Schema = z.object({
 // Cierre B2 por pedido: el picker B2 escanea el QR, marca los items B2 que
 // pone en la sub-bolsa del pedido y cierra. Mismo modelo que el pack B1
 // pero solo afecta items B2 y setea order.b2ClosedAt.
-router.post('/:id/pack-b2', requireCap(WMS_CAPS.PICK_B2), async (req, res, next) => {
+router.post('/:id/pack-b2', requireCap(WMS_CAPS.PACK_B2), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const parsed = packB2Schema.safeParse(req.body || {});

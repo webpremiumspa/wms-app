@@ -63,7 +63,7 @@ export function SequenceDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const canPickB2 = hasCap(user, CAPS.PICK_B2);
+  const canPickB2 = hasCap(user, CAPS.PACK_B2);
   const canManage = hasCap(user, CAPS.PACK_B1) || hasCap(user, CAPS.SUPERVISE);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [removeTarget, setRemoveTarget] = useState<{ id: number; number: string } | null>(null);

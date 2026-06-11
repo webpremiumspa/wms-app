@@ -8,7 +8,7 @@ type Item = { to: string; label: string; icon: typeof Home; caps?: string[] };
 
 const ITEMS: Item[] = [
   { to: '/', label: 'Inicio', icon: Home },
-  { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PICK_B2] },
+  { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PACK_B2] },
   { to: '/dispatch', label: 'Cargar', icon: Scan, caps: [CAPS.LOAD] },
   { to: '/dashboard', label: 'Super.', icon: BarChart3, caps: [CAPS.SUPERVISE] },
 ];

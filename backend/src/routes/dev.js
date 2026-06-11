@@ -40,9 +40,8 @@ router.post('/seed', async (req, res, next) => {
         email: null,
         capabilities: {
           wms_pack_b1: true,
-          wms_pick_b2: true,
+          wms_pack_b2: true,
           wms_load: true,
-          wms_deliver: true,
           wms_supervise: true,
         },
       },

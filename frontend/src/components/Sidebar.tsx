@@ -9,7 +9,7 @@ type NavItem = { to: string; label: string; icon: typeof Home; caps?: string[] }
 const NAV: NavItem[] = [
   { to: '/', label: 'Inicio', icon: Home },
   { to: '/sequences', label: 'Secuencias', icon: ClipboardList, caps: [CAPS.PACK_B1] },
-  { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PICK_B2] },
+  { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PACK_B2] },
   { to: '/dispatch', label: 'Clasificación', icon: Scan, caps: [CAPS.LOAD] },
   { to: '/dashboard', label: 'Supervisión', icon: BarChart3, caps: [CAPS.SUPERVISE] },
   { to: '/debug', label: 'Diagnóstico', icon: Stethoscope, caps: [CAPS.SUPERVISE] },

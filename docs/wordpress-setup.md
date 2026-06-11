@@ -48,10 +48,9 @@ add_action('init', function () {
     }
 
     $caps = [
-        'wms_pack_b1',   // picker B1: tomar pedido (claim), marcar items, cerrar pedido, imprimir albaranes
-        'wms_pick_b2',   // picker B2: granel matinal
+        'wms_pack_b1',   // picker + packer B1: tomar pedido (claim), marcar items, cerrar pedido, imprimir albaranes
+        'wms_pack_b2',   // picker + packer B2: armar sub-bolsa por pedido y cerrar B2
         'wms_load',      // operador de carga: clasificar + cargar al vehículo
-        'wms_deliver',   // repartidor: escaneo en destino con alerta B2
         'wms_supervise', // supervisor: dashboard, diagnóstico, aprobar/liberar/desbloquear
     ];
 
@@ -130,5 +129,12 @@ Verificar en el código del plugin propio los nombres exactos:
 
 1. `wp-admin → Usuarios → Añadir nuevo`.
 2. Rol: `WMS Operario`.
-3. Con User Role Editor, marcar al menos `wms_pack_b1` para probar el ciclo completo. (`wms_pick_b1` fue eliminada — se unificó con `wms_pack_b1`.)
+3. Con User Role Editor, marcar al menos `wms_pack_b1` para probar el ciclo completo.
+
+> **Caps obsoletas (eliminadas en versiones anteriores):**
+> - `wms_pick_b1` → unificada en `wms_pack_b1`.
+> - `wms_pick_b2` → renombrada a `wms_pack_b2` (ahora hace pick + pack del B2 por pedido).
+> - `wms_deliver` → eliminada. El repartidor accede vía QR público + escáner embebido (cualquier login sirve).
+>
+> Si las tenés en User Role Editor, podés desmarcarlas de los usuarios y borrarlas del mu-plugin.
 4. Probar login en `https://wms.chimuelo.cl` (o `http://localhost:5173` en dev).

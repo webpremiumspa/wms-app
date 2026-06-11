@@ -16,7 +16,7 @@ import { renderSequenceAlbaranesPdf } from '../services/pdf.js';
 const router = Router();
 router.use(requireAuth);
 
-router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B2, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
+router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
   try {
     const sequences = await prisma.sequence.findMany({
       orderBy: { createdAt: 'desc' },
@@ -118,7 +118,7 @@ router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (r
   }
 });
 
-router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PICK_B2, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const sequence = await prisma.sequence.findUnique({

@@ -72,9 +72,9 @@ const SECTIONS: Section[] = [
         <ul>
           <li><strong>Carmen</strong> — Encargada de B1 (<code>wms_pack_b1</code>). Crea secuencias, cierra el flujo B1 y aprueba entregas parciales al hablar con el cliente.</li>
           <li><strong>José</strong> — Picker B1 (<code>wms_pack_b1</code>). Escanea el QR del albarán para tomar el pedido, arma la bolsa y cierra.</li>
-          <li><strong>Patricia</strong> — Pickeadora B2 (<code>wms_pick_b2</code>). Recolecta el granel matinal.</li>
+          <li><strong>Patricia</strong> — Pickeadora B2 (<code>wms_pack_b2</code>). Arma la sub-bolsa B2 de cada pedido y cierra.</li>
           <li><strong>Diego</strong> — Operador de carga (<code>wms_load</code>). Clasifica y carga a las camionetas.</li>
-          <li><strong>Mauricio</strong> — Repartidor (<code>wms_deliver</code>). Entrega al cliente.</li>
+          <li><strong>Mauricio</strong> — Repartidor. No requiere cap específico: el QR del albarán es público, y el escáner embebido funciona para cualquier usuario logueado.</li>
           <li><strong>Cristian</strong> — Supervisor (<code>wms_supervise</code>). Monitorea, diagnostica, también puede aprobar entregas parciales.</li>
         </ul>
 

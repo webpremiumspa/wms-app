@@ -11,7 +11,7 @@ import { CAPS, hasCap } from '@/lib/auth';
 export function Picking() {
   const { user } = useAuth();
   const canPackB1 = hasCap(user, CAPS.PACK_B1);
-  const canPickB2 = hasCap(user, CAPS.PICK_B2);
+  const canPickB2 = hasCap(user, CAPS.PACK_B2);
   const [showClosed, setShowClosed] = useState(false);
 
   const { data: sequences, isLoading } = useQuery({

@@ -39,8 +39,7 @@ export function hasCap(user: WmsUser | null, cap: string): boolean {
 
 export const CAPS = {
   PACK_B1: 'wms_pack_b1',
-  PICK_B2: 'wms_pick_b2',
+  PACK_B2: 'wms_pack_b2',
   LOAD: 'wms_load',
-  DELIVER: 'wms_deliver',
   SUPERVISE: 'wms_supervise',
 } as const;
