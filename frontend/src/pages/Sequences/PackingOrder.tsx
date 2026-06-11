@@ -33,11 +33,15 @@ export function PackingOrder() {
   const [showPartialForm, setShowPartialForm] = useState(false);
   const [packError, setPackError] = useState<string | null>(null);
   const [reassignedFrom, setReassignedFrom] = useState<{ displayName?: string; username?: string } | null>(null);
+  // Confirmación previa cuando el pedido ya está tomado por OTRO picker:
+  // antes de reasignar, mostramos un modal "¿tomarlo igual?". Solo si el
+  // usuario confirma se ejecuta el claim.
+  const [confirmTakeOver, setConfirmTakeOver] = useState<{
+    displayName?: string;
+    username?: string;
+    claimedAt?: string;
+  } | null>(null);
 
-  // Modelo "último escaneo gana": al entrar a esta pantalla, claim siempre
-  // reasigna el pedido a este usuario. Si otro picker tenía el pedido,
-  // recibimos `reassignedFrom` para mostrarlo. La validación de quién puede
-  // cerrar la hace el backend en POST /:id/pack.
   const claim = useMutation({
     mutationFn: () => ordersApi.claim(ordId),
     onSuccess: (data) => {
@@ -57,9 +61,31 @@ export function PackingOrder() {
     if (order.status !== 'sequenced') return;
     // Idempotente si el usuario ya es el claimer actual.
     if (order.pickedBy?.wpUserId === user?.id) return;
+
+    if (order.pickedBy) {
+      // Otro picker lo tiene → confirmar antes de reasignar.
+      setConfirmTakeOver({
+        displayName: order.pickedBy.displayName,
+        username: order.pickedBy.username,
+        claimedAt: order.claimedAt || undefined,
+      });
+      return;
+    }
+
+    // Nadie lo tiene → claim directo, sin confirmación.
     claim.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order?.id, order?.status, order?.pickedBy?.wpUserId]);
+
+  function acceptTakeOver() {
+    setConfirmTakeOver(null);
+    claim.mutate();
+  }
+
+  function cancelTakeOver() {
+    setConfirmTakeOver(null);
+    navigate(`/sequences/${seqId}/packing`);
+  }
 
   const removeOrder = useMutation({
     mutationFn: ({ reasonCode, reasonText }: { reasonCode: string; reasonText: string }) =>
@@ -368,6 +394,41 @@ export function PackingOrder() {
         isPending={removeOrder.isPending}
         error={removeError}
       />
+
+      {/* Modal de confirmación: este pedido ya lo tiene otro picker.
+          Bloqueamos el render normal hasta que el usuario decida. */}
+      {confirmTakeOver && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="card w-full max-w-md space-y-3 p-4">
+            <div className="flex items-start gap-2">
+              <User className="text-amber-600" size={22} />
+              <div className="flex-1">
+                <h3 className="font-semibold">Pedido tomado por otro picker</h3>
+                <p className="mt-1 text-sm text-slate-700">
+                  Este pedido lo tiene <strong>{confirmTakeOver.displayName || confirmTakeOver.username || 'otro usuario'}</strong>
+                  {confirmTakeOver.claimedAt && (
+                    <> desde las {new Date(confirmTakeOver.claimedAt).toLocaleTimeString('es-CL')}</>
+                  )}.
+                </p>
+                <p className="mt-2 text-xs text-slate-600">
+                  Si lo tomás vos, el picker anterior verá un error cuando intente cerrarlo. Confirmá solo si estás seguro (ej. te dijo que dejó de trabajarlo).
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={cancelTakeOver} className="btn-ghost border border-slate-300">
+                Volver atrás
+              </button>
+              <button
+                onClick={acceptTakeOver}
+                className="rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700"
+              >
+                Tomarlo igual
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Truck, Printer, CheckCircle2, AlertTriangle, Image as ImageIcon, Home, LogIn, ClipboardCheck } from 'lucide-react';
@@ -31,6 +32,15 @@ export function Scan() {
     mutationFn: () => dispatchApi.loaded(order!.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['order-public', idNum] }),
   });
+
+  // Si el usuario está logueado y puede empacar Y el pedido es empacable
+  // → redirigimos directo a la vista de packing. El picker llega con el QR,
+  // escanea, y arranca a marcar items en lugar de ver un landing intermedio.
+  useEffect(() => {
+    if (user && canPack && order?.packable && order?.openSequenceId) {
+      navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`, { replace: true });
+    }
+  }, [user, canPack, order?.packable, order?.openSequenceId, order?.id, navigate]);
 
   if (!Number.isFinite(idNum) || idNum <= 0) {
     return <ScanShell><div className="card p-6 text-center text-red-700">ID de pedido inválido en la URL.</div></ScanShell>;
