@@ -54,6 +54,7 @@ export const EVENT_LABELS: Record<string, string> = {
   'order.claimed': 'tomó pedido para empacar',
   'order.claim_reassigned': 'reasignó pedido (otro picker lo tenía)',
   'order.packed': 'empacó pedido',
+  'order.packed_from_old_sequence': 'empacó pedido desde secuencia antigua',
   'order.unblocked': 'reactivó pedido',
   'order.partial_delivery_approved': 'aprobó entrega parcial',
   'order.partial_delivery_revoked': 'revocó entrega parcial',

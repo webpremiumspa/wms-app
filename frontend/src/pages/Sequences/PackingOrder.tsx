@@ -41,6 +41,11 @@ export function PackingOrder() {
     username?: string;
     claimedAt?: string;
   } | null>(null);
+  // Si la secuencia es de hace más de 1 día, mostramos un modal bloqueante
+  // ("¿estás seguro? este albarán podría ser viejo reciclado"). El picker
+  // tiene que confirmar explícitamente; queda registrado en eventos.
+  const [oldSeqModal, setOldSeqModal] = useState<{ createdAt: string } | null>(null);
+  const [confirmedOldSeq, setConfirmedOldSeq] = useState(false);
 
   const claim = useMutation({
     mutationFn: () => ordersApi.claim(ordId),
@@ -56,9 +61,36 @@ export function PackingOrder() {
     },
   });
 
+  // Busca la secuencia actual entre los links del pedido. Es la que está en
+  // el seqId de la URL (la que el picker decidió procesar).
+  const currentSequence = order?.sequenceLinks?.find((l) => l.sequenceId === seqId)?.sequence;
+
+  // Chequea si una fecha cae HOY o AYER (por día calendario, no por 24h).
+  function isFromTodayOrYesterday(iso?: string): boolean {
+    if (!iso) return true; // sin fecha → no podemos juzgar, no bloqueamos
+    const d = new Date(iso);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    return d >= yesterday;
+  }
+
+  // Detector de secuencia antigua: bloquea con modal antes de cualquier acción.
+  useEffect(() => {
+    if (!order || !currentSequence) return;
+    if (confirmedOldSeq) return; // ya confirmado
+    if (oldSeqModal) return; // ya mostrado
+    if (!isFromTodayOrYesterday(currentSequence.createdAt)) {
+      setOldSeqModal({ createdAt: currentSequence.createdAt });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order?.id, currentSequence?.createdAt]);
+
   useEffect(() => {
     if (!order) return;
     if (order.status !== 'sequenced') return;
+    if (oldSeqModal) return; // esperar confirmación de secuencia antigua
     // Idempotente si el usuario ya es el claimer actual.
     if (order.pickedBy?.wpUserId === user?.id) return;
 
@@ -75,7 +107,7 @@ export function PackingOrder() {
     // Nadie lo tiene → claim directo, sin confirmación.
     claim.mutate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [order?.id, order?.status, order?.pickedBy?.wpUserId]);
+  }, [order?.id, order?.status, order?.pickedBy?.wpUserId, oldSeqModal]);
 
   function acceptTakeOver() {
     setConfirmTakeOver(null);
@@ -84,6 +116,16 @@ export function PackingOrder() {
 
   function cancelTakeOver() {
     setConfirmTakeOver(null);
+    navigate(`/sequences/${seqId}/packing`);
+  }
+
+  function acceptOldSequence() {
+    setConfirmedOldSeq(true);
+    setOldSeqModal(null);
+  }
+
+  function cancelOldSequence() {
+    setOldSeqModal(null);
     navigate(`/sequences/${seqId}/packing`);
   }
 
@@ -123,7 +165,7 @@ export function PackingOrder() {
   }, [order]);
 
   const pack = useMutation({
-    mutationFn: () => ordersApi.pack(ordId, [...checked]),
+    mutationFn: () => ordersApi.pack(ordId, [...checked], confirmedOldSeq || undefined),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', ordId] });
       queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
@@ -171,6 +213,21 @@ export function PackingOrder() {
         </div>
         <div className="text-sm text-slate-600">{order.customerName || '—'}</div>
         {order.customerAddress && <div className="text-xs text-slate-500">{order.customerAddress}</div>}
+        {/* Doble verificación visual: fecha del pedido WC + secuencia. Ayuda
+            a detectar albaranes viejos reciclados antes de empacar. */}
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-2 text-xs text-slate-500">
+          {order.createdAt && (
+            <span>
+              Pedido del <strong className="text-slate-700">{new Date(order.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>
+            </span>
+          )}
+          {currentSequence && (
+            <span>
+              Secuencia <strong className="text-slate-700">#{currentSequence.id}</strong> · creada el{' '}
+              <strong className="text-slate-700">{new Date(currentSequence.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}</strong>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Aviso informativo si el pedido fue reasignado desde otro picker
@@ -400,6 +457,48 @@ export function PackingOrder() {
         isPending={removeOrder.isPending}
         error={removeError}
       />
+
+      {/* Modal bloqueante: la secuencia es de hace más de 1 día. Podría ser
+          un albarán impreso viejo, reciclado por error. */}
+      {oldSeqModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="card w-full max-w-md space-y-3 p-4">
+            <div className="flex items-start gap-2">
+              <AlertOctagon className="text-red-600" size={22} />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-800">Albarán de secuencia antigua</h3>
+                <p className="mt-1 text-sm text-slate-700">
+                  La secuencia <strong>#{currentSequence?.id}</strong> fue creada el{' '}
+                  <strong>
+                    {new Date(oldSeqModal.createdAt).toLocaleDateString('es-CL', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </strong>{' '}— no es de hoy ni de ayer.
+                </p>
+                <p className="mt-2 text-xs text-slate-600">
+                  Verifica que el albarán sea el correcto antes de empacar. Si es un papel viejo reciclado por error, devuélvelo al supervisor.
+                </p>
+                <p className="mt-2 text-xs text-slate-500">
+                  Si continúas, queda registrado en el log de auditoría que empacaste desde una secuencia antigua.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={cancelOldSequence} className="btn-ghost border border-slate-300">
+                Cancelar y volver
+              </button>
+              <button
+                onClick={acceptOldSequence}
+                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Continuar de todos modos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de confirmación: este pedido ya lo tiene otro picker.
           Bloqueamos el render normal hasta que el usuario decida. */}

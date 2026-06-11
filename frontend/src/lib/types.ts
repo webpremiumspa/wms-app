@@ -98,11 +98,15 @@ export type OrderDetail = {
   hasB2Pending: boolean;
   allowPartialDelivery: boolean;
   partialDeliveryNote: string | null;
+  createdAt?: string; // fecha de WC (cuándo se hizo el pedido)
   packedAt: string | null;
   packedBy: Picker | null;
   pickedBy: Picker | null;
   claimedAt: string | null;
-  sequenceLinks?: Array<{ sequenceId: number }>;
+  sequenceLinks?: Array<{
+    sequenceId: number;
+    sequence?: { id: number; createdAt: string; status: string };
+  }>;
   packable?: boolean;
   openSequenceId?: number | null;
   items: OrderItem[];

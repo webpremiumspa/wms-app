@@ -76,7 +76,9 @@ router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.DELIVER, WMS_
         items: { include: { product: true } },
         packedBy: { select: { wpUserId: true, displayName: true, username: true } },
         pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
-        sequenceLinks: { select: { sequenceId: true } },
+        sequenceLinks: {
+          include: { sequence: { select: { id: true, createdAt: true, status: true } } },
+        },
       },
     });
     if (!order) throw new HttpError(404, `Pedido ${wpOrderId} no encontrado en el WMS`);
@@ -95,7 +97,9 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.DEL
         items: { include: { product: true } },
         packedBy: { select: { wpUserId: true, displayName: true, username: true } },
         pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
-        sequenceLinks: { select: { sequenceId: true } },
+        sequenceLinks: {
+          include: { sequence: { select: { id: true, createdAt: true, status: true } } },
+        },
       },
     });
     if (!order) throw new HttpError(404, 'Order not found');
@@ -110,6 +114,10 @@ const packSchema = z.object({
   // que empacar físicamente desde B1, pero el pedido igual se cierra para
   // imprimir el albarán que lleva los items a sacar del granel).
   itemIds: z.array(z.number().int().positive()),
+  // Solo se setea cuando el picker confirma el modal de "secuencia antigua"
+  // (la secuencia no es de hoy ni de ayer). Sirve para auditoría: queda
+  // registrado en eventos que se empacó deliberadamente desde un albarán viejo.
+  confirmedOldSequence: z.boolean().optional(),
 });
 
 // Loadability check para un pedido: sirve para la UI de Dispatch (mostrar
@@ -254,6 +262,19 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
         },
       }),
     ]);
+
+    // Evento de auditoría aparte cuando el picker confirmó una secuencia antigua.
+    // Sirve para que el supervisor detecte si esto pasa frecuentemente.
+    if (parsed.data.confirmedOldSequence) {
+      await prisma.event.create({
+        data: {
+          type: 'order.packed_from_old_sequence',
+          actorId: req.user.wpUserId,
+          orderId: id,
+          payload: {},
+        },
+      });
+    }
 
     res.json({ ok: true });
   } catch (err) {

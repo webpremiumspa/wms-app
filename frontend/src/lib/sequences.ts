@@ -86,8 +86,8 @@ export const ordersApi = {
   // sin obligar a loguearse antes de ver el contenido del pedido.
   getPublicByWpId: async (wpOrderId: number): Promise<OrderDetail> =>
     (await api.get(`/public/orders/${wpOrderId}`)).data.order,
-  pack: async (id: number, itemIds: number[]): Promise<void> => {
-    await api.post(`/orders/${id}/pack`, { itemIds });
+  pack: async (id: number, itemIds: number[], confirmedOldSequence?: boolean): Promise<void> => {
+    await api.post(`/orders/${id}/pack`, { itemIds, confirmedOldSequence });
   },
   loadability: async (id: number): Promise<OrderLoadability> =>
     (await api.get(`/orders/${id}/loadability`)).data,
