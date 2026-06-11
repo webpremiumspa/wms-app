@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Package, Scan, Truck, BarChart3 } from 'lucide-react';
+import { Home, Package, Scan, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import clsx from 'clsx';
@@ -10,7 +10,6 @@ const ITEMS: Item[] = [
   { to: '/', label: 'Inicio', icon: Home },
   { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PICK_B2] },
   { to: '/dispatch', label: 'Cargar', icon: Scan, caps: [CAPS.LOAD] },
-  { to: '/delivery', label: 'Entrega', icon: Truck, caps: [CAPS.DELIVER] },
   { to: '/dashboard', label: 'Super.', icon: BarChart3, caps: [CAPS.SUPERVISE] },
 ];
 

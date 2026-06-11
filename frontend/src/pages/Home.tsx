@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import { Link } from 'react-router-dom';
-import { Package, Scan, Truck, ClipboardList, BarChart3 } from 'lucide-react';
+import { Package, Scan, ClipboardList, BarChart3 } from 'lucide-react';
 
 type Tile = { to: string; label: string; icon: typeof Package; caps: string[] };
 
@@ -9,7 +9,6 @@ const TILES: Tile[] = [
   { to: '/sequences/new', label: 'Generar secuencia', icon: ClipboardList, caps: [CAPS.PACK_B1] },
   { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PICK_B2] },
   { to: '/dispatch', label: 'Clasificación y carga', icon: Scan, caps: [CAPS.LOAD] },
-  { to: '/delivery', label: 'Entrega', icon: Truck, caps: [CAPS.DELIVER] },
   { to: '/dashboard', label: 'Supervisión', icon: BarChart3, caps: [CAPS.SUPERVISE] },
 ];
 

@@ -15,7 +15,6 @@ import { PickingB2 } from '@/pages/PickingB2';
 import { PickingB2Batch } from '@/pages/PickingB2Batch';
 import { Picking } from '@/pages/Picking';
 import { Dispatch } from '@/pages/Dispatch';
-import { Delivery } from '@/pages/Delivery';
 import { Dashboard } from '@/pages/Dashboard';
 import { Help } from '@/pages/Help';
 import { Debug } from '@/pages/Debug';
@@ -51,7 +50,6 @@ export default function App() {
               <Route path="picking-b2/batch" element={<PickingB2Batch />} />
               <Route path="sequences/:id/picking-b2" element={<PickingB2 />} />
               <Route path="dispatch" element={<Dispatch />} />
-              <Route path="delivery" element={<Delivery />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="debug" element={<Debug />} />
               <Route path="help" element={<Help />} />

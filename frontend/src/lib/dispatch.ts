@@ -56,27 +56,6 @@ export type DispatchOrder = {
   blockReason: string | null;
 };
 
-export type DeliveryItem = {
-  id: number;
-  qty: number;
-  sku: string | null;
-  name: string;
-  thumbnailUrl: string | null;
-};
-
-export type DeliveryOrder = {
-  id: number;
-  wpOrderId: number;
-  number: string;
-  route: string | null;
-  stopPosition: number | null;
-  customerName: string | null;
-  customerAddress: string | null;
-  hasB2Pending: boolean;
-  b1Items: DeliveryItem[];
-  b2Items: DeliveryItem[];
-};
-
 export type RouteSummary = {
   route: string;
   total: number;
@@ -119,6 +98,3 @@ export const dispatchApi = {
   today: async (): Promise<RouteSummary[]> => (await api.get('/dispatch/today')).data.routes,
 };
 
-export const deliveryApi = {
-  scan: async (qr: string): Promise<DeliveryOrder> => (await api.post('/delivery/scan', { qr })).data.order,
-};

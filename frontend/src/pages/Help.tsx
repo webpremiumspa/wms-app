@@ -415,10 +415,11 @@ const SECTIONS: Section[] = [
     icon: Truck,
     body: (
       <>
+        <p>El repartidor no tiene una pantalla "Entrega" en el menú — el flujo arranca con el escaneo del QR del albarán.</p>
         <ol>
-          <li>Al llegar a la dirección del cliente, abre <strong>Entrega</strong>.</li>
-          <li>Escanea el QR del albarán de la bolsa.</li>
-          <li>Aparece el contenido del pedido (lo que tienes que entregar dentro de la bolsa).</li>
+          <li>Al llegar a la dirección del cliente, abre la cámara del móvil (la nativa, no la del WMS) y escanea el QR del albarán de la bolsa. El QR abre la app del WMS en la vista del pedido.</li>
+          <li>La primera vez te pedirá iniciar sesión. Después de eso te recuerda hasta que cierres sesión.</li>
+          <li>Aparece el contenido del pedido (lo que tienes que entregar dentro de la bolsa) y la ruta destacada.</li>
           <li>
             <strong className="text-amber-800">
               ⚠ Si el pedido tiene productos de Bodega 2 pendientes, vas a ver un banner naranja gigante, el móvil va a sonar dos veces y vibrará.
@@ -426,6 +427,7 @@ const SECTIONS: Section[] = [
             Tienes que tomar esos productos del cargamento a granel del vehículo y agregarlos antes de entregar.
           </li>
           <li>Entrega físicamente (foto, firma, etc. lo gestiona el sistema externo que ya usas).</li>
+          <li>Para ir al siguiente pedido toca <strong>"Escanear otro pedido"</strong> al pie de la pantalla — la app abre una cámara embebida y, al detectar el QR, te lleva directo al nuevo pedido sin tener que abrir la cámara externa otra vez.</li>
         </ol>
         <div className="flex items-start gap-2 rounded-lg bg-amber-50 p-3 ring-1 ring-amber-200">
           <AlertOctagon className="shrink-0 text-amber-700" size={18} />

@@ -1,15 +1,27 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Truck, Printer, CheckCircle2, AlertTriangle, Image as ImageIcon, Home, LogIn, ClipboardCheck } from 'lucide-react';
+import { Truck, Printer, CheckCircle2, AlertTriangle, Image as ImageIcon, Home, LogIn, ClipboardCheck, Camera, X } from 'lucide-react';
 import { ordersApi } from '@/lib/sequences';
 import { dispatchApi } from '@/lib/dispatch';
 import { orderStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { B2Alert } from '@/components/B2Alert';
 import { Badge } from '@/components/Badge';
+import { QRScanner } from '@/components/QRScanner';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
+
+// Extrae wpOrderId del payload del QR. Soporta URL nueva (/scan/<id>) y
+// legacy (WMS:<id>). Devuelve null si no reconoce el formato.
+function parseQrToWpId(raw: string): number | null {
+  const trimmed = raw.trim();
+  const urlMatch = trimmed.match(/\/scan\/(\d+)(?:[/?#]|$)/);
+  if (urlMatch) return Number(urlMatch[1]);
+  const wmsMatch = trimmed.match(/^WMS:(\d+)$/);
+  if (wmsMatch) return Number(wmsMatch[1]);
+  return null;
+}
 
 export function Scan() {
   const { wpOrderId } = useParams();
@@ -20,6 +32,9 @@ export function Scan() {
 
   const canLoad = hasCap(user, CAPS.LOAD);
   const canPack = hasCap(user, CAPS.PACK_B1);
+  const canDeliver = hasCap(user, CAPS.DELIVER);
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   // Endpoint público: no requiere auth, devuelve datos del pedido + items.
   const { data: order, isLoading, error } = useQuery({
@@ -173,6 +188,49 @@ export function Scan() {
                 <Printer size={18} />
                 Reimprimir albarán
               </button>
+
+              {/* Para repartidores y operadores de carga: cámara embebida para
+                  escanear el siguiente pedido sin volver a abrir la cámara
+                  externa cada vez. */}
+              {(canDeliver || canLoad) && !showScanner && (
+                <button
+                  type="button"
+                  onClick={() => { setShowScanner(true); setScanError(null); }}
+                  className="btn-ghost w-full border border-slate-300"
+                >
+                  <Camera size={18} />
+                  Escanear otro pedido
+                </button>
+              )}
+              {showScanner && (
+                <div className="card space-y-2 p-3 ring-1 ring-brand-100">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-semibold text-slate-700">Escáner</div>
+                    <button
+                      type="button"
+                      onClick={() => setShowScanner(false)}
+                      className="text-xs text-slate-500 hover:underline"
+                    >
+                      <X size={14} className="inline" /> Cerrar
+                    </button>
+                  </div>
+                  <QRScanner
+                    onScan={(text) => {
+                      const wpId = parseQrToWpId(text);
+                      if (wpId == null) {
+                        setScanError(`QR no reconocido: "${text.slice(0, 60)}"`);
+                        return;
+                      }
+                      setShowScanner(false);
+                      navigate(`/scan/${wpId}`);
+                    }}
+                  />
+                  {scanError && (
+                    <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{scanError}</div>
+                  )}
+                </div>
+              )}
+
               <Link to="/" className="btn-ghost w-full border border-slate-300">
                 <Home size={16} />
                 Volver al inicio
@@ -184,10 +242,10 @@ export function Scan() {
                 <AlertTriangle size={18} className="mt-0.5 shrink-0" />
                 <div className="text-sm">
                   {order.packable
-                    ? 'Iniciá sesión para empacar este pedido (queda registrado a tu nombre).'
+                    ? 'Inicia sesión para empacar este pedido (queda registrado a tu nombre).'
                     : order.status === 'packed'
-                    ? 'Iniciá sesión para confirmar carga al vehículo o reimprimir el albarán.'
-                    : 'Iniciá sesión para acceder a este pedido.'}
+                    ? 'Inicia sesión para confirmar carga al vehículo o reimprimir el albarán.'
+                    : 'Inicia sesión para acceder a este pedido.'}
                 </div>
               </div>
               <Link

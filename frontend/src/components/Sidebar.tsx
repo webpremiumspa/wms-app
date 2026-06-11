@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Package, Truck, Scan, ClipboardList, LogOut, BarChart3, HelpCircle, Stethoscope } from 'lucide-react';
+import { Home, Package, Scan, ClipboardList, LogOut, BarChart3, HelpCircle, Stethoscope } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import clsx from 'clsx';
@@ -11,7 +11,6 @@ const NAV: NavItem[] = [
   { to: '/sequences', label: 'Secuencias', icon: ClipboardList, caps: [CAPS.PACK_B1] },
   { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PICK_B2] },
   { to: '/dispatch', label: 'Clasificación', icon: Scan, caps: [CAPS.LOAD] },
-  { to: '/delivery', label: 'Entrega', icon: Truck, caps: [CAPS.DELIVER] },
   { to: '/dashboard', label: 'Supervisión', icon: BarChart3, caps: [CAPS.SUPERVISE] },
   { to: '/debug', label: 'Diagnóstico', icon: Stethoscope, caps: [CAPS.SUPERVISE] },
   { to: '/help', label: 'Ayuda', icon: HelpCircle },

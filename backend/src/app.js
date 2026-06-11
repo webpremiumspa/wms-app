@@ -12,7 +12,6 @@ import webhookRoutes from './routes/webhooks.js';
 import devRoutes from './routes/dev.js';
 import pickingB2Routes from './routes/picking-b2.js';
 import dispatchRoutes from './routes/dispatch.js';
-import deliveryRoutes from './routes/delivery.js';
 import dashboardRoutes from './routes/dashboard.js';
 import syncRoutes from './routes/sync.js';
 import publicRoutes from './routes/public.js';
@@ -30,7 +29,6 @@ function mountJsonRoutes(app, prefix = '') {
   app.use(`${prefix}/sequences`, sequenceRoutes);
   app.use(`${prefix}/picking/b2`, pickingB2Routes);
   app.use(`${prefix}/dispatch`, dispatchRoutes);
-  app.use(`${prefix}/delivery`, deliveryRoutes);
   app.use(`${prefix}/dashboard`, dashboardRoutes);
   app.use(`${prefix}/sync`, syncRoutes);
   app.use(`${prefix}/public`, publicRoutes);

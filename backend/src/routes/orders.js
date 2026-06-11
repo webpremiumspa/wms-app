@@ -203,7 +203,7 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
     // Si otro picker escaneó después, este usuario debe recargar — el pedido
     // ya no es suyo.
     if (order.pickedById && order.pickedById !== req.user.wpUserId) {
-      throw new HttpError(403, 'Este pedido fue reasignado a otro picker. Recargá para continuar.', {
+      throw new HttpError(403, 'Este pedido fue reasignado a otro picker. Recarga la página para continuar.', {
         currentPickerId: order.pickedById,
       });
     }
