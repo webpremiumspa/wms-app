@@ -89,6 +89,8 @@ export const ordersApi = {
   pack: async (id: number, itemIds: number[], confirmedOldSequence?: boolean): Promise<void> => {
     await api.post(`/orders/${id}/pack`, { itemIds, confirmedOldSequence });
   },
+  packB2: async (id: number, itemIds: number[], confirmedOldSequence?: boolean): Promise<{ ok: boolean; closedSequences: number[] }> =>
+    (await api.post(`/orders/${id}/pack-b2`, { itemIds, confirmedOldSequence })).data,
   loadability: async (id: number): Promise<OrderLoadability> =>
     (await api.get(`/orders/${id}/loadability`)).data,
   approvePartialDelivery: async (id: number, note?: string): Promise<{ ok: boolean }> =>

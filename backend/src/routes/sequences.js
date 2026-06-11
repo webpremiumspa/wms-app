@@ -91,6 +91,8 @@ router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (r
           packedById: null,
           pickedById: null,
           claimedAt: null,
+          b2ClosedAt: null,
+          b2ClosedById: null,
           classifiedAt: null,
           loadedAt: null,
         },

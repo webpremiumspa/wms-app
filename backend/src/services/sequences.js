@@ -128,237 +128,155 @@ export async function getPendingPacking(sequenceId) {
   });
 }
 
-// Reporte de picking B2 para UNA secuencia. Agrupa los items B2 por productId
-// con su cantidad total a sacar del granel. Se marca picked si TODOS los items
-// B2 de ese productId dentro de la secuencia tienen pickedAt.
-export async function getPickingB2Report(sequenceId) {
+// Lista los pedidos con B2 pendiente en la secuencia. Cada pedido tiene su
+// propia "cerradura B2" (orden.b2ClosedAt). El picker B2 entra a cada pedido,
+// marca sus items B2 al ponerlos en la sub-bolsa, y cierra el B2 del pedido.
+export async function getPendingPackingB2(sequenceId) {
   const seq = await prisma.sequence.findUnique({ where: { id: sequenceId } });
   if (!seq) throw new HttpError(404, 'Sequence not found');
 
-  const items = await prisma.orderItem.findMany({
+  // Solo pedidos con hasB2Pending (tienen items B2) y que NO estén bloqueados
+  // ni entregados. Mostramos los que ya cerraron B2 (al final) y los pendientes.
+  const orders = await prisma.order.findMany({
     where: {
-      warehouse: 'B2',
-      order: { sequenceLinks: { some: { sequenceId } } },
-    },
-    include: { product: true, order: { select: { number: true } } },
-  });
-
-  const groups = new Map();
-  for (const it of items) {
-    const g = groups.get(it.productId) || {
-      productId: it.productId,
-      sku: it.product?.sku,
-      name: it.product?.name,
-      thumbnailUrl: it.product?.thumbnailUrl,
-      qty: 0,
-      totalCount: 0,
-      pickedCount: 0,
-    };
-    g.qty += it.qty;
-    g.totalCount += 1;
-    if (it.pickedAt) g.pickedCount += 1;
-    groups.set(it.productId, g);
-  }
-
-  const rows = Array.from(groups.values()).map((g) => ({
-    productId: g.productId,
-    sku: g.sku,
-    name: g.name,
-    thumbnailUrl: g.thumbnailUrl,
-    qty: g.qty,
-    picked: g.pickedCount === g.totalCount && g.totalCount > 0,
-    ordersCount: g.totalCount,
-  }));
-
-  rows.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  const allPicked = rows.length > 0 && rows.every((r) => r.picked);
-
-  return { sequence: seq, items: rows, allPicked, totalSkus: rows.length };
-}
-
-// Marca un SKU B2 como recolectado dentro de la secuencia. Propaga pickedAt a
-// todos los items B2 con ese productId que pertenezcan a pedidos de la secuencia.
-export async function markPickedB2({ sequenceId, productId, actorId, picked }) {
-  const seq = await prisma.sequence.findUnique({ where: { id: sequenceId } });
-  if (!seq) throw new HttpError(404, 'Sequence not found');
-  if (seq.b2ClosedAt) throw new HttpError(409, 'B2 picking is already closed for this sequence');
-
-  const at = picked ? new Date() : null;
-  await prisma.orderItem.updateMany({
-    where: {
-      productId,
-      warehouse: 'B2',
-      order: { sequenceLinks: { some: { sequenceId } } },
-    },
-    data: { pickedAt: at },
-  });
-
-  await prisma.event.create({
-    data: {
-      type: picked ? 'sequence.item_picked' : 'sequence.item_unpicked',
-      actorId,
-      payload: { sequenceId, productId, warehouse: 'B2' },
-    },
-  });
-}
-
-// ─── Picking B2 en BATCH (varias secuencias a la vez) ─────────────────────
-// El equipo B2 puede consolidar el picking de N secuencias en una sola corrida
-// matinal. El batch es efímero (no persiste como entidad): vive en la URL/UI
-// del operador. Cada secuencia mantiene su propio cierre B2 independiente.
-//
-// Reglas:
-//  - Solo secuencias con b2_closed_at = NULL pueden entrar al batch.
-//  - Al cerrar, se cierran SOLO las secuencias que quedaron 100% pickeadas.
-//    Las que tengan items B2 sin marcar quedan abiertas para otra ronda.
-async function validateBatchSequences(sequenceIds) {
-  if (!Array.isArray(sequenceIds) || sequenceIds.length === 0) {
-    throw new HttpError(400, 'sequenceIds required');
-  }
-  const seqs = await prisma.sequence.findMany({
-    where: { id: { in: sequenceIds } },
-    select: { id: true, b2ClosedAt: true },
-  });
-  if (seqs.length !== sequenceIds.length) {
-    throw new HttpError(404, 'Some sequences do not exist');
-  }
-  const alreadyClosed = seqs.filter((s) => s.b2ClosedAt !== null).map((s) => s.id);
-  if (alreadyClosed.length > 0) {
-    throw new HttpError(409, 'Some sequences have B2 already closed', { alreadyClosed });
-  }
-  return seqs;
-}
-
-export async function getPickingB2BatchReport(sequenceIds) {
-  await validateBatchSequences(sequenceIds);
-
-  const items = await prisma.orderItem.findMany({
-    where: {
-      warehouse: 'B2',
-      order: { sequenceLinks: { some: { sequenceId: { in: sequenceIds } } } },
+      sequenceLinks: { some: { sequenceId } },
+      hasB2Pending: true,
+      status: { in: ['sequenced', 'picked', 'packed', 'classified', 'loaded'] },
     },
     include: {
-      product: true,
-      order: {
-        select: {
-          number: true,
-          sequenceLinks: { select: { sequenceId: true } },
-        },
-      },
+      items: { where: { warehouse: 'B2' }, select: { id: true, pickedAt: true } },
+      b2ClosedBy: { select: { wpUserId: true, displayName: true, username: true } },
     },
+    orderBy: { id: 'asc' },
   });
 
-  // Agrupar por productId, sumando qty entre secuencias.
-  const groups = new Map();
-  for (const it of items) {
-    const g = groups.get(it.productId) || {
-      productId: it.productId,
-      sku: it.product?.sku,
-      name: it.product?.name,
-      thumbnailUrl: it.product?.thumbnailUrl,
-      qty: 0,
-      totalCount: 0,
-      pickedCount: 0,
-      orderNumbers: new Set(),
+  return orders.map((o) => {
+    const total = o.items.length;
+    const pickedItems = o.items.filter((i) => i.pickedAt).length;
+    return {
+      id: o.id,
+      number: o.number,
+      customerName: o.customerName,
+      route: o.route,
+      stopPosition: o.stopPosition,
+      status: o.status,
+      itemCount: total,
+      pickedCount: pickedItems,
+      b2ClosedAt: o.b2ClosedAt,
+      b2ClosedBy: o.b2ClosedBy ? {
+        wpUserId: o.b2ClosedBy.wpUserId,
+        displayName: o.b2ClosedBy.displayName,
+        username: o.b2ClosedBy.username,
+      } : null,
     };
-    g.qty += it.qty;
-    g.totalCount += 1;
-    if (it.pickedAt) g.pickedCount += 1;
-    g.orderNumbers.add(it.order.number);
-    groups.set(it.productId, g);
+  });
+}
+
+// Cierra el B2 de un pedido: setea pickedAt en los items B2 confirmados y
+// marca b2ClosedAt/b2ClosedById en el pedido. Después chequea si la
+// secuencia entera tiene su B2 completo (todos los pedidos con B2 cerrados +
+// los sin B2 no aplican) y auto-cierra el flujo B2 de la secuencia.
+//
+// Acepta `confirmedOldSequence: boolean` análogo al pack B1 — si el picker
+// confirmó que es una secuencia antigua, queda registrado en eventos.
+export async function packOrderB2({ orderId, itemIds, actorId, confirmedOldSequence = false }) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+      sequenceLinks: { include: { sequence: { select: { id: true, b1ClosedAt: true, b2ClosedAt: true } } } },
+    },
+  });
+  if (!order) throw new HttpError(404, 'Order not found');
+  if (order.b2ClosedAt) throw new HttpError(409, 'Order B2 already closed');
+
+  const b2Items = order.items.filter((i) => i.warehouse === 'B2');
+  if (b2Items.length === 0) {
+    throw new HttpError(409, 'Order has no B2 items');
   }
 
-  const rows = Array.from(groups.values()).map((g) => ({
-    productId: g.productId,
-    sku: g.sku,
-    name: g.name,
-    thumbnailUrl: g.thumbnailUrl,
-    qty: g.qty,
-    picked: g.pickedCount === g.totalCount && g.totalCount > 0,
-    ordersCount: g.orderNumbers.size,
-  }));
-  rows.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  const required = new Set(b2Items.map((i) => i.id));
+  const confirmed = new Set(itemIds);
+  const missing = [...required].filter((x) => !confirmed.has(x));
 
-  const allPicked = rows.length > 0 && rows.every((r) => r.picked);
-  return { sequenceIds, items: rows, allPicked, totalSkus: rows.length };
-}
-
-export async function markPickedB2Batch({ sequenceIds, productId, actorId, picked }) {
-  await validateBatchSequences(sequenceIds);
-
-  const at = picked ? new Date() : null;
-  await prisma.orderItem.updateMany({
-    where: {
-      productId,
-      warehouse: 'B2',
-      order: { sequenceLinks: { some: { sequenceId: { in: sequenceIds } } } },
-    },
-    data: { pickedAt: at },
-  });
-
-  await prisma.event.create({
-    data: {
-      type: picked ? 'sequence.item_picked' : 'sequence.item_unpicked',
-      actorId,
-      payload: { sequenceIds, productId, warehouse: 'B2', batch: true },
-    },
-  });
-}
-
-// Cierre flexible: cierra B2 solo en las secuencias 100% pickeadas. Reporta
-// las que quedaron incompletas para que el operador sepa cuáles siguen vivas.
-export async function closeSequenceB2BatchPartial({ sequenceIds, actorId }) {
-  await validateBatchSequences(sequenceIds);
-
-  // Para cada secuencia, contar items B2 totales y pendientes.
-  const breakdown = await Promise.all(
-    sequenceIds.map(async (sequenceId) => {
-      const items = await prisma.orderItem.findMany({
-        where: {
-          warehouse: 'B2',
-          order: { sequenceLinks: { some: { sequenceId } } },
-        },
-        select: { pickedAt: true },
-      });
-      const total = items.length;
-      const pending = items.filter((i) => !i.pickedAt).length;
-      return { sequenceId, total, pending };
-    }),
-  );
+  // Si hay items faltantes, no se puede cerrar a menos que el pedido tenga
+  // entrega parcial aprobada (igual que el flujo de carga: el cliente acepta
+  // recibir sin esos items).
+  if (missing.length > 0 && !order.allowPartialDelivery) {
+    throw new HttpError(409, 'All B2 items must be checked before closing', { missingItemIds: missing });
+  }
 
   const now = new Date();
-  const closed = [];
-  const stillPending = [];
+  const itemUpdates = confirmed.size > 0 ? [
+    prisma.orderItem.updateMany({
+      where: { id: { in: [...confirmed] }, orderId, warehouse: 'B2' },
+      data: { pickedAt: now },
+    }),
+  ] : [];
 
-  for (const b of breakdown) {
-    if (b.pending === 0) {
-      // Secuencias sin items B2 también se cierran (no-op de picking pero el
-      // flujo queda marcado como completo).
-      const seq = await prisma.sequence.findUnique({
-        where: { id: b.sequenceId },
-        select: { b1ClosedAt: true },
-      });
+  await prisma.$transaction([
+    ...itemUpdates,
+    prisma.order.update({
+      where: { id: orderId },
+      data: { b2ClosedAt: now, b2ClosedById: actorId },
+    }),
+    prisma.event.create({
+      data: {
+        type: 'order.b2_packed',
+        actorId,
+        orderId,
+        payload: { itemIds: [...confirmed], partial: missing.length > 0 },
+      },
+    }),
+  ]);
+
+  if (confirmedOldSequence) {
+    await prisma.event.create({
+      data: {
+        type: 'order.b2_packed_from_old_sequence',
+        actorId,
+        orderId,
+        payload: {},
+      },
+    });
+  }
+
+  // Auto-cerrar el flujo B2 de la(s) secuencia(s) si TODOS sus pedidos con B2
+  // ya están cerrados. Recorre cada secuencia del pedido.
+  const closedSequences = [];
+  for (const link of order.sequenceLinks) {
+    const seq = link.sequence;
+    if (seq.b2ClosedAt) continue; // ya cerrada
+    const sequenceId = seq.id;
+
+    const pendingPedidos = await prisma.order.count({
+      where: {
+        sequenceLinks: { some: { sequenceId } },
+        hasB2Pending: true,
+        b2ClosedAt: null,
+        status: { notIn: ['blocked', 'delivered'] },
+      },
+    });
+    if (pendingPedidos === 0) {
       await prisma.sequence.update({
-        where: { id: b.sequenceId },
+        where: { id: sequenceId },
         data: {
           b2ClosedAt: now,
-          ...(seq?.b1ClosedAt ? { status: 'closed', closedAt: now } : {}),
+          ...(seq.b1ClosedAt ? { status: 'closed', closedAt: now } : {}),
         },
       });
       await prisma.event.create({
         data: {
           type: 'sequence.b2_closed',
           actorId,
-          payload: { sequenceId: b.sequenceId, totalSkus: b.total, batch: true },
+          payload: { sequenceId, auto: true },
         },
       });
-      closed.push(b.sequenceId);
-    } else {
-      stillPending.push({ sequenceId: b.sequenceId, total: b.total, pending: b.pending });
+      closedSequences.push(sequenceId);
     }
   }
 
-  return { closed, stillPending };
+  return { ok: true, closedSequences };
 }
 
 // Cierra el flujo B1 de una secuencia: exige que todos los pedidos estén

@@ -32,6 +32,7 @@ export function Scan() {
 
   const canLoad = hasCap(user, CAPS.LOAD);
   const canPack = hasCap(user, CAPS.PACK_B1);
+  const canPickB2 = hasCap(user, CAPS.PICK_B2);
   const canDeliver = hasCap(user, CAPS.DELIVER);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -48,14 +49,20 @@ export function Scan() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['order-public', idNum] }),
   });
 
-  // Si el usuario está logueado y puede empacar Y el pedido es empacable
-  // → redirigimos directo a la vista de packing. El picker llega con el QR,
-  // escanea, y arranca a marcar items en lugar de ver un landing intermedio.
+  // Si el usuario está logueado y puede trabajar el pedido, redirigimos
+  // directo a la vista correspondiente. Prioridad: B1 packing si packable,
+  // si no, B2 picking si b2Pickable. Así el operador llega al QR y arranca a
+  // marcar items sin ver un landing intermedio.
   useEffect(() => {
-    if (user && canPack && order?.packable && order?.openSequenceId) {
+    if (!user || !order?.openSequenceId) return;
+    if (canPack && order.packable) {
       navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`, { replace: true });
+      return;
     }
-  }, [user, canPack, order?.packable, order?.openSequenceId, order?.id, navigate]);
+    if (canPickB2 && order.b2Pickable) {
+      navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`, { replace: true });
+    }
+  }, [user, canPack, canPickB2, order?.packable, order?.b2Pickable, order?.openSequenceId, order?.id, navigate]);
 
   if (!Number.isFinite(idNum) || idNum <= 0) {
     return <ScanShell><div className="card p-6 text-center text-red-700">ID de pedido inválido en la URL.</div></ScanShell>;
@@ -162,6 +169,15 @@ export function Scan() {
                 >
                   <ClipboardCheck size={18} />
                   Empacar este pedido
+                </button>
+              )}
+              {canPickB2 && order.b2Pickable && order.openSequenceId && !order.packable && (
+                <button
+                  onClick={() => navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`)}
+                  className="btn-primary w-full"
+                >
+                  <ClipboardCheck size={18} />
+                  Pickear B2 de este pedido
                 </button>
               )}
               {canLoad && order.status === 'packed' && (

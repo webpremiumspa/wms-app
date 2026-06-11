@@ -103,6 +103,9 @@ export type OrderDetail = {
   packedBy: Picker | null;
   pickedBy: Picker | null;
   claimedAt: string | null;
+  b2ClosedAt: string | null;
+  b2ClosedBy: Picker | null;
+  b2Pickable?: boolean;
   sequenceLinks?: Array<{
     sequenceId: number;
     sequence?: { id: number; createdAt: string; status: string };

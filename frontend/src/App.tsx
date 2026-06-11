@@ -12,7 +12,7 @@ import { PackingList } from '@/pages/Sequences/PackingList';
 import { PackingOrder } from '@/pages/Sequences/PackingOrder';
 import { SequenceClose } from '@/pages/Sequences/Close';
 import { PickingB2 } from '@/pages/PickingB2';
-import { PickingB2Batch } from '@/pages/PickingB2Batch';
+import { PickingB2Order } from '@/pages/Sequences/PickingB2Order';
 import { Picking } from '@/pages/Picking';
 import { Dispatch } from '@/pages/Dispatch';
 import { Dashboard } from '@/pages/Dashboard';
@@ -47,8 +47,8 @@ export default function App() {
               <Route path="sequences/:id/packing/:orderId" element={<PackingOrder />} />
               <Route path="sequences/:id/close" element={<SequenceClose />} />
               <Route path="picking" element={<Picking />} />
-              <Route path="picking-b2/batch" element={<PickingB2Batch />} />
               <Route path="sequences/:id/picking-b2" element={<PickingB2 />} />
+              <Route path="sequences/:id/picking-b2/:orderId" element={<PickingB2Order />} />
               <Route path="dispatch" element={<Dispatch />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="debug" element={<Debug />} />

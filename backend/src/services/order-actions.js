@@ -57,6 +57,8 @@ export async function removeOrderFromSequence({
         packedById: null,
         pickedById: null,
         claimedAt: null,
+        b2ClosedAt: null,
+        b2ClosedById: null,
         classifiedAt: null,
         loadedAt: null,
         allowPartialDelivery: false,

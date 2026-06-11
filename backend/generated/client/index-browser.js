@@ -160,6 +160,8 @@ exports.Prisma.OrderScalarFieldEnum = {
   claimedAt: 'claimedAt',
   packedById: 'packedById',
   packedAt: 'packedAt',
+  b2ClosedById: 'b2ClosedById',
+  b2ClosedAt: 'b2ClosedAt',
   classifiedAt: 'classifiedAt',
   loadedAt: 'loadedAt',
   deliveredAt: 'deliveredAt',

@@ -26,6 +26,7 @@ model UserMeta {
   sequencesCreated Sequence[] @relation("SequenceCreator")
   packedOrders     Order[]    @relation("OrderPacker")
   pickedOrders     Order[]    @relation("OrderPicker")
+  b2ClosedOrders   Order[]    @relation("OrderB2Closer")
   events           Event[]
 
   @@map("users_meta")
@@ -71,6 +72,12 @@ model Order {
   claimedAt       DateTime? @map("claimed_at")
   packedById      Int?     @map("packed_by_id")
   packedAt        DateTime? @map("packed_at")
+  // Cierre B2 por pedido: el picker B2 escanea el QR del albarán, marca los
+  // items B2 que pone en la sub-bolsa del pedido y cierra. Cuando todos los
+  // pedidos con B2 de una secuencia tienen b2ClosedAt → la secuencia
+  // auto-cierra su flujo B2.
+  b2ClosedById    Int?     @map("b2_closed_by_id")
+  b2ClosedAt      DateTime? @map("b2_closed_at")
   classifiedAt    DateTime? @map("classified_at")
   loadedAt        DateTime? @map("loaded_at")
   deliveredAt     DateTime? @map("delivered_at")
@@ -79,6 +86,7 @@ model Order {
 
   packedBy        UserMeta? @relation("OrderPacker", fields: [packedById], references: [wpUserId])
   pickedBy        UserMeta? @relation("OrderPicker", fields: [pickedById], references: [wpUserId])
+  b2ClosedBy      UserMeta? @relation("OrderB2Closer", fields: [b2ClosedById], references: [wpUserId])
   items           OrderItem[]
   sequenceLinks   SequenceOrder[]
   events          Event[]

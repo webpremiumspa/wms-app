@@ -335,35 +335,37 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'b2-picking',
-    title: 'Picking Bodega 2 (granel, por secuencia)',
+    title: 'Picking Bodega 2 (per-pedido, igual que B1)',
     icon: Package,
     body: (
       <>
-        <p>El equipo de B2 pickea aparte del equipo B1, pero <strong>para las mismas secuencias</strong>. Cada secuencia tiene su propio listado de items B2 a sacar del granel. Generalmente se hace una sola corrida matinal que cubre las secuencias armadas el día anterior.</p>
+        <p>El picking B2 funciona <strong>igual que el B1</strong>: el picker escanea el QR del albarán de cada pedido, arma una <em>sub-bolsa</em> con los items B2 específicos de ese pedido, la asocia (atándola o etiquetándola con el número de pedido) y cierra el pedido.</p>
 
-        <h4>Picking de una secuencia individual</h4>
+        <h4>Flujo del picker B2</h4>
         <ol>
-          <li>Abre <strong>Picking</strong>. Vas a ver una tarjeta por cada secuencia con items B2 pendientes.</li>
-          <li>Toca la tarjeta. El reporte muestra los SKUs B2 con cantidad total y cuántos pedidos los necesitan.</li>
-          <li>Recorre con el móvil, marca cada SKU al recolectarlo. El estado se sincroniza en vivo entre operadores.</li>
-          <li>Cuando termines, toca <strong>Cerrar picking B2</strong>. El flujo B2 queda cerrado para esa secuencia.</li>
+          <li>El operador de B1 ya armó la secuencia e imprimió los albaranes.</li>
+          <li>El picker B2 abre la app y va a <strong>Picking</strong>. Ve una tarjeta por cada secuencia con pedidos B2 pendientes.</li>
+          <li>Entra a la secuencia o, alternativamente, escanea el QR del primer albarán directamente desde la cámara del móvil.</li>
+          <li>Aparece el pedido con los items B2 que tiene que recolectar de la bodega 2 (foto + SKU + cantidad).</li>
+          <li>Por cada item B2 que mete en la sub-bolsa del pedido, marca su checkbox.</li>
+          <li>Toca <strong>Cerrar B2 del pedido</strong>. El pedido queda registrado como B2 cerrado, a su nombre.</li>
+          <li>Toca <strong>Escanear pedido</strong> o vuelve a la lista para el siguiente.</li>
         </ol>
 
-        <h4>Picking conjunto (varias secuencias a la vez)</h4>
-        <p>Si en la mañana tienes varias secuencias del día anterior y quieres evitar entrar y salir de cada una:</p>
-        <ol>
-          <li>En <strong>Picking</strong>, marca el <em>checkbox</em> al lado de cada secuencia B2 que quieras incluir (debe haber al menos 2).</li>
-          <li>Aparece un botón flotante <strong>"Picking conjunto (N secuencias)"</strong>. Tocalo.</li>
-          <li>Se abre una vista consolidada con todos los SKUs B2 sumados (si dos secuencias piden el mismo SKU, ves la cantidad total).</li>
-          <li>Marcas cada SKU al recolectarlo. Cuando termines, <strong>Cerrar picking conjunto</strong>.</li>
-          <li>El sistema cierra el B2 <em>solo</em> de las secuencias que quedaron 100% pickeadas. Las que tengan items sin marcar quedan abiertas para otra ronda — vas a ver el resumen en pantalla.</li>
-        </ol>
-        <p className="text-slate-600">
-          El batch es <strong>estático</strong>: si mientras estás pickeando se crea una secuencia nueva, queda para una próxima ronda — no se agrega al batch en curso.
+        <h4>Cierre automático del flujo B2 de la secuencia</h4>
+        <p>
+          Cuando todos los pedidos con items B2 de una secuencia tienen su B2 cerrado, el flujo B2 de esa secuencia se cierra automáticamente. No hay un botón "cerrar B2 de la secuencia" — es transparente.
         </p>
+
         <p className="text-slate-600">
-          El cierre B2 es independiente del cierre B1 (packing). Pueden cerrarse en cualquier orden.
+          El cierre B2 es independiente del cierre B1 (packing). Pueden cerrarse en cualquier orden y no se condicionan entre sí.
         </p>
+
+        <h4>Si falta un item B2</h4>
+        <ul>
+          <li>Si el cliente <strong>acepta entrega parcial</strong>: alguien con cap <code>wms_pack_b1</code> aprueba la entrega parcial del pedido y entonces el picker B2 puede cerrar el pedido aunque falte el item.</li>
+          <li>Si <strong>no</strong>: deja el pedido sin cerrar y avisa al supervisor. El pedido va a quedar bloqueado en clasificación (no se podrá cargar al vehículo).</li>
+        </ul>
       </>
     ),
   },

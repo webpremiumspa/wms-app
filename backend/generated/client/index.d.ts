@@ -1381,6 +1381,7 @@ export namespace Prisma {
     sequencesCreated: number
     packedOrders: number
     pickedOrders: number
+    b2ClosedOrders: number
     events: number
   }
 
@@ -1388,6 +1389,7 @@ export namespace Prisma {
     sequencesCreated?: boolean | UserMetaCountOutputTypeCountSequencesCreatedArgs
     packedOrders?: boolean | UserMetaCountOutputTypeCountPackedOrdersArgs
     pickedOrders?: boolean | UserMetaCountOutputTypeCountPickedOrdersArgs
+    b2ClosedOrders?: boolean | UserMetaCountOutputTypeCountB2ClosedOrdersArgs
     events?: boolean | UserMetaCountOutputTypeCountEventsArgs
   }
 
@@ -1420,6 +1422,13 @@ export namespace Prisma {
    * UserMetaCountOutputType without action
    */
   export type UserMetaCountOutputTypeCountPickedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrderWhereInput
+  }
+
+  /**
+   * UserMetaCountOutputType without action
+   */
+  export type UserMetaCountOutputTypeCountB2ClosedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: OrderWhereInput
   }
 
@@ -1775,6 +1784,7 @@ export namespace Prisma {
     sequencesCreated?: boolean | UserMeta$sequencesCreatedArgs<ExtArgs>
     packedOrders?: boolean | UserMeta$packedOrdersArgs<ExtArgs>
     pickedOrders?: boolean | UserMeta$pickedOrdersArgs<ExtArgs>
+    b2ClosedOrders?: boolean | UserMeta$b2ClosedOrdersArgs<ExtArgs>
     events?: boolean | UserMeta$eventsArgs<ExtArgs>
     _count?: boolean | UserMetaCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["userMeta"]>
@@ -1796,6 +1806,7 @@ export namespace Prisma {
     sequencesCreated?: boolean | UserMeta$sequencesCreatedArgs<ExtArgs>
     packedOrders?: boolean | UserMeta$packedOrdersArgs<ExtArgs>
     pickedOrders?: boolean | UserMeta$pickedOrdersArgs<ExtArgs>
+    b2ClosedOrders?: boolean | UserMeta$b2ClosedOrdersArgs<ExtArgs>
     events?: boolean | UserMeta$eventsArgs<ExtArgs>
     _count?: boolean | UserMetaCountOutputTypeDefaultArgs<ExtArgs>
   }
@@ -1806,6 +1817,7 @@ export namespace Prisma {
       sequencesCreated: Prisma.$SequencePayload<ExtArgs>[]
       packedOrders: Prisma.$OrderPayload<ExtArgs>[]
       pickedOrders: Prisma.$OrderPayload<ExtArgs>[]
+      b2ClosedOrders: Prisma.$OrderPayload<ExtArgs>[]
       events: Prisma.$EventPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
@@ -2161,6 +2173,7 @@ export namespace Prisma {
     sequencesCreated<T extends UserMeta$sequencesCreatedArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$sequencesCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SequencePayload<ExtArgs>, T, "findMany"> | Null>
     packedOrders<T extends UserMeta$packedOrdersArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$packedOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany"> | Null>
     pickedOrders<T extends UserMeta$pickedOrdersArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$pickedOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany"> | Null>
+    b2ClosedOrders<T extends UserMeta$b2ClosedOrdersArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$b2ClosedOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany"> | Null>
     events<T extends UserMeta$eventsArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2542,6 +2555,26 @@ export namespace Prisma {
    * UserMeta.pickedOrders
    */
   export type UserMeta$pickedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Order
+     */
+    select?: OrderSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OrderInclude<ExtArgs> | null
+    where?: OrderWhereInput
+    orderBy?: OrderOrderByWithRelationInput | OrderOrderByWithRelationInput[]
+    cursor?: OrderWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OrderScalarFieldEnum | OrderScalarFieldEnum[]
+  }
+
+  /**
+   * UserMeta.b2ClosedOrders
+   */
+  export type UserMeta$b2ClosedOrdersArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the Order
      */
@@ -3558,6 +3591,7 @@ export namespace Prisma {
     bagsExpected: number | null
     pickedById: number | null
     packedById: number | null
+    b2ClosedById: number | null
   }
 
   export type OrderSumAggregateOutputType = {
@@ -3567,6 +3601,7 @@ export namespace Prisma {
     bagsExpected: number | null
     pickedById: number | null
     packedById: number | null
+    b2ClosedById: number | null
   }
 
   export type OrderMinAggregateOutputType = {
@@ -3586,6 +3621,8 @@ export namespace Prisma {
     claimedAt: Date | null
     packedById: number | null
     packedAt: Date | null
+    b2ClosedById: number | null
+    b2ClosedAt: Date | null
     classifiedAt: Date | null
     loadedAt: Date | null
     deliveredAt: Date | null
@@ -3610,6 +3647,8 @@ export namespace Prisma {
     claimedAt: Date | null
     packedById: number | null
     packedAt: Date | null
+    b2ClosedById: number | null
+    b2ClosedAt: Date | null
     classifiedAt: Date | null
     loadedAt: Date | null
     deliveredAt: Date | null
@@ -3634,6 +3673,8 @@ export namespace Prisma {
     claimedAt: number
     packedById: number
     packedAt: number
+    b2ClosedById: number
+    b2ClosedAt: number
     classifiedAt: number
     loadedAt: number
     deliveredAt: number
@@ -3650,6 +3691,7 @@ export namespace Prisma {
     bagsExpected?: true
     pickedById?: true
     packedById?: true
+    b2ClosedById?: true
   }
 
   export type OrderSumAggregateInputType = {
@@ -3659,6 +3701,7 @@ export namespace Prisma {
     bagsExpected?: true
     pickedById?: true
     packedById?: true
+    b2ClosedById?: true
   }
 
   export type OrderMinAggregateInputType = {
@@ -3678,6 +3721,8 @@ export namespace Prisma {
     claimedAt?: true
     packedById?: true
     packedAt?: true
+    b2ClosedById?: true
+    b2ClosedAt?: true
     classifiedAt?: true
     loadedAt?: true
     deliveredAt?: true
@@ -3702,6 +3747,8 @@ export namespace Prisma {
     claimedAt?: true
     packedById?: true
     packedAt?: true
+    b2ClosedById?: true
+    b2ClosedAt?: true
     classifiedAt?: true
     loadedAt?: true
     deliveredAt?: true
@@ -3726,6 +3773,8 @@ export namespace Prisma {
     claimedAt?: true
     packedById?: true
     packedAt?: true
+    b2ClosedById?: true
+    b2ClosedAt?: true
     classifiedAt?: true
     loadedAt?: true
     deliveredAt?: true
@@ -3837,6 +3886,8 @@ export namespace Prisma {
     claimedAt: Date | null
     packedById: number | null
     packedAt: Date | null
+    b2ClosedById: number | null
+    b2ClosedAt: Date | null
     classifiedAt: Date | null
     loadedAt: Date | null
     deliveredAt: Date | null
@@ -3880,6 +3931,8 @@ export namespace Prisma {
     claimedAt?: boolean
     packedById?: boolean
     packedAt?: boolean
+    b2ClosedById?: boolean
+    b2ClosedAt?: boolean
     classifiedAt?: boolean
     loadedAt?: boolean
     deliveredAt?: boolean
@@ -3887,6 +3940,7 @@ export namespace Prisma {
     updatedAt?: boolean
     packedBy?: boolean | Order$packedByArgs<ExtArgs>
     pickedBy?: boolean | Order$pickedByArgs<ExtArgs>
+    b2ClosedBy?: boolean | Order$b2ClosedByArgs<ExtArgs>
     items?: boolean | Order$itemsArgs<ExtArgs>
     sequenceLinks?: boolean | Order$sequenceLinksArgs<ExtArgs>
     events?: boolean | Order$eventsArgs<ExtArgs>
@@ -3911,6 +3965,8 @@ export namespace Prisma {
     claimedAt?: boolean
     packedById?: boolean
     packedAt?: boolean
+    b2ClosedById?: boolean
+    b2ClosedAt?: boolean
     classifiedAt?: boolean
     loadedAt?: boolean
     deliveredAt?: boolean
@@ -3921,6 +3977,7 @@ export namespace Prisma {
   export type OrderInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     packedBy?: boolean | Order$packedByArgs<ExtArgs>
     pickedBy?: boolean | Order$pickedByArgs<ExtArgs>
+    b2ClosedBy?: boolean | Order$b2ClosedByArgs<ExtArgs>
     items?: boolean | Order$itemsArgs<ExtArgs>
     sequenceLinks?: boolean | Order$sequenceLinksArgs<ExtArgs>
     events?: boolean | Order$eventsArgs<ExtArgs>
@@ -3932,6 +3989,7 @@ export namespace Prisma {
     objects: {
       packedBy: Prisma.$UserMetaPayload<ExtArgs> | null
       pickedBy: Prisma.$UserMetaPayload<ExtArgs> | null
+      b2ClosedBy: Prisma.$UserMetaPayload<ExtArgs> | null
       items: Prisma.$OrderItemPayload<ExtArgs>[]
       sequenceLinks: Prisma.$SequenceOrderPayload<ExtArgs>[]
       events: Prisma.$EventPayload<ExtArgs>[]
@@ -3953,6 +4011,8 @@ export namespace Prisma {
       claimedAt: Date | null
       packedById: number | null
       packedAt: Date | null
+      b2ClosedById: number | null
+      b2ClosedAt: Date | null
       classifiedAt: Date | null
       loadedAt: Date | null
       deliveredAt: Date | null
@@ -4300,6 +4360,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     packedBy<T extends Order$packedByArgs<ExtArgs> = {}>(args?: Subset<T, Order$packedByArgs<ExtArgs>>): Prisma__UserMetaClient<$Result.GetResult<Prisma.$UserMetaPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     pickedBy<T extends Order$pickedByArgs<ExtArgs> = {}>(args?: Subset<T, Order$pickedByArgs<ExtArgs>>): Prisma__UserMetaClient<$Result.GetResult<Prisma.$UserMetaPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
+    b2ClosedBy<T extends Order$b2ClosedByArgs<ExtArgs> = {}>(args?: Subset<T, Order$b2ClosedByArgs<ExtArgs>>): Prisma__UserMetaClient<$Result.GetResult<Prisma.$UserMetaPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     items<T extends Order$itemsArgs<ExtArgs> = {}>(args?: Subset<T, Order$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderItemPayload<ExtArgs>, T, "findMany"> | Null>
     sequenceLinks<T extends Order$sequenceLinksArgs<ExtArgs> = {}>(args?: Subset<T, Order$sequenceLinksArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SequenceOrderPayload<ExtArgs>, T, "findMany"> | Null>
     events<T extends Order$eventsArgs<ExtArgs> = {}>(args?: Subset<T, Order$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findMany"> | Null>
@@ -4348,6 +4409,8 @@ export namespace Prisma {
     readonly claimedAt: FieldRef<"Order", 'DateTime'>
     readonly packedById: FieldRef<"Order", 'Int'>
     readonly packedAt: FieldRef<"Order", 'DateTime'>
+    readonly b2ClosedById: FieldRef<"Order", 'Int'>
+    readonly b2ClosedAt: FieldRef<"Order", 'DateTime'>
     readonly classifiedAt: FieldRef<"Order", 'DateTime'>
     readonly loadedAt: FieldRef<"Order", 'DateTime'>
     readonly deliveredAt: FieldRef<"Order", 'DateTime'>
@@ -4670,6 +4733,21 @@ export namespace Prisma {
    * Order.pickedBy
    */
   export type Order$pickedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserMeta
+     */
+    select?: UserMetaSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserMetaInclude<ExtArgs> | null
+    where?: UserMetaWhereInput
+  }
+
+  /**
+   * Order.b2ClosedBy
+   */
+  export type Order$b2ClosedByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the UserMeta
      */
@@ -8610,6 +8688,8 @@ export namespace Prisma {
     claimedAt: 'claimedAt',
     packedById: 'packedById',
     packedAt: 'packedAt',
+    b2ClosedById: 'b2ClosedById',
+    b2ClosedAt: 'b2ClosedAt',
     classifiedAt: 'classifiedAt',
     loadedAt: 'loadedAt',
     deliveredAt: 'deliveredAt',
@@ -8795,6 +8875,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceListRelationFilter
     packedOrders?: OrderListRelationFilter
     pickedOrders?: OrderListRelationFilter
+    b2ClosedOrders?: OrderListRelationFilter
     events?: EventListRelationFilter
   }
 
@@ -8811,6 +8892,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceOrderByRelationAggregateInput
     packedOrders?: OrderOrderByRelationAggregateInput
     pickedOrders?: OrderOrderByRelationAggregateInput
+    b2ClosedOrders?: OrderOrderByRelationAggregateInput
     events?: EventOrderByRelationAggregateInput
   }
 
@@ -8830,6 +8912,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceListRelationFilter
     packedOrders?: OrderListRelationFilter
     pickedOrders?: OrderListRelationFilter
+    b2ClosedOrders?: OrderListRelationFilter
     events?: EventListRelationFilter
   }, "wpUserId">
 
@@ -8947,6 +9030,8 @@ export namespace Prisma {
     claimedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    b2ClosedById?: IntNullableFilter<"Order"> | number | null
+    b2ClosedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     loadedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     deliveredAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -8954,6 +9039,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Order"> | Date | string
     packedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
     pickedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
+    b2ClosedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
     items?: OrderItemListRelationFilter
     sequenceLinks?: SequenceOrderListRelationFilter
     events?: EventListRelationFilter
@@ -8976,6 +9062,8 @@ export namespace Prisma {
     claimedAt?: SortOrderInput | SortOrder
     packedById?: SortOrderInput | SortOrder
     packedAt?: SortOrderInput | SortOrder
+    b2ClosedById?: SortOrderInput | SortOrder
+    b2ClosedAt?: SortOrderInput | SortOrder
     classifiedAt?: SortOrderInput | SortOrder
     loadedAt?: SortOrderInput | SortOrder
     deliveredAt?: SortOrderInput | SortOrder
@@ -8983,6 +9071,7 @@ export namespace Prisma {
     updatedAt?: SortOrder
     packedBy?: UserMetaOrderByWithRelationInput
     pickedBy?: UserMetaOrderByWithRelationInput
+    b2ClosedBy?: UserMetaOrderByWithRelationInput
     items?: OrderItemOrderByRelationAggregateInput
     sequenceLinks?: SequenceOrderOrderByRelationAggregateInput
     events?: EventOrderByRelationAggregateInput
@@ -9008,6 +9097,8 @@ export namespace Prisma {
     claimedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    b2ClosedById?: IntNullableFilter<"Order"> | number | null
+    b2ClosedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     loadedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     deliveredAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -9015,6 +9106,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"Order"> | Date | string
     packedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
     pickedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
+    b2ClosedBy?: XOR<UserMetaNullableRelationFilter, UserMetaWhereInput> | null
     items?: OrderItemListRelationFilter
     sequenceLinks?: SequenceOrderListRelationFilter
     events?: EventListRelationFilter
@@ -9037,6 +9129,8 @@ export namespace Prisma {
     claimedAt?: SortOrderInput | SortOrder
     packedById?: SortOrderInput | SortOrder
     packedAt?: SortOrderInput | SortOrder
+    b2ClosedById?: SortOrderInput | SortOrder
+    b2ClosedAt?: SortOrderInput | SortOrder
     classifiedAt?: SortOrderInput | SortOrder
     loadedAt?: SortOrderInput | SortOrder
     deliveredAt?: SortOrderInput | SortOrder
@@ -9069,6 +9163,8 @@ export namespace Prisma {
     claimedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
     packedById?: IntNullableWithAggregatesFilter<"Order"> | number | null
     packedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+    b2ClosedById?: IntNullableWithAggregatesFilter<"Order"> | number | null
+    b2ClosedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
     loadedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
     deliveredAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
@@ -9350,6 +9446,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
     events?: EventCreateNestedManyWithoutActorInput
   }
 
@@ -9366,6 +9463,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
     events?: EventUncheckedCreateNestedManyWithoutActorInput
   }
 
@@ -9382,6 +9480,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
     events?: EventUpdateManyWithoutActorNestedInput
   }
 
@@ -9398,6 +9497,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
     events?: EventUncheckedUpdateManyWithoutActorNestedInput
   }
 
@@ -9518,6 +9618,7 @@ export namespace Prisma {
     partialDeliveryNote?: string | null
     claimedAt?: Date | string | null
     packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -9525,6 +9626,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
     pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
+    b2ClosedBy?: UserMetaCreateNestedOneWithoutB2ClosedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
@@ -9547,6 +9649,8 @@ export namespace Prisma {
     claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -9571,6 +9675,7 @@ export namespace Prisma {
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9578,6 +9683,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
     pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
+    b2ClosedBy?: UserMetaUpdateOneWithoutB2ClosedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
@@ -9600,6 +9706,8 @@ export namespace Prisma {
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9627,6 +9735,8 @@ export namespace Prisma {
     claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -9648,6 +9758,7 @@ export namespace Prisma {
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -9672,6 +9783,8 @@ export namespace Prisma {
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10308,6 +10421,8 @@ export namespace Prisma {
     claimedAt?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
+    b2ClosedById?: SortOrder
+    b2ClosedAt?: SortOrder
     classifiedAt?: SortOrder
     loadedAt?: SortOrder
     deliveredAt?: SortOrder
@@ -10322,6 +10437,7 @@ export namespace Prisma {
     bagsExpected?: SortOrder
     pickedById?: SortOrder
     packedById?: SortOrder
+    b2ClosedById?: SortOrder
   }
 
   export type OrderMaxOrderByAggregateInput = {
@@ -10341,6 +10457,8 @@ export namespace Prisma {
     claimedAt?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
+    b2ClosedById?: SortOrder
+    b2ClosedAt?: SortOrder
     classifiedAt?: SortOrder
     loadedAt?: SortOrder
     deliveredAt?: SortOrder
@@ -10365,6 +10483,8 @@ export namespace Prisma {
     claimedAt?: SortOrder
     packedById?: SortOrder
     packedAt?: SortOrder
+    b2ClosedById?: SortOrder
+    b2ClosedAt?: SortOrder
     classifiedAt?: SortOrder
     loadedAt?: SortOrder
     deliveredAt?: SortOrder
@@ -10379,6 +10499,7 @@ export namespace Prisma {
     bagsExpected?: SortOrder
     pickedById?: SortOrder
     packedById?: SortOrder
+    b2ClosedById?: SortOrder
   }
 
   export type EnumOrderStatusWithAggregatesFilter<$PrismaModel = never> = {
@@ -10695,6 +10816,13 @@ export namespace Prisma {
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
   }
 
+  export type OrderCreateNestedManyWithoutB2ClosedByInput = {
+    create?: XOR<OrderCreateWithoutB2ClosedByInput, OrderUncheckedCreateWithoutB2ClosedByInput> | OrderCreateWithoutB2ClosedByInput[] | OrderUncheckedCreateWithoutB2ClosedByInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutB2ClosedByInput | OrderCreateOrConnectWithoutB2ClosedByInput[]
+    createMany?: OrderCreateManyB2ClosedByInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+  }
+
   export type EventCreateNestedManyWithoutActorInput = {
     create?: XOR<EventCreateWithoutActorInput, EventUncheckedCreateWithoutActorInput> | EventCreateWithoutActorInput[] | EventUncheckedCreateWithoutActorInput[]
     connectOrCreate?: EventCreateOrConnectWithoutActorInput | EventCreateOrConnectWithoutActorInput[]
@@ -10720,6 +10848,13 @@ export namespace Prisma {
     create?: XOR<OrderCreateWithoutPickedByInput, OrderUncheckedCreateWithoutPickedByInput> | OrderCreateWithoutPickedByInput[] | OrderUncheckedCreateWithoutPickedByInput[]
     connectOrCreate?: OrderCreateOrConnectWithoutPickedByInput | OrderCreateOrConnectWithoutPickedByInput[]
     createMany?: OrderCreateManyPickedByInputEnvelope
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+  }
+
+  export type OrderUncheckedCreateNestedManyWithoutB2ClosedByInput = {
+    create?: XOR<OrderCreateWithoutB2ClosedByInput, OrderUncheckedCreateWithoutB2ClosedByInput> | OrderCreateWithoutB2ClosedByInput[] | OrderUncheckedCreateWithoutB2ClosedByInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutB2ClosedByInput | OrderCreateOrConnectWithoutB2ClosedByInput[]
+    createMany?: OrderCreateManyB2ClosedByInputEnvelope
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
   }
 
@@ -10800,6 +10935,20 @@ export namespace Prisma {
     deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
+  export type OrderUpdateManyWithoutB2ClosedByNestedInput = {
+    create?: XOR<OrderCreateWithoutB2ClosedByInput, OrderUncheckedCreateWithoutB2ClosedByInput> | OrderCreateWithoutB2ClosedByInput[] | OrderUncheckedCreateWithoutB2ClosedByInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutB2ClosedByInput | OrderCreateOrConnectWithoutB2ClosedByInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutB2ClosedByInput | OrderUpsertWithWhereUniqueWithoutB2ClosedByInput[]
+    createMany?: OrderCreateManyB2ClosedByInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutB2ClosedByInput | OrderUpdateWithWhereUniqueWithoutB2ClosedByInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutB2ClosedByInput | OrderUpdateManyWithWhereWithoutB2ClosedByInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
+  }
+
   export type EventUpdateManyWithoutActorNestedInput = {
     create?: XOR<EventCreateWithoutActorInput, EventUncheckedCreateWithoutActorInput> | EventCreateWithoutActorInput[] | EventUncheckedCreateWithoutActorInput[]
     connectOrCreate?: EventCreateOrConnectWithoutActorInput | EventCreateOrConnectWithoutActorInput[]
@@ -10853,6 +11002,20 @@ export namespace Prisma {
     connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
     update?: OrderUpdateWithWhereUniqueWithoutPickedByInput | OrderUpdateWithWhereUniqueWithoutPickedByInput[]
     updateMany?: OrderUpdateManyWithWhereWithoutPickedByInput | OrderUpdateManyWithWhereWithoutPickedByInput[]
+    deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
+  }
+
+  export type OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput = {
+    create?: XOR<OrderCreateWithoutB2ClosedByInput, OrderUncheckedCreateWithoutB2ClosedByInput> | OrderCreateWithoutB2ClosedByInput[] | OrderUncheckedCreateWithoutB2ClosedByInput[]
+    connectOrCreate?: OrderCreateOrConnectWithoutB2ClosedByInput | OrderCreateOrConnectWithoutB2ClosedByInput[]
+    upsert?: OrderUpsertWithWhereUniqueWithoutB2ClosedByInput | OrderUpsertWithWhereUniqueWithoutB2ClosedByInput[]
+    createMany?: OrderCreateManyB2ClosedByInputEnvelope
+    set?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    disconnect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    delete?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    connect?: OrderWhereUniqueInput | OrderWhereUniqueInput[]
+    update?: OrderUpdateWithWhereUniqueWithoutB2ClosedByInput | OrderUpdateWithWhereUniqueWithoutB2ClosedByInput[]
+    updateMany?: OrderUpdateManyWithWhereWithoutB2ClosedByInput | OrderUpdateManyWithWhereWithoutB2ClosedByInput[]
     deleteMany?: OrderScalarWhereInput | OrderScalarWhereInput[]
   }
 
@@ -10928,6 +11091,12 @@ export namespace Prisma {
     connect?: UserMetaWhereUniqueInput
   }
 
+  export type UserMetaCreateNestedOneWithoutB2ClosedOrdersInput = {
+    create?: XOR<UserMetaCreateWithoutB2ClosedOrdersInput, UserMetaUncheckedCreateWithoutB2ClosedOrdersInput>
+    connectOrCreate?: UserMetaCreateOrConnectWithoutB2ClosedOrdersInput
+    connect?: UserMetaWhereUniqueInput
+  }
+
   export type OrderItemCreateNestedManyWithoutOrderInput = {
     create?: XOR<OrderItemCreateWithoutOrderInput, OrderItemUncheckedCreateWithoutOrderInput> | OrderItemCreateWithoutOrderInput[] | OrderItemUncheckedCreateWithoutOrderInput[]
     connectOrCreate?: OrderItemCreateOrConnectWithoutOrderInput | OrderItemCreateOrConnectWithoutOrderInput[]
@@ -11000,6 +11169,16 @@ export namespace Prisma {
     delete?: UserMetaWhereInput | boolean
     connect?: UserMetaWhereUniqueInput
     update?: XOR<XOR<UserMetaUpdateToOneWithWhereWithoutPickedOrdersInput, UserMetaUpdateWithoutPickedOrdersInput>, UserMetaUncheckedUpdateWithoutPickedOrdersInput>
+  }
+
+  export type UserMetaUpdateOneWithoutB2ClosedOrdersNestedInput = {
+    create?: XOR<UserMetaCreateWithoutB2ClosedOrdersInput, UserMetaUncheckedCreateWithoutB2ClosedOrdersInput>
+    connectOrCreate?: UserMetaCreateOrConnectWithoutB2ClosedOrdersInput
+    upsert?: UserMetaUpsertWithoutB2ClosedOrdersInput
+    disconnect?: UserMetaWhereInput | boolean
+    delete?: UserMetaWhereInput | boolean
+    connect?: UserMetaWhereUniqueInput
+    update?: XOR<XOR<UserMetaUpdateToOneWithWhereWithoutB2ClosedOrdersInput, UserMetaUpdateWithoutB2ClosedOrdersInput>, UserMetaUncheckedUpdateWithoutB2ClosedOrdersInput>
   }
 
   export type OrderItemUpdateManyWithoutOrderNestedInput = {
@@ -11598,12 +11777,14 @@ export namespace Prisma {
     partialDeliveryNote?: string | null
     claimedAt?: Date | string | null
     packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
+    b2ClosedBy?: UserMetaCreateNestedOneWithoutB2ClosedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
@@ -11625,6 +11806,8 @@ export namespace Prisma {
     pickedById?: number | null
     claimedAt?: Date | string | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -11659,12 +11842,14 @@ export namespace Prisma {
     partialDeliveryNote?: string | null
     claimedAt?: Date | string | null
     packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
+    b2ClosedBy?: UserMetaCreateNestedOneWithoutB2ClosedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
@@ -11686,6 +11871,8 @@ export namespace Prisma {
     claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -11703,6 +11890,71 @@ export namespace Prisma {
 
   export type OrderCreateManyPickedByInputEnvelope = {
     data: OrderCreateManyPickedByInput | OrderCreateManyPickedByInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type OrderCreateWithoutB2ClosedByInput = {
+    wpOrderId: number
+    number: string
+    status?: $Enums.OrderStatus
+    route?: string | null
+    stopPosition?: number | null
+    customerName?: string | null
+    customerAddress?: string | null
+    hasB2Pending?: boolean
+    bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
+    claimedAt?: Date | string | null
+    packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
+    classifiedAt?: Date | string | null
+    loadedAt?: Date | string | null
+    deliveredAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
+    pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
+    items?: OrderItemCreateNestedManyWithoutOrderInput
+    sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
+    events?: EventCreateNestedManyWithoutOrderInput
+  }
+
+  export type OrderUncheckedCreateWithoutB2ClosedByInput = {
+    id?: number
+    wpOrderId: number
+    number: string
+    status?: $Enums.OrderStatus
+    route?: string | null
+    stopPosition?: number | null
+    customerName?: string | null
+    customerAddress?: string | null
+    hasB2Pending?: boolean
+    bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
+    packedById?: number | null
+    packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
+    classifiedAt?: Date | string | null
+    loadedAt?: Date | string | null
+    deliveredAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    items?: OrderItemUncheckedCreateNestedManyWithoutOrderInput
+    sequenceLinks?: SequenceOrderUncheckedCreateNestedManyWithoutOrderInput
+    events?: EventUncheckedCreateNestedManyWithoutOrderInput
+  }
+
+  export type OrderCreateOrConnectWithoutB2ClosedByInput = {
+    where: OrderWhereUniqueInput
+    create: XOR<OrderCreateWithoutB2ClosedByInput, OrderUncheckedCreateWithoutB2ClosedByInput>
+  }
+
+  export type OrderCreateManyB2ClosedByInputEnvelope = {
+    data: OrderCreateManyB2ClosedByInput | OrderCreateManyB2ClosedByInput[]
     skipDuplicates?: boolean
   }
 
@@ -11798,6 +12050,8 @@ export namespace Prisma {
     claimedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     packedById?: IntNullableFilter<"Order"> | number | null
     packedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    b2ClosedById?: IntNullableFilter<"Order"> | number | null
+    b2ClosedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     classifiedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     loadedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     deliveredAt?: DateTimeNullableFilter<"Order"> | Date | string | null
@@ -11819,6 +12073,22 @@ export namespace Prisma {
   export type OrderUpdateManyWithWhereWithoutPickedByInput = {
     where: OrderScalarWhereInput
     data: XOR<OrderUpdateManyMutationInput, OrderUncheckedUpdateManyWithoutPickedByInput>
+  }
+
+  export type OrderUpsertWithWhereUniqueWithoutB2ClosedByInput = {
+    where: OrderWhereUniqueInput
+    update: XOR<OrderUpdateWithoutB2ClosedByInput, OrderUncheckedUpdateWithoutB2ClosedByInput>
+    create: XOR<OrderCreateWithoutB2ClosedByInput, OrderUncheckedCreateWithoutB2ClosedByInput>
+  }
+
+  export type OrderUpdateWithWhereUniqueWithoutB2ClosedByInput = {
+    where: OrderWhereUniqueInput
+    data: XOR<OrderUpdateWithoutB2ClosedByInput, OrderUncheckedUpdateWithoutB2ClosedByInput>
+  }
+
+  export type OrderUpdateManyWithWhereWithoutB2ClosedByInput = {
+    where: OrderScalarWhereInput
+    data: XOR<OrderUpdateManyMutationInput, OrderUncheckedUpdateManyWithoutB2ClosedByInput>
   }
 
   export type EventUpsertWithWhereUniqueWithoutActorInput = {
@@ -11917,6 +12187,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
     events?: EventCreateNestedManyWithoutActorInput
   }
 
@@ -11932,6 +12203,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
     events?: EventUncheckedCreateNestedManyWithoutActorInput
   }
 
@@ -11952,6 +12224,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
+    b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
     events?: EventCreateNestedManyWithoutActorInput
   }
 
@@ -11967,12 +12240,50 @@ export namespace Prisma {
     updatedAt?: Date | string
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
+    b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
     events?: EventUncheckedCreateNestedManyWithoutActorInput
   }
 
   export type UserMetaCreateOrConnectWithoutPickedOrdersInput = {
     where: UserMetaWhereUniqueInput
     create: XOR<UserMetaCreateWithoutPickedOrdersInput, UserMetaUncheckedCreateWithoutPickedOrdersInput>
+  }
+
+  export type UserMetaCreateWithoutB2ClosedOrdersInput = {
+    wpUserId: number
+    username: string
+    displayName: string
+    email?: string | null
+    capabilities: JsonNullValueInput | InputJsonValue
+    active?: boolean
+    lastLoginAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
+    packedOrders?: OrderCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
+    events?: EventCreateNestedManyWithoutActorInput
+  }
+
+  export type UserMetaUncheckedCreateWithoutB2ClosedOrdersInput = {
+    wpUserId: number
+    username: string
+    displayName: string
+    email?: string | null
+    capabilities: JsonNullValueInput | InputJsonValue
+    active?: boolean
+    lastLoginAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
+    packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
+    events?: EventUncheckedCreateNestedManyWithoutActorInput
+  }
+
+  export type UserMetaCreateOrConnectWithoutB2ClosedOrdersInput = {
+    where: UserMetaWhereUniqueInput
+    create: XOR<UserMetaCreateWithoutB2ClosedOrdersInput, UserMetaUncheckedCreateWithoutB2ClosedOrdersInput>
   }
 
   export type OrderItemCreateWithoutOrderInput = {
@@ -12068,6 +12379,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
     events?: EventUpdateManyWithoutActorNestedInput
   }
 
@@ -12083,6 +12395,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
     events?: EventUncheckedUpdateManyWithoutActorNestedInput
   }
 
@@ -12109,6 +12422,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
+    b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
     events?: EventUpdateManyWithoutActorNestedInput
   }
 
@@ -12124,6 +12438,50 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
+    b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
+    events?: EventUncheckedUpdateManyWithoutActorNestedInput
+  }
+
+  export type UserMetaUpsertWithoutB2ClosedOrdersInput = {
+    update: XOR<UserMetaUpdateWithoutB2ClosedOrdersInput, UserMetaUncheckedUpdateWithoutB2ClosedOrdersInput>
+    create: XOR<UserMetaCreateWithoutB2ClosedOrdersInput, UserMetaUncheckedCreateWithoutB2ClosedOrdersInput>
+    where?: UserMetaWhereInput
+  }
+
+  export type UserMetaUpdateToOneWithWhereWithoutB2ClosedOrdersInput = {
+    where?: UserMetaWhereInput
+    data: XOR<UserMetaUpdateWithoutB2ClosedOrdersInput, UserMetaUncheckedUpdateWithoutB2ClosedOrdersInput>
+  }
+
+  export type UserMetaUpdateWithoutB2ClosedOrdersInput = {
+    wpUserId?: IntFieldUpdateOperationsInput | number
+    username?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    capabilities?: JsonNullValueInput | InputJsonValue
+    active?: BoolFieldUpdateOperationsInput | boolean
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
+    packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
+    events?: EventUpdateManyWithoutActorNestedInput
+  }
+
+  export type UserMetaUncheckedUpdateWithoutB2ClosedOrdersInput = {
+    wpUserId?: IntFieldUpdateOperationsInput | number
+    username?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    capabilities?: JsonNullValueInput | InputJsonValue
+    active?: BoolFieldUpdateOperationsInput | boolean
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
+    packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
     events?: EventUncheckedUpdateManyWithoutActorNestedInput
   }
 
@@ -12197,6 +12555,7 @@ export namespace Prisma {
     partialDeliveryNote?: string | null
     claimedAt?: Date | string | null
     packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -12204,6 +12563,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
     pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
+    b2ClosedBy?: UserMetaCreateNestedOneWithoutB2ClosedOrdersInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
   }
@@ -12225,6 +12585,8 @@ export namespace Prisma {
     claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -12287,6 +12649,7 @@ export namespace Prisma {
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12294,6 +12657,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
     pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
+    b2ClosedBy?: UserMetaUpdateOneWithoutB2ClosedOrdersNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
   }
@@ -12315,6 +12679,8 @@ export namespace Prisma {
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12365,6 +12731,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
     events?: EventCreateNestedManyWithoutActorInput
   }
 
@@ -12380,6 +12747,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
     events?: EventUncheckedCreateNestedManyWithoutActorInput
   }
 
@@ -12429,6 +12797,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
     events?: EventUpdateManyWithoutActorNestedInput
   }
 
@@ -12444,6 +12813,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
     events?: EventUncheckedUpdateManyWithoutActorNestedInput
   }
 
@@ -12505,6 +12875,7 @@ export namespace Prisma {
     partialDeliveryNote?: string | null
     claimedAt?: Date | string | null
     packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -12512,6 +12883,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
     pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
+    b2ClosedBy?: UserMetaCreateNestedOneWithoutB2ClosedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     events?: EventCreateNestedManyWithoutOrderInput
   }
@@ -12533,6 +12905,8 @@ export namespace Prisma {
     claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -12606,6 +12980,7 @@ export namespace Prisma {
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12613,6 +12988,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
     pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
+    b2ClosedBy?: UserMetaUpdateOneWithoutB2ClosedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
   }
@@ -12634,6 +13010,8 @@ export namespace Prisma {
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12656,6 +13034,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
   }
 
   export type UserMetaUncheckedCreateWithoutEventsInput = {
@@ -12671,6 +13050,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
   }
 
   export type UserMetaCreateOrConnectWithoutEventsInput = {
@@ -12692,6 +13072,7 @@ export namespace Prisma {
     partialDeliveryNote?: string | null
     claimedAt?: Date | string | null
     packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -12699,6 +13080,7 @@ export namespace Prisma {
     updatedAt?: Date | string
     packedBy?: UserMetaCreateNestedOneWithoutPackedOrdersInput
     pickedBy?: UserMetaCreateNestedOneWithoutPickedOrdersInput
+    b2ClosedBy?: UserMetaCreateNestedOneWithoutB2ClosedOrdersInput
     items?: OrderItemCreateNestedManyWithoutOrderInput
     sequenceLinks?: SequenceOrderCreateNestedManyWithoutOrderInput
   }
@@ -12720,6 +13102,8 @@ export namespace Prisma {
     claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -12758,6 +13142,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
   }
 
   export type UserMetaUncheckedUpdateWithoutEventsInput = {
@@ -12773,6 +13158,7 @@ export namespace Prisma {
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
   }
 
   export type OrderUpsertWithoutEventsInput = {
@@ -12800,6 +13186,7 @@ export namespace Prisma {
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12807,6 +13194,7 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
     pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
+    b2ClosedBy?: UserMetaUpdateOneWithoutB2ClosedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
   }
@@ -12828,6 +13216,8 @@ export namespace Prisma {
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -12864,6 +13254,8 @@ export namespace Prisma {
     pickedById?: number | null
     claimedAt?: Date | string | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -12887,6 +13279,33 @@ export namespace Prisma {
     claimedAt?: Date | string | null
     packedById?: number | null
     packedAt?: Date | string | null
+    b2ClosedById?: number | null
+    b2ClosedAt?: Date | string | null
+    classifiedAt?: Date | string | null
+    loadedAt?: Date | string | null
+    deliveredAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrderCreateManyB2ClosedByInput = {
+    id?: number
+    wpOrderId: number
+    number: string
+    status?: $Enums.OrderStatus
+    route?: string | null
+    stopPosition?: number | null
+    customerName?: string | null
+    customerAddress?: string | null
+    hasB2Pending?: boolean
+    bagsExpected?: number
+    allowPartialDelivery?: boolean
+    partialDeliveryNote?: string | null
+    pickedById?: number | null
+    claimedAt?: Date | string | null
+    packedById?: number | null
+    packedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
     classifiedAt?: Date | string | null
     loadedAt?: Date | string | null
     deliveredAt?: Date | string | null
@@ -12950,12 +13369,14 @@ export namespace Prisma {
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
+    b2ClosedBy?: UserMetaUpdateOneWithoutB2ClosedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
@@ -12977,6 +13398,8 @@ export namespace Prisma {
     pickedById?: NullableIntFieldUpdateOperationsInput | number | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13003,6 +13426,8 @@ export namespace Prisma {
     pickedById?: NullableIntFieldUpdateOperationsInput | number | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13024,12 +13449,14 @@ export namespace Prisma {
     partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
+    b2ClosedBy?: UserMetaUpdateOneWithoutB2ClosedOrdersNestedInput
     items?: OrderItemUpdateManyWithoutOrderNestedInput
     sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
     events?: EventUpdateManyWithoutOrderNestedInput
@@ -13051,6 +13478,8 @@ export namespace Prisma {
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13077,6 +13506,88 @@ export namespace Prisma {
     claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedById?: NullableIntFieldUpdateOperationsInput | number | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedById?: NullableIntFieldUpdateOperationsInput | number | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderUpdateWithoutB2ClosedByInput = {
+    wpOrderId?: IntFieldUpdateOperationsInput | number
+    number?: StringFieldUpdateOperationsInput | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    route?: NullableStringFieldUpdateOperationsInput | string | null
+    stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
+    customerName?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
+    bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    packedBy?: UserMetaUpdateOneWithoutPackedOrdersNestedInput
+    pickedBy?: UserMetaUpdateOneWithoutPickedOrdersNestedInput
+    items?: OrderItemUpdateManyWithoutOrderNestedInput
+    sequenceLinks?: SequenceOrderUpdateManyWithoutOrderNestedInput
+    events?: EventUpdateManyWithoutOrderNestedInput
+  }
+
+  export type OrderUncheckedUpdateWithoutB2ClosedByInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    wpOrderId?: IntFieldUpdateOperationsInput | number
+    number?: StringFieldUpdateOperationsInput | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    route?: NullableStringFieldUpdateOperationsInput | string | null
+    stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
+    customerName?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
+    bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    packedById?: NullableIntFieldUpdateOperationsInput | number | null
+    packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    items?: OrderItemUncheckedUpdateManyWithoutOrderNestedInput
+    sequenceLinks?: SequenceOrderUncheckedUpdateManyWithoutOrderNestedInput
+    events?: EventUncheckedUpdateManyWithoutOrderNestedInput
+  }
+
+  export type OrderUncheckedUpdateManyWithoutB2ClosedByInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    wpOrderId?: IntFieldUpdateOperationsInput | number
+    number?: StringFieldUpdateOperationsInput | string
+    status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    route?: NullableStringFieldUpdateOperationsInput | string | null
+    stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
+    customerName?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
+    bagsExpected?: IntFieldUpdateOperationsInput | number
+    allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
+    partialDeliveryNote?: NullableStringFieldUpdateOperationsInput | string | null
+    pickedById?: NullableIntFieldUpdateOperationsInput | number | null
+    claimedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    packedById?: NullableIntFieldUpdateOperationsInput | number | null
+    packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     classifiedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     loadedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     deliveredAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null

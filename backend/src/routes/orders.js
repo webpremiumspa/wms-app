@@ -14,6 +14,7 @@ import {
   getOrderLoadability,
   claimOrder,
 } from '../services/order-actions.js';
+import { packOrderB2 } from '../services/sequences.js';
 import { config } from '../config.js';
 
 const router = Router();
@@ -88,7 +89,7 @@ router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.DELIVER, WMS_
   }
 });
 
-router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.DELIVER, WMS_CAPS.LOAD), async (req, res, next) => {
+router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.DELIVER, WMS_CAPS.LOAD, WMS_CAPS.PICK_B2), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
     const order = await prisma.order.findUnique({
@@ -97,6 +98,7 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.DEL
         items: { include: { product: true } },
         packedBy: { select: { wpUserId: true, displayName: true, username: true } },
         pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
+        b2ClosedBy: { select: { wpUserId: true, displayName: true, username: true } },
         sequenceLinks: {
           include: { sequence: { select: { id: true, createdAt: true, status: true } } },
         },
@@ -118,6 +120,31 @@ const packSchema = z.object({
   // (la secuencia no es de hoy ni de ayer). Sirve para auditoría: queda
   // registrado en eventos que se empacó deliberadamente desde un albarán viejo.
   confirmedOldSequence: z.boolean().optional(),
+});
+
+const packB2Schema = z.object({
+  itemIds: z.array(z.number().int().positive()),
+  confirmedOldSequence: z.boolean().optional(),
+});
+
+// Cierre B2 por pedido: el picker B2 escanea el QR, marca los items B2 que
+// pone en la sub-bolsa del pedido y cierra. Mismo modelo que el pack B1
+// pero solo afecta items B2 y setea order.b2ClosedAt.
+router.post('/:id/pack-b2', requireCap(WMS_CAPS.PICK_B2), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const parsed = packB2Schema.safeParse(req.body || {});
+    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
+    const result = await packOrderB2({
+      orderId: id,
+      itemIds: parsed.data.itemIds,
+      actorId: req.user.wpUserId,
+      confirmedOldSequence: parsed.data.confirmedOldSequence === true,
+    });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Loadability check para un pedido: sirve para la UI de Dispatch (mostrar

@@ -28,6 +28,13 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
       .map((l) => l.sequence)
       .find((s) => s.status === 'open')?.id || null;
     const packable = order.status === 'sequenced' && openSequenceId != null;
+    // Indica si el pedido necesita picking B2 (tiene items B2, no está cerrado
+    // B2 todavía, y está en un estado activo). El picker B2 escanea el QR y
+    // entra a esta vista.
+    const b2Pickable = order.hasB2Pending
+      && order.b2ClosedAt == null
+      && openSequenceId != null
+      && !['blocked', 'delivered'].includes(order.status);
 
     res.json({
       order: {
@@ -43,6 +50,7 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
         allowPartialDelivery: order.allowPartialDelivery,
         partialDeliveryNote: order.partialDeliveryNote,
         packable,
+        b2Pickable,
         openSequenceId,
         items: order.items.map((it) => ({
           id: it.id,
