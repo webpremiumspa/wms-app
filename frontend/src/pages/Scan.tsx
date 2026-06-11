@@ -69,8 +69,6 @@ export function Scan() {
         <div className="card space-y-2 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xl font-bold">#{order.number}</span>
-            {order.route && <Badge variant="blue">{order.route}</Badge>}
-            {order.stopPosition != null && <Badge variant="gray">Parada {order.stopPosition}</Badge>}
             <Badge variant={isLoaded ? 'green' : 'gray'}>{orderStatusLabel(order.status)}</Badge>
           </div>
           <div className="text-sm text-slate-700">{order.customerName || '—'}</div>
@@ -78,6 +76,26 @@ export function Scan() {
             <div className="text-xs text-slate-500">{order.customerAddress}</div>
           )}
         </div>
+
+        {/* Bloque grande de ruta — clave para el operador de clasificación.
+            Si el pedido todavía no tiene ruta, lo decimos explícitamente
+            (acá sí, porque al escanear es momento de saberlo). */}
+        {order.route ? (
+          <div className="rounded-xl bg-brand-50 p-4 ring-1 ring-brand-100">
+            <div className="text-xs uppercase tracking-wide text-brand-700">Ruta · Parada</div>
+            <div className="mt-1 flex items-baseline gap-3">
+              <div className="text-4xl font-bold text-brand-800">{order.route}</div>
+              {order.stopPosition != null && (
+                <div className="text-2xl font-semibold text-brand-700">· {order.stopPosition}</div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200">
+            <AlertTriangle size={16} />
+            Este pedido aún no tiene ruta asignada.
+          </div>
+        )}
 
         {/* Alerta gigante con sonido + vibración si hay B2 */}
         {order.hasB2Pending && (

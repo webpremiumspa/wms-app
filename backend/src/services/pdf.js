@@ -72,6 +72,11 @@ async function drawAlbaran(doc, order, opts = {}) {
     .text(`Pedido #${order.number}`, 40, 70)
     .text(`Fecha: ${new Date().toLocaleString('es-CL')}`, 40, 86);
 
+  // Si el pedido tiene ruta asignada al momento de imprimir, la mostramos en
+  // pill azul. Si no la tiene, NO imprimimos nada — la ruta puede asignarse
+  // antes o después de la impresión, y "Sin ruta asignada" en el papel
+  // confunde. El operador de clasificación verá la ruta actualizada cuando
+  // escanee el QR del albarán empacado.
   if (order.route) {
     const routeText = `RUTA ${order.route}${order.stopPosition ? ` · PARADA ${order.stopPosition}` : ''}`;
     const padX = 10;
@@ -85,9 +90,6 @@ async function drawAlbaran(doc, order, opts = {}) {
     doc.roundedRect(40, 106, pillW, pillH, 6).fill('#1d4ed8');
     doc.fillColor('#ffffff').text(routeText, 40 + padX, 106 + padY);
     doc.restore();
-  } else {
-    doc.font('Helvetica').fontSize(11).fillColor('#94a3b8')
-      .text('Sin ruta asignada', 40, 110);
   }
 
   doc.image(qrPng, 410, 35, { width: 140, height: 140 });

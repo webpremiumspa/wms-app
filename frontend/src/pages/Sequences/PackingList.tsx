@@ -51,8 +51,10 @@ export function PackingList() {
       <h2 className="text-xl font-semibold">Selección de pedido a empacar</h2>
       <ProgressBar value={packed} total={data.length} label="Pedidos empacados" />
 
+      {/* Bloque de impresión visible solo en desktop (md+). En el móvil del
+          picker no tiene sentido — la impresora está en la estación de trabajo. */}
       {printable > 0 && (
-        <div className="card flex items-center justify-between gap-3 p-3 ring-1 ring-brand-100">
+        <div className="card hidden items-center justify-between gap-3 p-3 ring-1 ring-brand-100 md:flex">
           <div className="min-w-0">
             <div className="text-sm font-semibold text-slate-800">Imprimir albaranes de la secuencia</div>
             <div className="text-xs text-slate-500">
@@ -71,7 +73,7 @@ export function PackingList() {
         </div>
       )}
       {printError && (
-        <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{printError}</div>
+        <div className="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 md:block">{printError}</div>
       )}
 
       <div className="space-y-2">
@@ -104,7 +106,7 @@ export function PackingList() {
               {claimed && (
                 <div
                   className="ml-3 flex items-center gap-1 text-xs text-amber-700"
-                  title="Está siendo trabajado por este picker. Si entrás, se reasigna a vos."
+                  title="Está siendo trabajado por este picker. Si entras, se reasigna a ti."
                 >
                   <User size={14} />
                   Tomado por {o.pickedBy!.displayName || o.pickedBy!.username}

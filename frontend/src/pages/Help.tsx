@@ -197,22 +197,22 @@ const SECTIONS: Section[] = [
         <h4>Paso 1 · Sincronizar pedidos desde WooCommerce</h4>
         <p>Si los pedidos del día todavía no están en el WMS:</p>
         <ol>
-          <li>Elegí un rango de fechas (presets: <em>Hoy</em>, <em>Ayer</em>, <em>Últimos 2 días</em>, o calendario manual).</li>
-          <li>Marcá los estados de WC a incluir: <em>Procesando</em>, <em>En espera</em>, <em>Completado</em>, <em>Pendiente pago</em>, <em>En ruta</em>.</li>
-          <li>Si cambiaste la <strong>bodega</strong> de algún producto en WC y querés que el WMS lo refleje, marcá <em>Refrescar metadata de productos</em>.</li>
+          <li>Elige un rango de fechas (presets: <em>Hoy</em>, <em>Ayer</em>, <em>Últimos 2 días</em>, o calendario manual).</li>
+          <li>Marca los estados de WC a incluir: <em>Procesando</em>, <em>En espera</em>, <em>Completado</em>, <em>Pendiente pago</em>, <em>En ruta</em>.</li>
+          <li>Si cambiaste la <strong>bodega</strong> de algún producto en WC y quieres que el WMS lo refleje, marca <em>Refrescar metadata de productos</em>.</li>
           <li>Click <strong>Sincronizar</strong>.</li>
         </ol>
 
         <h4>Paso 2 · Seleccionar pedidos y generar</h4>
         <ol>
-          <li>Marcá los pedidos pendientes que entran en esta secuencia (o usá <em>Seleccionar todos</em>).</li>
+          <li>Marca los pedidos pendientes que entran en esta secuencia (o usa <em>Seleccionar todos</em>).</li>
           <li>Click <strong>Validar stock</strong>: el sistema consulta WC y avisa si algún SKU no tiene unidades suficientes.</li>
           <li>Click <strong>Generar secuencia</strong>. Los pedidos quedan reservados.</li>
         </ol>
 
         <h4>Paso 3 · Imprimir todos los albaranes</h4>
         <p>
-          Desde <strong>Secuencia → Empacar pedidos</strong>, tocá el botón <strong>"Imprimir todos"</strong> en el bloque superior. Se genera un único PDF con N páginas (una por pedido), cada una con su QR. Imprimís de una vez y dejás las hojas en la zona de picking.
+          Desde <strong>Secuencia → Empacar pedidos</strong>, toca el botón <strong>"Imprimir todos"</strong> en el bloque superior. Se genera un único PDF con N páginas (una por pedido), cada una con su QR. Lo imprimes de una vez y dejas las hojas en la zona de picking.
         </p>
         <p className="text-slate-600">
           Los pickers van tomando hojas y escaneando el QR con su móvil para "tomar" (claim) el pedido y empezar a empacarlo. El sistema registra quién lo preparó.
@@ -249,19 +249,19 @@ const SECTIONS: Section[] = [
 
         <h4>Acceso alternativo desde la lista</h4>
         <p>
-          Si el albarán se rompió o no está disponible, también podés entrar a un pedido tocando su tarjeta en <strong>Empacar pedidos</strong>. El claim se aplica igual (se reasigna a vos).
+          Si el albarán se rompió o no está disponible, también puedes entrar a un pedido tocando su tarjeta en <strong>Empacar pedidos</strong>. El claim se aplica igual (se reasigna a ti).
         </p>
 
         <h4>Si un pedido ya lo tiene otro</h4>
         <p>
-          La tarjeta muestra badge amarillo <em>"Tomado por X"</em> — es informativo. Si entrás igual, el pedido se reasigna a vos. Pero importante: <strong>solo el último picker que escaneó puede cerrar el pedido</strong>. Si X tiene la pantalla abierta y vos escaneás después, X verá un error al intentar cerrar (<em>"Este pedido fue reasignado a otro picker. Recargá para continuar."</em>).
+          La tarjeta muestra badge amarillo <em>"Tomado por X"</em> — es informativo. Si entras igual, el pedido se reasigna a ti. Pero importante: <strong>solo el último picker que escaneó puede cerrar el pedido</strong>. Si X tiene la pantalla abierta y tú escaneas después, X verá un error al intentar cerrar (<em>"Este pedido fue reasignado a otro picker. Recarga para continuar."</em>).
         </p>
         <p className="text-slate-600">
           En la práctica: respeta el badge "Tomado por X" salvo que sepas que X ya no está trabajando ese pedido.
         </p>
 
         <p className="text-amber-800">
-          Tip: si dos productos se parecen mucho, mirá la foto antes de tomar — es la causa #1 de errores en picking.
+          Tip: si dos productos se parecen mucho, mira la foto antes de tomar — es la causa #1 de errores en picking.
         </p>
       </>
     ),
@@ -277,16 +277,16 @@ const SECTIONS: Section[] = [
           <li>Después de escanear el QR (o entrar desde la lista), el pedido queda <strong>asignado a ese picker</strong>.</li>
           <li>Cada tarjeta muestra <strong>ruta</strong> (badge azul), <em>parada de carga</em> y aviso si tiene B2 pendiente.</li>
           <li>Se ven los items B1 (van en la bolsa) y, si aplica, los B2 (que NO van — se entregan a granel desde Bodega 2).</li>
-          <li>Por cada item B1 que se mete en la bolsa, marcá su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
-          <li>Tocá <strong>Cerrar pedido</strong>. El albarán YA está impreso (se imprimió en batch al armar la secuencia) — se coloca en la bolsa visible.</li>
+          <li>Por cada item B1 que se mete en la bolsa, marca su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
+          <li>Toca <strong>Cerrar pedido</strong>. El albarán YA está impreso (se imprimió en batch al armar la secuencia) — se coloca en la bolsa visible.</li>
           <li>Queda registrado quién empacó el pedido (trazabilidad).</li>
         </ol>
         <p className="text-slate-600">
-          <strong>Reimprimir albarán</strong>: si la hoja original se rompió o se manchó, podés reimprimirla desde el pedido empacado. Cada reimpresión genera el albarán nuevo con la info actualizada.
+          <strong>Reimprimir albarán</strong>: si la hoja original se rompió o se manchó, puedes reimprimirla desde el pedido empacado. Cada reimpresión genera el albarán nuevo con la info actualizada.
         </p>
 
         <h4>Pedidos solo de Bodega 2</h4>
-        <p>Si un pedido <strong>no tiene items B1</strong> (todo es de B2), igual lo cerrás desde la lista de empacar:</p>
+        <p>Si un pedido <strong>no tiene items B1</strong> (todo es de B2), igual lo cierras desde la lista de empacar:</p>
         <ul>
           <li>No hay items para marcar — el botón cambia a <em>"Imprimir albarán y cerrar"</em>.</li>
           <li>El albarán impreso solo muestra los items B2 a sacar del granel.</li>
@@ -294,13 +294,13 @@ const SECTIONS: Section[] = [
         </ul>
 
         <h4>Acciones del operador (excepciones)</h4>
-        <p>Si al empacar te encontrás con un problema, en la parte inferior de la pantalla del pedido hay dos botones:</p>
+        <p>Si al empacar te encuentras con un problema, en la parte inferior de la pantalla del pedido hay dos botones:</p>
         <ul>
           <li>
-            <strong className="text-red-700">Remover de la secuencia</strong> — usalo cuando no podés cerrar el pedido (sin stock B1, producto dañado, cliente canceló). Se abre un modal donde elegís el motivo. El pedido pasa a estado <em>Bloqueado</em> y sale de esta secuencia. El resto del flujo continúa sin trabarse.
+            <strong className="text-red-700">Remover de la secuencia</strong> — úsalo cuando no puedes cerrar el pedido (sin stock B1, producto dañado, cliente canceló). Se abre un modal donde eliges el motivo. El pedido pasa a estado <em>Bloqueado</em> y sale de esta secuencia. El resto del flujo continúa sin trabarse.
           </li>
           <li>
-            <strong className="text-emerald-700">Aprobar entrega parcial</strong> — solo aparece si el pedido tiene B2 pendiente. Usalo cuando hablaste con el cliente y aceptó recibir el pedido aunque falte alguno de los items B2. Dejá una nota explicando el acuerdo. El pedido se "desbloquea" automáticamente en clasificación/carga.
+            <strong className="text-emerald-700">Aprobar entrega parcial</strong> — solo aparece si el pedido tiene B2 pendiente. Úsalo cuando hablaste con el cliente y aceptó recibir el pedido aunque falte alguno de los items B2. Deja una nota explicando el acuerdo. El pedido se "desbloquea" automáticamente en clasificación/carga.
           </li>
         </ul>
 
@@ -309,7 +309,7 @@ const SECTIONS: Section[] = [
         </div>
 
         <h4>Reimprimir un albarán</h4>
-        <p>Si se perdió o se manchó el papel, podés reimprimir desde:</p>
+        <p>Si se perdió o se manchó el papel, puedes reimprimir desde:</p>
         <ul>
           <li>La pantalla del pedido empacado.</li>
           <li>La pantalla de la secuencia (al expandir cada pedido).</li>
@@ -343,19 +343,19 @@ const SECTIONS: Section[] = [
 
         <h4>Picking de una secuencia individual</h4>
         <ol>
-          <li>Abrí <strong>Picking</strong>. Vas a ver una tarjeta por cada secuencia con items B2 pendientes.</li>
-          <li>Tocá la tarjeta. El reporte muestra los SKUs B2 con cantidad total y cuántos pedidos los necesitan.</li>
-          <li>Recorré con el móvil, marcá cada SKU al recolectarlo. El estado se sincroniza en vivo entre operadores.</li>
-          <li>Cuando termines, tocá <strong>Cerrar picking B2</strong>. El flujo B2 queda cerrado para esa secuencia.</li>
+          <li>Abre <strong>Picking</strong>. Vas a ver una tarjeta por cada secuencia con items B2 pendientes.</li>
+          <li>Toca la tarjeta. El reporte muestra los SKUs B2 con cantidad total y cuántos pedidos los necesitan.</li>
+          <li>Recorre con el móvil, marca cada SKU al recolectarlo. El estado se sincroniza en vivo entre operadores.</li>
+          <li>Cuando termines, toca <strong>Cerrar picking B2</strong>. El flujo B2 queda cerrado para esa secuencia.</li>
         </ol>
 
         <h4>Picking conjunto (varias secuencias a la vez)</h4>
-        <p>Si en la mañana tenés varias secuencias del día anterior y querés evitar entrar y salir de cada una:</p>
+        <p>Si en la mañana tienes varias secuencias del día anterior y quieres evitar entrar y salir de cada una:</p>
         <ol>
-          <li>En <strong>Picking</strong>, marcá el <em>checkbox</em> al lado de cada secuencia B2 que quieras incluir (debe haber al menos 2).</li>
+          <li>En <strong>Picking</strong>, marca el <em>checkbox</em> al lado de cada secuencia B2 que quieras incluir (debe haber al menos 2).</li>
           <li>Aparece un botón flotante <strong>"Picking conjunto (N secuencias)"</strong>. Tocalo.</li>
           <li>Se abre una vista consolidada con todos los SKUs B2 sumados (si dos secuencias piden el mismo SKU, ves la cantidad total).</li>
-          <li>Marcás cada SKU al recolectarlo. Cuando termines, <strong>Cerrar picking conjunto</strong>.</li>
+          <li>Marcas cada SKU al recolectarlo. Cuando termines, <strong>Cerrar picking conjunto</strong>.</li>
           <li>El sistema cierra el B2 <em>solo</em> de las secuencias que quedaron 100% pickeadas. Las que tengan items sin marcar quedan abiertas para otra ronda — vas a ver el resumen en pantalla.</li>
         </ol>
         <p className="text-slate-600">
@@ -396,9 +396,9 @@ const SECTIONS: Section[] = [
           Si al escanear ves un <strong className="text-red-700">banner rojo grande "⚠ B2 INCOMPLETO — NO CARGAR"</strong> con la lista de items faltantes, significa que la pickeadora B2 no encontró stock para ese pedido y nadie autorizó la entrega parcial. El botón <em>"Confirmar carga al vehículo"</em> queda deshabilitado.
         </p>
         <ul>
-          <li>Dejá la bolsa en un rincón "no cargar" hasta que se resuelva.</li>
-          <li>Avisá al encargado de B1 para que llame al cliente o gestione el stock.</li>
-          <li>Si el cliente acepta entrega parcial y tenés el rol <code>wms_pack_b1</code> o <code>wms_supervise</code>, podés autorizarla desde este mismo banner (botón verde <em>"Autorizar entrega parcial"</em>) y cargar al vehículo.</li>
+          <li>Deja la bolsa en un rincón "no cargar" hasta que se resuelva.</li>
+          <li>Avisa al encargado de B1 para que llame al cliente o gestione el stock.</li>
+          <li>Si el cliente acepta entrega parcial y tienes el rol <code>wms_pack_b1</code> o <code>wms_supervise</code>, puedes autorizarla desde este mismo banner (botón verde <em>"Autorizar entrega parcial"</em>) y cargar al vehículo.</li>
         </ul>
 
         <h4>Indicadores especiales en la pantalla del pedido</h4>
@@ -465,7 +465,7 @@ const SECTIONS: Section[] = [
       <>
         <p>Cuando un pedido se comporta raro (falta una ruta, los items aparecen con la bodega vieja, el sync no lo trae), el supervisor tiene una página dedicada en el sidebar: <strong>Diagnóstico</strong>.</p>
         <ol>
-          <li>Pegá el <code>wpOrderId</code> (el ID de WC, no el número del pedido) y tocá <strong>Consultar</strong>.</li>
+          <li>Pega el <code>wpOrderId</code> (el ID de WC, no el número del pedido) y toca <strong>Consultar</strong>.</li>
           <li>Vas a ver tres bloques:
             <ul>
               <li><strong>Diagnóstico</strong> — mensajes en castellano explicando qué está mal (ej: <em>"Ruta desincronizada: local=null vs WC=R1"</em>).</li>
@@ -531,7 +531,7 @@ const SECTIONS: Section[] = [
         </ul>
 
         <h4>"Eliminar la secuencia" — qué se pierde</h4>
-        <p>Si eliminás una secuencia donde ya se hizo picking o empaque:</p>
+        <p>Si eliminas una secuencia donde ya se hizo picking o empaque:</p>
         <ul>
           <li>Los pedidos vuelven al estado <strong>Recibido</strong> para poder reagruparlos.</li>
           <li>Se borra el registro de qué items fueron recolectados.</li>
@@ -539,7 +539,7 @@ const SECTIONS: Section[] = [
           <li>Los albaranes ya impresos quedan como papel físico sin reflejo en el sistema. Hay que volver a empacar para imprimir nuevos.</li>
           <li>Los pedidos ya entregados no se tocan: están finalizados.</li>
         </ul>
-        <p className="text-slate-600">Usá esta opción cuando te equivocaste de pedidos o necesitás cambiar la metadata WC (bodega, ruta) de un pedido bloqueado.</p>
+        <p className="text-slate-600">Usa esta opción cuando te equivocaste de pedidos o necesitas cambiar la metadata WC (bodega, ruta) de un pedido bloqueado.</p>
       </>
     ),
   },

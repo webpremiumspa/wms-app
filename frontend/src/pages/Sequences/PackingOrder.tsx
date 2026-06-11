@@ -191,7 +191,7 @@ export function PackingOrder() {
           <User className="shrink-0 text-emerald-700" size={16} />
           <div className="flex-1 text-xs text-emerald-900">
             <span className="font-semibold">Tomaste este pedido</span>
-            {order.claimedAt && <> a las {new Date(order.claimedAt).toLocaleTimeString('es-CL')}</>}. Empacalo y cerralo; queda registrado a tu nombre.
+            {order.claimedAt && <> a las {new Date(order.claimedAt).toLocaleTimeString('es-CL')}</>}. Empácalo y ciérralo; queda registrado a tu nombre.
           </div>
         </div>
       )}
@@ -328,7 +328,13 @@ export function PackingOrder() {
           <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Acciones del operador</div>
           <button
             type="button"
-            onClick={() => { setRemoveError(null); setRemoveOpen(true); }}
+            onClick={() => {
+              const msg = `¿Confirmas remover el pedido #${order.number} de la secuencia? Pasará a estado Bloqueado y se perderá el progreso de picking/packing. En el siguiente paso te pediremos el motivo.`;
+              if (window.confirm(msg)) {
+                setRemoveError(null);
+                setRemoveOpen(true);
+              }
+            }}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 ring-1 ring-red-200 hover:bg-red-100"
           >
             <UserX size={14} />
@@ -349,7 +355,7 @@ export function PackingOrder() {
               ) : (
                 <div className="space-y-2 rounded-lg bg-white p-3 ring-1 ring-emerald-200">
                   <div className="text-xs font-medium text-slate-700">
-                    Confirmá la nota (queda registrada en el log)
+                    Confirma la nota (queda registrada en el log)
                   </div>
                   <textarea
                     value={partialNote}
@@ -411,7 +417,7 @@ export function PackingOrder() {
                   )}.
                 </p>
                 <p className="mt-2 text-xs text-slate-600">
-                  Si lo tomás vos, el picker anterior verá un error cuando intente cerrarlo. Confirmá solo si estás seguro (ej. te dijo que dejó de trabajarlo).
+                  Si lo tomas tú, el picker anterior verá un error cuando intente cerrarlo. Confirma solo si estás seguro (ej. te dijo que dejó de trabajarlo).
                 </p>
               </div>
             </div>

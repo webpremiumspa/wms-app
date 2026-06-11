@@ -1,7 +1,7 @@
 import type { OrderStatus, SequenceStatus } from './types';
 
 // Mapeo único de los enums internos (en inglés en BD) a su display en español.
-// Si querés cambiar el wording en toda la app, se hace acá y se propaga.
+// Si quieres cambiar el wording en toda la app, se hace acá y se propaga.
 // Los enums internos NO se traducen — solo el texto que ve el operador.
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {

@@ -288,7 +288,13 @@ export function SequenceDetail() {
                       <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
                         <button
                           type="button"
-                          onClick={() => { setRemoveError(null); setRemoveTarget({ id: order.id, number: order.number }); }}
+                          onClick={() => {
+                            const msg = `¿Confirmas remover el pedido #${order.number} de la secuencia? Pasará a estado Bloqueado y se perderá el progreso de picking/packing. En el siguiente paso te pediremos el motivo.`;
+                            if (window.confirm(msg)) {
+                              setRemoveError(null);
+                              setRemoveTarget({ id: order.id, number: order.number });
+                            }
+                          }}
                           className="flex items-center gap-2 text-sm font-medium text-red-700 hover:underline"
                         >
                           <UserX size={14} />
