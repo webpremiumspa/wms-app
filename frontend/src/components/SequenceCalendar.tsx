@@ -116,7 +116,7 @@ export function SequenceCalendar({ sequences, onSelectDay, selectedDay }: Props)
               onClick={() => onSelectDay(isSelected ? null : iso)}
               disabled={status === 'empty' && !inMonth}
               className={clsx(
-                'relative flex aspect-square flex-col items-center justify-center rounded-md text-xs transition',
+                'flex h-9 items-center justify-center gap-1 rounded-md px-1 text-xs leading-none transition',
                 !inMonth && 'opacity-40',
                 status === 'empty' && 'bg-slate-50 text-slate-400',
                 status === 'open' && 'bg-amber-100 text-amber-900 hover:bg-amber-200',
@@ -125,9 +125,9 @@ export function SequenceCalendar({ sequences, onSelectDay, selectedDay }: Props)
                 isSelected && 'ring-2 ring-brand-700 ring-offset-1',
               )}
             >
-              <span className="text-sm font-semibold leading-none">{d.getDate()}</span>
+              <span className="text-sm font-semibold">{d.getDate()}</span>
               {count > 0 && (
-                <span className="mt-0.5 text-[10px] leading-none opacity-80">{count}</span>
+                <span className="text-[10px] opacity-80">· {count}</span>
               )}
             </button>
           );
