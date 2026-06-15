@@ -8,6 +8,8 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { QRScanner } from '@/components/QRScanner';
+import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
+import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 
 // Extrae el wpOrderId del QR (URL nueva o legacy WMS:<id>).
 function parseQrToWpId(raw: string): number | null {
@@ -27,6 +29,7 @@ export function PackingList() {
   const [printing, setPrinting] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['sequence', seqId, 'pending-packing'],
@@ -44,12 +47,9 @@ export function PackingList() {
 
   const packed = data.filter((o) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.status)).length;
   const printable = data.filter((o) => ['sequenced', 'packed', 'classified', 'loaded'].includes(o.status)).length;
-  // Pendientes primero, empacados al final (mejor flujo visual del picker).
-  const sorted = [...data].sort((a, b) => {
-    const aDone = ['packed', 'classified', 'loaded', 'delivered'].includes(a.status) ? 1 : 0;
-    const bDone = ['packed', 'classified', 'loaded', 'delivered'].includes(b.status) ? 1 : 0;
-    return aDone - bDone;
-  });
+  const { routes, hasNoRoute } = extractRoutes(data);
+  // Aplica filtro por ruta + orden por stopPosition desc (parada lejana primero).
+  const sorted = applyRouteFilter(data, routeFilter);
 
   async function printAll() {
     setPrintError(null);
@@ -79,6 +79,13 @@ export function PackingList() {
         )}
       </div>
       <ProgressBar value={packed} total={data.length} label="Pedidos empacados" />
+
+      <RouteFilter
+        selected={routeFilter}
+        routes={routes}
+        hasNoRoute={hasNoRoute}
+        onChange={setRouteFilter}
+      />
 
       {/* Bloque de impresión visible solo en desktop (md+). En el móvil del
           picker no tiene sentido — la impresora está en la estación de trabajo. */}

@@ -8,6 +8,8 @@ import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
+import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
+import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 
@@ -68,6 +70,7 @@ export function SequenceDetail() {
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [removeTarget, setRemoveTarget] = useState<{ id: number; number: string } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
+  const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['sequence', seqId],
@@ -245,7 +248,19 @@ export function SequenceDetail() {
         <h3 className="text-sm font-semibold text-slate-700">
           Pedidos en esta secuencia ({orderCount})
         </h3>
-        {seq.orders.map(({ order }) => {
+        {(() => {
+          const allOrders = seq.orders.map(({ order }) => order);
+          const { routes, hasNoRoute } = extractRoutes(allOrders);
+          return (
+            <RouteFilter
+              selected={routeFilter}
+              routes={routes}
+              hasNoRoute={hasNoRoute}
+              onChange={setRouteFilter}
+            />
+          );
+        })()}
+        {applyRouteFilter(seq.orders.map(({ order }) => order), routeFilter).map((order) => {
           const isOpen = expanded.has(order.id);
           const tooLateToRemove = ['classified', 'loaded', 'delivered'].includes(order.status);
           return (

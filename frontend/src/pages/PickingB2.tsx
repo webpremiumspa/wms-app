@@ -8,6 +8,8 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { QRScanner } from '@/components/QRScanner';
+import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
+import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 
 function parseQrToWpId(raw: string): number | null {
   const t = raw.trim();
@@ -24,6 +26,7 @@ export function PickingB2() {
   const navigate = useNavigate();
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['picking-b2-sequence', seqId],
@@ -35,11 +38,8 @@ export function PickingB2() {
 
   const total = data.orders.length;
   const closed = data.orders.filter((o) => !!o.b2ClosedAt).length;
-  const sorted = [...data.orders].sort((a, b) => {
-    const aDone = a.b2ClosedAt ? 1 : 0;
-    const bDone = b.b2ClosedAt ? 1 : 0;
-    return aDone - bDone;
-  });
+  const { routes, hasNoRoute } = extractRoutes(data.orders);
+  const sorted = applyRouteFilter(data.orders, routeFilter);
 
   return (
     <div className="space-y-4">
@@ -56,6 +56,13 @@ export function PickingB2() {
         )}
       </div>
       <ProgressBar value={closed} total={total} label="Pedidos B2 cerrados" />
+
+      <RouteFilter
+        selected={routeFilter}
+        routes={routes}
+        hasNoRoute={hasNoRoute}
+        onChange={setRouteFilter}
+      />
 
       {data.sequence?.b2ClosedAt && (
         <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200">

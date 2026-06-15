@@ -56,6 +56,8 @@ export type SequenceOrderInfo = {
   customerName: string | null;
   status: OrderStatus;
   hasB2Pending: boolean;
+  route: string | null;
+  stopPosition: number | null;
 };
 
 export type PendingPackingOrder = {

@@ -16,11 +16,14 @@ import { renderSequenceAlbaranesPdf } from '../services/pdf.js';
 const router = Router();
 router.use(requireAuth);
 
-router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
+router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
+    // Default 50 (vista de lista). La vista de calendario pide ~1000 para
+    // poder mostrar varios meses sin paginar.
+    const limit = Math.min(Number(req.query.limit) || 50, 1000);
     const sequences = await prisma.sequence.findMany({
       orderBy: { createdAt: 'desc' },
-      take: 50,
+      take: limit,
       include: {
         _count: { select: { orders: true } },
         orders: {

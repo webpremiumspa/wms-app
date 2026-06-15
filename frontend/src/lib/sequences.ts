@@ -9,7 +9,8 @@ import type {
 } from './types';
 
 export const sequencesApi = {
-  list: async (): Promise<Sequence[]> => (await api.get('/sequences')).data.sequences,
+  list: async (opts?: { limit?: number }): Promise<Sequence[]> =>
+    (await api.get('/sequences', { params: opts ? { limit: opts.limit } : undefined })).data.sequences,
 
   get: async (id: number): Promise<SequenceDetail> => (await api.get(`/sequences/${id}`)).data.sequence,
 

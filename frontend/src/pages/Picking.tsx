@@ -16,7 +16,7 @@ export function Picking() {
 
   const { data: sequences, isLoading } = useQuery({
     queryKey: ['sequences'],
-    queryFn: sequencesApi.list,
+    queryFn: () => sequencesApi.list(),
     enabled: canPackB1 || canPickB2,
     refetchInterval: 5000,
   });
