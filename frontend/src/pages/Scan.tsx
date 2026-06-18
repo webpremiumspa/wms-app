@@ -35,6 +35,7 @@ export function Scan() {
   const canPickB2 = hasCap(user, CAPS.PACK_B2);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [showSelector, setShowSelector] = useState(false);
 
   // Endpoint público: no requiere auth, devuelve datos del pedido + items.
   const { data: order, isLoading, error } = useQuery({
@@ -48,20 +49,49 @@ export function Scan() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['order-public', idNum] }),
   });
 
-  // Si el usuario está logueado y puede trabajar el pedido, redirigimos
-  // directo a la vista correspondiente. Prioridad: B1 packing si packable,
-  // si no, B2 picking si b2Pickable. Así el operador llega al QR y arranca a
-  // marcar items sin ver un landing intermedio.
+  // Computa qué acciones aplican a este pedido para este usuario.
+  // Si solo aplica 1 → auto-redirect (sin pregunta).
+  // Si aplican 2+ → mostramos selector para que el operador elija.
+  // Si 0 → landing normal con info del pedido.
+  const availableActions: Array<'pack' | 'pickB2' | 'load'> = (() => {
+    if (!user || !order) return [];
+    const actions: Array<'pack' | 'pickB2' | 'load'> = [];
+    if (canPack && order.packable && order.openSequenceId) actions.push('pack');
+    if (canPickB2 && order.b2Pickable && order.openSequenceId) actions.push('pickB2');
+    if (canLoad && ['packed', 'classified'].includes(order.status)) actions.push('load');
+    return actions;
+  })();
+
   useEffect(() => {
-    if (!user || !order?.openSequenceId) return;
-    if (canPack && order.packable) {
-      navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`, { replace: true });
+    if (!user || !order || availableActions.length === 0) return;
+    // Una sola acción → auto-redirect a la vista correspondiente (excepto
+    // 'load' que es un botón en la misma página, no una navegación).
+    if (availableActions.length === 1) {
+      const only = availableActions[0];
+      if (only === 'pack') {
+        navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`, { replace: true });
+      } else if (only === 'pickB2') {
+        navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`, { replace: true });
+      }
+      // 'load' → se queda en /scan y muestra el botón estándar.
       return;
     }
-    if (canPickB2 && order.b2Pickable) {
-      navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`, { replace: true });
+    // 2+ acciones → mostrar selector.
+    setShowSelector(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, order?.id, order?.status, availableActions.length]);
+
+  function pickAction(kind: 'pack' | 'pickB2' | 'load') {
+    setShowSelector(false);
+    if (!order) return;
+    if (kind === 'pack' && order.openSequenceId) {
+      navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`);
+    } else if (kind === 'pickB2' && order.openSequenceId) {
+      navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`);
     }
-  }, [user, canPack, canPickB2, order?.packable, order?.b2Pickable, order?.openSequenceId, order?.id, navigate]);
+    // 'load' → no navega; el usuario verá el botón "Confirmar carga al vehículo"
+    // junto con el banner B2 si aplica (queda en /scan).
+  }
 
   if (!Number.isFinite(idNum) || idNum <= 0) {
     return <ScanShell><div className="card p-6 text-center text-red-700">ID de pedido inválido en la URL.</div></ScanShell>;
@@ -276,7 +306,84 @@ export function Scan() {
           )}
         </div>
       </div>
+
+      {/* Modal selector cuando el usuario tiene 2+ acciones posibles para
+          este pedido (ej. caps B1+B2, o B2+Load). Si solo aplica 1 acción,
+          el useEffect ya redirigió. Si 0, no se muestra. */}
+      {showSelector && availableActions.length >= 2 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="card w-full max-w-md space-y-3 p-4">
+            <div>
+              <h3 className="text-base font-semibold">¿Qué quieres hacer con este pedido?</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                Tu cuenta tiene varios roles aplicables a #{order.number}. Elige una acción.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {availableActions.includes('pack') && (
+                <SelectorAction
+                  icon={<ClipboardCheck size={20} />}
+                  title="Empacar B1"
+                  description="Armar la bolsa con los items de Bodega 1 y cerrar el pedido."
+                  onClick={() => pickAction('pack')}
+                />
+              )}
+              {availableActions.includes('pickB2') && (
+                <SelectorAction
+                  icon={<ClipboardCheck size={20} />}
+                  title="Pickear B2"
+                  description="Armar la sub-bolsa con los items de Bodega 2 y cerrar el B2."
+                  onClick={() => pickAction('pickB2')}
+                />
+              )}
+              {availableActions.includes('load') && (
+                <SelectorAction
+                  icon={<Truck size={20} />}
+                  title="Cargar al vehículo"
+                  description="Confirmar que la bolsa está cargada en la camioneta de la ruta."
+                  onClick={() => pickAction('load')}
+                />
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowSelector(false)}
+              className="w-full text-xs text-slate-500 hover:underline"
+            >
+              Cancelar y ver detalle del pedido
+            </button>
+          </div>
+        </div>
+      )}
     </ScanShell>
+  );
+}
+
+function SelectorAction({
+  icon,
+  title,
+  description,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:bg-brand-50"
+    >
+      <div className="rounded-lg bg-brand-50 p-2 text-brand-700">{icon}</div>
+      <div className="flex-1">
+        <div className="font-medium text-slate-900">{title}</div>
+        <div className="text-xs text-slate-500">{description}</div>
+      </div>
+    </button>
   );
 }
 
