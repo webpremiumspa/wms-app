@@ -1,13 +1,16 @@
 ---
 deployment:
   tasks:
-    # cPanel/CloudLinux necesita carpeta física para el Application URL /api.
-    - /bin/mkdir -p $HOME/wms.chimuelo.cl/api
-    - /bin/touch $HOME/wms.chimuelo.cl/api/.htaccess
-    - /bin/bash -lc 'if [ ! -s "$HOME/wms.chimuelo.cl/api/.htaccess" ]; then printf "%s\n" "# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN" "PassengerAppRoot \"$HOME/wms.chimuelo.cl/backend\"" "PassengerBaseURI \"/api\"" "PassengerNodejs \"$HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/node\"" "PassengerAppType node" "PassengerStartupFile server.js" "# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END" > "$HOME/wms.chimuelo.cl/api/.htaccess"; fi'
+    # Detección de target: el mismo .cpanel.yml sirve para prod y dev.
+    #   /home/chimuelo/repos/wms-chimuelo       → wms.chimuelo.cl
+    #   /home/chimuelo/repos/wms-chimuelo-dev   → wmsdev.chimuelo.cl
+    # El case matchea izquierda-a-derecha: la rama -dev tiene que ir primero.
 
-    # ─── 1. Backend → wms.chimuelo.cl/backend/ ───────────────────────────────
-    - /usr/bin/rsync -a --delete --exclude='node_modules' --exclude='.env' backend/ $HOME/wms.chimuelo.cl/backend/
+    # cPanel/CloudLinux necesita carpeta física para el Application URL /api.
+    - /bin/bash -lc 'case "$PWD" in *wms-chimuelo-dev*) T=wmsdev.chimuelo.cl ;; *) T=wms.chimuelo.cl ;; esac && mkdir -p $HOME/$T/api && touch $HOME/$T/api/.htaccess && if [ ! -s "$HOME/$T/api/.htaccess" ]; then printf "%s\n" "# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN" "PassengerAppRoot \"$HOME/$T/backend\"" "PassengerBaseURI \"/api\"" "PassengerNodejs \"$HOME/nodevenv/$T/backend/20/bin/node\"" "PassengerAppType node" "PassengerStartupFile server.js" "# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END" > "$HOME/$T/api/.htaccess"; fi'
+
+    # ─── 1. Backend → $T/backend/ ────────────────────────────────────────────
+    - /bin/bash -lc 'case "$PWD" in *wms-chimuelo-dev*) T=wmsdev.chimuelo.cl ;; *) T=wms.chimuelo.cl ;; esac && rsync -a --delete --exclude=node_modules --exclude=.env backend/ $HOME/$T/backend/'
 
     # ─── 2. Backend deps. Solo corre `npm ci` cuando el package-lock.json
     # cambió (verificación por hash). En deploys normales (solo código) se
@@ -15,9 +18,7 @@ deployment:
     # --ignore-scripts evita que @prisma/client corra su postinstall (que
     # detona WASM y muere por límite de memoria de CloudLinux). El cliente
     # Prisma ya viene generado en backend/generated/ desde local.
-    - /bin/bash -lc 'source $HOME/nodevenv/wms.chimuelo.cl/backend/20/bin/activate && cd $HOME/wms.chimuelo.cl/backend && CURRENT_HASH=$(sha256sum package-lock.json | cut -d" " -f1) && STORED_HASH=$(cat node_modules/.lockfile-hash 2>/dev/null || echo "") && if [ "$CURRENT_HASH" != "$STORED_HASH" ]; then echo ">> lockfile cambió, instalando dependencias..." && npm ci --omit=dev --ignore-scripts && echo "$CURRENT_HASH" > node_modules/.lockfile-hash; else echo ">> lockfile sin cambios, skip npm ci"; fi'
+    - /bin/bash -lc 'case "$PWD" in *wms-chimuelo-dev*) T=wmsdev.chimuelo.cl ;; *) T=wms.chimuelo.cl ;; esac && source $HOME/nodevenv/$T/backend/20/bin/activate && cd $HOME/$T/backend && CURRENT_HASH=$(sha256sum package-lock.json | cut -d" " -f1) && STORED_HASH=$(cat node_modules/.lockfile-hash 2>/dev/null || echo "") && if [ "$CURRENT_HASH" != "$STORED_HASH" ]; then echo ">> lockfile cambió, instalando dependencias..." && npm ci --omit=dev --ignore-scripts && echo "$CURRENT_HASH" > node_modules/.lockfile-hash; else echo ">> lockfile sin cambios, skip npm ci"; fi'
 
-    # ─── 3. Frontend dist (ya buildeado en local) → raíz del subdominio ──────
-    - /usr/bin/rsync -a --exclude='.htaccess' frontend/dist/ $HOME/wms.chimuelo.cl/
-
-    - echo "Deploy OK. Restart la app Node si hubo cambios de backend."
+    # ─── 3. Frontend dist (ya buildeado en local) → raíz del subdominio ─────
+    - /bin/bash -lc 'case "$PWD" in *wms-chimuelo-dev*) T=wmsdev.chimuelo.cl ;; *) T=wms.chimuelo.cl ;; esac && rsync -a --exclude=.htaccess frontend/dist/ $HOME/$T/ && echo ">> Deploy OK → $T. Restart la app Node si hubo cambios de backend."'
