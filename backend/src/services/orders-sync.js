@@ -143,6 +143,25 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
   // pedido, no cuándo lo sincronizamos.
   const wcDate = data.date_created ? new Date(data.date_created) : new Date();
 
+  // Pre-resolver bodega de cada producto del pedido en UNA sola query antes de
+  // la transacción. Antes hacíamos 1 findUnique por item dentro de la tx (N+1).
+  const lineItems = (data.line_items || []).filter((li) => li.product_id > 0);
+  const uniqueProductIds = [...new Set(lineItems.map((li) => li.product_id))];
+  const productMetas = uniqueProductIds.length
+    ? await prisma.productMeta.findMany({
+        where: { wpProductId: { in: uniqueProductIds } },
+        select: { wpProductId: true, warehouse: true },
+      })
+    : [];
+  const warehouseByProduct = new Map(productMetas.map((p) => [p.wpProductId, p.warehouse]));
+
+  const itemsData = lineItems.map((li) => ({
+    productId: li.product_id,
+    qty: li.quantity,
+    warehouse: warehouseByProduct.get(li.product_id) || 'B1',
+  }));
+  const hasB2 = itemsData.some((it) => it.warehouse === 'B2');
+
   // 2. Tx con solo escrituras locales. Tiempo extendido por las dudas.
   return prisma.$transaction(
     async (tx) => {
@@ -158,6 +177,7 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           customerAddress: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', ') || null,
           bagsExpected: 1,
           createdAt: wcDate,
+          hasB2Pending: hasB2,
         },
         update: {
           number: String(data.number ?? data.id),
@@ -166,32 +186,20 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           customerName: [data.billing?.first_name, data.billing?.last_name].filter(Boolean).join(' ') || null,
           customerAddress: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', ') || null,
           createdAt: wcDate,
+          hasB2Pending: hasB2,
         },
       });
 
       await tx.orderItem.deleteMany({ where: { orderId: order.id } });
 
-      let hasB2 = false;
-      for (const li of data.line_items || []) {
-        const productId = li.product_id;
-        if (!productId || productId <= 0) continue;
-        const p = await tx.productMeta.findUnique({ where: { wpProductId: productId } });
-        const warehouse = p?.warehouse || 'B1';
-        if (warehouse === 'B2') hasB2 = true;
-
-        await tx.orderItem.create({
-          data: {
-            orderId: order.id,
-            productId,
-            qty: li.quantity,
-            warehouse,
-          },
+      if (itemsData.length > 0) {
+        await tx.orderItem.createMany({
+          data: itemsData.map((it) => ({ orderId: order.id, ...it })),
         });
       }
 
-      return tx.order.update({
+      return tx.order.findUnique({
         where: { id: order.id },
-        data: { hasB2Pending: hasB2 },
         include: { items: { include: { product: true } } },
       });
     },

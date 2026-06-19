@@ -10,39 +10,14 @@ import { Badge } from '@/components/Badge';
 import type { StockProblem } from '@/lib/types';
 import clsx from 'clsx';
 
-function todayISO() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-function yesterdayISO() {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
-const PRESETS = [
-  { label: 'Hoy', range: () => ({ after: todayISO(), before: todayISO() }) },
-  { label: 'Ayer', range: () => ({ after: yesterdayISO(), before: yesterdayISO() }) },
-  { label: 'Últimos 2 días', range: () => ({ after: yesterdayISO(), before: todayISO() }) },
-];
-
 export function SequenceNew() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [problems, setProblems] = useState<StockProblem[] | null>(null);
 
-  // Sync state
-  const [afterDate, setAfterDate] = useState(yesterdayISO());
-  const [beforeDate, setBeforeDate] = useState(todayISO());
-  const [statuses, setStatuses] = useState<string[]>(['en-preparacion']);
   const [forceProductRefresh, setForceProductRefresh] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
-
-  function toggleStatus(s: string) {
-    setStatuses((cur) => (cur.includes(s) ? cur.filter((x) => x !== s) : [...cur, s]));
-  }
 
   const { data: pending, isLoading } = useQuery({
     queryKey: ['orders', 'pending'],
@@ -57,9 +32,6 @@ export function SequenceNew() {
 
   const sync = useMutation({
     mutationFn: () => syncApi.orders({
-      after: afterDate || undefined,
-      before: beforeDate || undefined,
-      statuses: statuses.length > 0 ? statuses : undefined,
       forceProductRefresh: forceProductRefresh || undefined,
     }),
     onSuccess: (result) => {
@@ -127,89 +99,17 @@ export function SequenceNew() {
           <h3 className="font-semibold text-slate-800">Sincronizar desde WooCommerce</h3>
         </div>
         <p className="text-xs text-slate-500">
-          Trae al WMS los pedidos en estado <em>en-preparación</em> dentro del rango. Los duplicados se actualizan sin crear copias.
+          Trae al WMS todos los pedidos en estado <em>en-preparación</em> desde WooCommerce. Los duplicados se actualizan sin crear copias.
         </p>
-        <div className="flex flex-wrap gap-2">
-          {PRESETS.map((p) => {
-            const range = p.range();
-            const active = afterDate === range.after && beforeDate === range.before;
-            return (
-              <button
-                key={p.label}
-                type="button"
-                onClick={() => {
-                  setAfterDate(range.after);
-                  setBeforeDate(range.before);
-                }}
-                className={clsx(
-                  'rounded-full px-3 py-1 text-xs font-medium ring-1 transition',
-                  active
-                    ? 'bg-brand-700 text-white ring-brand-700'
-                    : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50',
-                )}
-              >
-                {p.label}
-              </button>
-            );
-          })}
-        </div>
 
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-3">
-          <label className="block">
-            <span className="text-xs font-medium text-slate-600">Desde</span>
-            <input
-              type="date"
-              className="input mt-1"
-              value={afterDate}
-              onChange={(e) => setAfterDate(e.target.value)}
-            />
-          </label>
-          <label className="block">
-            <span className="text-xs font-medium text-slate-600">Hasta</span>
-            <input
-              type="date"
-              className="input mt-1"
-              value={beforeDate}
-              onChange={(e) => setBeforeDate(e.target.value)}
-            />
-          </label>
-          <div className="flex items-end">
-            <button
-              onClick={() => sync.mutate()}
-              disabled={sync.isPending || statuses.length === 0}
-              className="btn-primary w-full"
-            >
-              <RefreshCw size={16} className={sync.isPending ? 'animate-spin' : ''} />
-              {sync.isPending ? 'Sincronizando…' : 'Sincronizar'}
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <div className="text-xs font-medium text-slate-600">Estados de WC a incluir</div>
-          <div className="mt-1 flex flex-wrap gap-2">
-            {[
-              { key: 'en-preparacion', label: 'En preparación' },
-            ].map((s) => {
-              const active = statuses.includes(s.key);
-              return (
-                <button
-                  key={s.key}
-                  type="button"
-                  onClick={() => toggleStatus(s.key)}
-                  className={clsx(
-                    'rounded-full px-3 py-1 text-xs font-medium ring-1 transition',
-                    active
-                      ? 'bg-brand-50 text-brand-800 ring-brand-300'
-                      : 'bg-white text-slate-500 ring-slate-300 hover:bg-slate-50',
-                  )}
-                >
-                  {active ? '✓ ' : ''}{s.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <button
+          onClick={() => sync.mutate()}
+          disabled={sync.isPending}
+          className="btn-primary w-full sm:w-auto"
+        >
+          <RefreshCw size={16} className={sync.isPending ? 'animate-spin' : ''} />
+          {sync.isPending ? 'Sincronizando…' : 'Sincronizar pedidos en preparación'}
+        </button>
 
         <label className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 ring-1 ring-amber-200">
           <input

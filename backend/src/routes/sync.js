@@ -35,12 +35,11 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     const parsed = syncSchema.safeParse(req.body || {});
     if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
 
-    const after = normalizeDate(parsed.data.after) ||
-      new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const after = normalizeDate(parsed.data.after);
     const before = normalizeDate(parsed.data.before, true);
     const statuses = parsed.data.statuses?.length
       ? parsed.data.statuses
-      : ['processing', 'on-hold', 'completed'];
+      : ['en-preparacion'];
 
     // Paginación: WC permite hasta 100 por página. Tope de seguridad: 10 páginas (1000 pedidos).
     const wcOrders = [];
@@ -48,7 +47,7 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     const maxPages = 10;
     while (page <= maxPages) {
       const batch = await wcListOrders({
-        after,
+        ...(after ? { after } : {}),
         ...(before ? { before } : {}),
         status: statuses.join(','),
         per_page: 100,
@@ -90,10 +89,30 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     const orders = [];
     const skippedOrders = [];
 
-    for (const wco of wcOrders) {
-      try {
-        const wasExisting = existingWpIds.has(wco.id);
-        const order = await syncOrder(wco.id, wco);
+    // Procesamos los pedidos en lotes paralelos. Cada syncOrder hace ~5 queries
+    // a la DB local; con 8 en paralelo saturamos bien el pool de Prisma sin
+    // pisarnos. WC ya respondió, así que esto es 100% local.
+    const CONCURRENCY = 8;
+    for (let i = 0; i < wcOrders.length; i += CONCURRENCY) {
+      const slice = wcOrders.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(
+        slice.map(async (wco) => {
+          try {
+            const wasExisting = existingWpIds.has(wco.id);
+            const order = await syncOrder(wco.id, wco);
+            return { ok: true, wco, wasExisting, order };
+          } catch (err) {
+            return { ok: false, wco, err };
+          }
+        }),
+      );
+      for (const r of results) {
+        if (!r.ok) {
+          failed += 1;
+          errors.push({ wpOrderId: r.wco.id, message: r.err.message });
+          continue;
+        }
+        const { order, wasExisting } = r;
         orders.push({
           wpOrderId: order.wpOrderId,
           number: order.number,
@@ -106,9 +125,6 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
           skippedOrders.push({ wpOrderId: order.wpOrderId, number: order.number, status: order.status });
         } else if (wasExisting) updated += 1;
         else created += 1;
-      } catch (err) {
-        failed += 1;
-        errors.push({ wpOrderId: wco.id, message: err.message });
       }
     }
 
