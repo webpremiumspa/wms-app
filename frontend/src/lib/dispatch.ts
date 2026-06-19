@@ -55,12 +55,34 @@ export type RouteSummary = {
   orders: Array<{ id: number; number: string; route: string; stopPosition: number | null; status: string; hasB2Pending: boolean }>;
 };
 
+export type B2DaySummaryRow = {
+  productId: number;
+  sku: string | null;
+  name: string;
+  thumbnailUrl: string | null;
+  totalQty: number;
+  orders: Array<{ wpOrderId: number; number: string; qty: number }>;
+};
+
+export type B2DayOrderRow = B2PendingPackingOrder & {
+  sequenceId: number | null;
+  sequenceCreatedAt: string | null;
+};
+
+export type B2DayResponse = {
+  orders: B2DayOrderRow[];
+  summary: B2DaySummaryRow[];
+};
+
 export const pickingB2Api = {
   summary: async (): Promise<B2PickingSummaryRow[]> =>
     (await api.get('/picking/b2/summary')).data.sequences,
 
   forSequence: async (sequenceId: number): Promise<B2PickingList> =>
     (await api.get(`/picking/b2/sequences/${sequenceId}`)).data,
+
+  today: async (): Promise<B2DayResponse> =>
+    (await api.get('/picking/b2/today')).data,
 };
 
 export const dispatchApi = {

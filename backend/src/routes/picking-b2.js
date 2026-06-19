@@ -54,6 +54,89 @@ router.get('/summary', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), async (
   }
 });
 
+// Vista del día: lista TODOS los pedidos con B2 pendiente cruzando todas las
+// secuencias abiertas + una tabla informativa con los productos B2 agrupados
+// por SKU (para que el picker pueda recorrer la bodega una sola vez sabiendo
+// el total que necesita de cada producto).
+//
+// Cada pedido sigue cerrándose por separado (link a su vista per-pedido).
+// La tabla agrupada es SOLO informativa, no es un picking consolidado.
+router.get('/today', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
+  try {
+    // Pedidos B2 pendientes de TODAS las secuencias abiertas.
+    const orders = await prisma.order.findMany({
+      where: {
+        hasB2Pending: true,
+        b2ClosedAt: null,
+        status: { in: ['sequenced', 'picked', 'packed', 'classified', 'loaded'] },
+        sequenceLinks: { some: { sequence: { b2ClosedAt: null } } },
+      },
+      include: {
+        items: {
+          where: { warehouse: 'B2' },
+          include: { product: true },
+        },
+        sequenceLinks: {
+          include: { sequence: { select: { id: true, createdAt: true } } },
+        },
+      },
+      orderBy: [{ route: 'asc' }, { stopPosition: 'asc' }, { id: 'asc' }],
+    });
+
+    // Lista de pedidos para el listado de cards.
+    const orderList = orders.map((o) => {
+      const seqLink = o.sequenceLinks[0];
+      const total = o.items.length;
+      const pickedCount = o.items.filter((i) => i.pickedAt).length;
+      return {
+        id: o.id,
+        number: o.number,
+        customerName: o.customerName,
+        shippingMethod: o.shippingMethod,
+        route: o.route,
+        stopPosition: o.stopPosition,
+        status: o.status,
+        itemCount: total,
+        pickedCount,
+        b2ClosedAt: o.b2ClosedAt,
+        sequenceId: seqLink?.sequence.id ?? null,
+        sequenceCreatedAt: seqLink?.sequence.createdAt ?? null,
+      };
+    });
+
+    // Tabla informativa: por cada productId, sumar qty pendiente + lista de
+    // pedidos que lo necesitan. Items ya pickeados no cuentan en el total
+    // pendiente porque ya están en la sub-bolsa.
+    const byProduct = new Map();
+    for (const o of orders) {
+      for (const it of o.items) {
+        if (it.pickedAt) continue;
+        const key = it.productId;
+        if (!byProduct.has(key)) {
+          byProduct.set(key, {
+            productId: it.productId,
+            sku: it.product?.sku ?? null,
+            name: it.product?.name ?? `Producto ${it.productId}`,
+            thumbnailUrl: it.product?.thumbnailUrl ?? null,
+            totalQty: 0,
+            orders: [],
+          });
+        }
+        const row = byProduct.get(key);
+        row.totalQty += it.qty;
+        row.orders.push({ wpOrderId: o.wpOrderId, number: o.number, qty: it.qty });
+      }
+    }
+    const summary = Array.from(byProduct.values()).sort((a, b) =>
+      (a.sku || '').localeCompare(b.sku || '') || a.name.localeCompare(b.name),
+    );
+
+    res.json({ orders: orderList, summary });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Lista de pedidos B2 pendientes en una secuencia (uno a uno, no agrupado).
 router.get('/sequences/:id', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {

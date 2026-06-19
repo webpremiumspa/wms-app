@@ -47,9 +47,27 @@ export function Picking() {
         Cada secuencia tiene su propio picking B1 (para empacar) y picking B2 (a granel, pedido por pedido). Cierran por separado.
       </p>
 
+      {canPickB2 && b2Open.length > 0 && (
+        <Link
+          to="/picking/b2-day"
+          className="card flex items-center gap-3 p-3 ring-1 ring-amber-200 hover:shadow-md"
+        >
+          <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
+            <Package size={18} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-amber-900">Picking {warehouseLabel('B2')} · Vista del día</div>
+            <div className="text-xs text-slate-500">
+              Todos los pedidos B2 pendientes + tabla agrupada de productos a sacar de la bodega.
+            </div>
+          </div>
+          <ChevronRight className="text-amber-600" />
+        </Link>
+      )}
+
       {canPickB2 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-amber-800">Picking Bodega 2 · pendiente</h3>
+          <h3 className="text-sm font-semibold text-amber-800">Picking Bodega 2 · pendiente (por secuencia)</h3>
           {isLoading ? (
             <Spinner />
           ) : b2Open.length === 0 && (!showClosed || b2Closed.length === 0) ? (
