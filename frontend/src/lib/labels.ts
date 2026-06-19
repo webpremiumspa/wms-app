@@ -1,4 +1,4 @@
-import type { OrderStatus, SequenceStatus } from './types';
+import type { OrderStatus, SequenceStatus, Warehouse } from './types';
 
 // Mapeo único de los enums internos (en inglés en BD) a su display en español.
 // Si quieres cambiar el wording en toda la app, se hace acá y se propaga.
@@ -40,6 +40,18 @@ export const SEQUENCE_STATUS_LABELS: Record<SequenceStatus, string> = {
   open: 'Abierta',
   closed: 'Cerrada',
 };
+
+// Labels de bodega: coinciden con los options del meta `_wms_bodega` en WC
+// (ver mu-plugin wms-product-warehouse.php). Si renombran las bodegas allá,
+// se actualiza acá y se propaga a toda la app.
+export const WAREHOUSE_LABELS: Record<Warehouse, string> = {
+  B1: 'B1 - Local',
+  B2: 'B2 - El Sol',
+};
+
+export function warehouseLabel(w: string): string {
+  return WAREHOUSE_LABELS[w as Warehouse] || w;
+}
 
 // Texto humano de los eventos del log (dashboard de supervisión).
 export const EVENT_LABELS: Record<string, string> = {

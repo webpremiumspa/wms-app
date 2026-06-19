@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, PackageOpen, UserX } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
-import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
+import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
@@ -42,7 +42,7 @@ function OrderItems({ orderId }: { orderId: number }) {
             <div className="truncate text-sm font-medium">{it.product.name}</div>
             <div className="text-xs text-slate-500">{it.product.sku || '—'}</div>
           </div>
-          <Badge variant={it.warehouse === 'B1' ? 'blue' : 'amber'}>{it.warehouse}</Badge>
+          <Badge variant={it.warehouse === 'B1' ? 'blue' : 'amber'}>{warehouseLabel(it.warehouse)}</Badge>
           <div className="text-sm font-bold text-brand-700">×{it.qty}</div>
         </div>
       ))}

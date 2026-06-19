@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { debugApi, type DebugOrderResponse } from '@/lib/debug';
-import { orderStatusLabel } from '@/lib/labels';
+import { orderStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 
@@ -184,7 +184,7 @@ export function Debug() {
                         <td className="px-2 py-1">{it.productName || '—'}</td>
                         <td className="px-2 py-1">×{it.qty}</td>
                         <td className="px-2 py-1">
-                          <Badge variant={it.warehouse === 'B1' ? 'blue' : 'amber'}>{it.warehouse}</Badge>
+                          <Badge variant={it.warehouse === 'B1' ? 'blue' : 'amber'}>{warehouseLabel(it.warehouse)}</Badge>
                         </td>
                         <td className="px-2 py-1 text-slate-600">{it.pickedAt ? new Date(it.pickedAt).toLocaleString('es-CL') : '—'}</td>
                         <td className="px-2 py-1 text-slate-600">{it.packedAt ? new Date(it.packedAt).toLocaleString('es-CL') : '—'}</td>
