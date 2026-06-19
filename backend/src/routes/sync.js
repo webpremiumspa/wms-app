@@ -1,11 +1,22 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import fs from 'node:fs';
+import os from 'node:os';
 import { requireAuth } from '../middleware/auth.js';
 import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { wcListOrders } from '../services/woocommerce.js';
 import { syncOrder, ensureProducts } from '../services/orders-sync.js';
+
+// Log de debug temporal para sync. Se escribe a un archivo conocido para
+// poder diagnosticar timeouts cuando passenger no expone stderr.
+const SYNC_LOG = `${os.homedir()}/wms-sync.log`;
+function slog(msg) {
+  try {
+    fs.appendFileSync(SYNC_LOG, `${new Date().toISOString()} ${msg}\n`);
+  } catch {}
+}
 
 const router = Router();
 router.use(requireAuth);
@@ -31,6 +42,8 @@ function normalizeDate(value, endOfDay = false) {
 }
 
 router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (req, res, next) => {
+  const t0 = Date.now();
+  slog('=== SYNC START ===');
   try {
     const parsed = syncSchema.safeParse(req.body || {});
     if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
@@ -41,11 +54,15 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
       ? parsed.data.statuses
       : ['en-preparacion'];
 
+    slog(`statuses=${statuses.join(',')} after=${after || '-'} before=${before || '-'}`);
+
     // Paginación: WC permite hasta 100 por página. Tope de seguridad: 10 páginas (1000 pedidos).
     const wcOrders = [];
     let page = 1;
     const maxPages = 10;
+    const tWc = Date.now();
     while (page <= maxPages) {
+      const tPage = Date.now();
       const batch = await wcListOrders({
         ...(after ? { after } : {}),
         ...(before ? { before } : {}),
@@ -55,10 +72,12 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
         orderby: 'date',
         order: 'desc',
       });
+      slog(`WC page ${page}: ${batch.length} orders in ${Date.now() - tPage}ms`);
       wcOrders.push(...batch);
       if (batch.length < 100) break;
       page += 1;
     }
+    slog(`WC total: ${wcOrders.length} orders fetched in ${Date.now() - tWc}ms`);
 
     // Pre-fetch UNA vez todos los productos referenciados por todos los pedidos
     // (1 call HTTP a WC con ?include=ids... en lugar de N calls).
@@ -68,7 +87,9 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
         if (li.product_id > 0) allProductIds.push(li.product_id);
       }
     }
+    const tProd = Date.now();
     await ensureProducts(allProductIds, { force: parsed.data.forceProductRefresh === true });
+    slog(`ensureProducts done in ${Date.now() - tProd}ms (${new Set(allProductIds).size} unique productIds)`);
 
     // Detectar cuáles WC orders ya existían en WMS antes del sync para
     // diferenciar "nuevos" de "actualizados" en la respuesta.
@@ -89,12 +110,13 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     const orders = [];
     const skippedOrders = [];
 
-    // Procesamos los pedidos en lotes paralelos. Cada syncOrder hace ~5 queries
-    // a la DB local; con 8 en paralelo saturamos bien el pool de Prisma sin
-    // pisarnos. WC ya respondió, así que esto es 100% local.
-    const CONCURRENCY = 8;
+    // Procesamos los pedidos en lotes paralelos. CloudLinux shared hosting
+    // suele tener pool MySQL chico, así que 4 simultáneos es seguro.
+    const CONCURRENCY = 4;
+    const tSync = Date.now();
     for (let i = 0; i < wcOrders.length; i += CONCURRENCY) {
       const slice = wcOrders.slice(i, i + CONCURRENCY);
+      const tBatch = Date.now();
       const results = await Promise.all(
         slice.map(async (wco) => {
           try {
@@ -102,10 +124,12 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
             const order = await syncOrder(wco.id, wco);
             return { ok: true, wco, wasExisting, order };
           } catch (err) {
+            slog(`syncOrder ${wco.id} FAILED: ${err.message}`);
             return { ok: false, wco, err };
           }
         }),
       );
+      slog(`batch ${i / CONCURRENCY + 1}/${Math.ceil(wcOrders.length / CONCURRENCY)} (${slice.length} orders) in ${Date.now() - tBatch}ms`);
       for (const r of results) {
         if (!r.ok) {
           failed += 1;
@@ -162,6 +186,7 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
       takenBySequences.push(...Array.from(bySeq.values()).sort((a, b) => a.id - b.id));
     }
 
+    slog(`=== SYNC DONE in ${Date.now() - t0}ms · created=${created} updated=${updated} skipped=${skipped} failed=${failed} ===`);
     res.json({
       total: wcOrders.length,
       synced,
@@ -177,6 +202,7 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
       statuses,
     });
   } catch (err) {
+    slog(`=== SYNC ERROR after ${Date.now() - t0}ms: ${err.message} ===`);
     next(err);
   }
 });
