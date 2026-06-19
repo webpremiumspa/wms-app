@@ -223,12 +223,28 @@ export async function claimOrder({ orderId, actorId }) {
 // Chequea si un pedido se puede clasificar/cargar. Devuelve detalles del
 // bloqueo cuando no es loadable (la UI los muestra). Si está aprobado para
 // entrega parcial, siempre devuelve loadable=true.
+//
+// Estados válidos para clasificar/cargar: 'packed', 'classified', 'loaded'.
+// Cualquier estado previo (received, sequenced, picked) significa que el
+// pedido no fue empacado (o se le borró la secuencia y volvió atrás) — no
+// se puede cargar al vehículo hasta que pase por packing.
+const LOAD_READY_STATUSES = ['packed', 'classified', 'loaded'];
+
 export async function getOrderLoadability(orderId) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: { items: { include: { product: true } } },
   });
   if (!order) throw new HttpError(404, 'Order not found');
+
+  if (!LOAD_READY_STATUSES.includes(order.status)) {
+    return {
+      loadable: false,
+      partialApproved: false,
+      missingB2Items: [],
+      reason: 'not_packed',
+    };
+  }
 
   if (order.allowPartialDelivery) {
     const missingB2 = order.items

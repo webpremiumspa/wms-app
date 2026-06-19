@@ -150,6 +150,26 @@ export function Dispatch() {
             </div>
           )}
 
+          {/* Bloqueo por estado: pedido no empacado (received/sequenced/picked) */}
+          {!scanned.loadable && scanned.blockReason === 'not_packed' && (
+            <div className="rounded-lg bg-amber-50 px-3 py-3 ring-2 ring-amber-400">
+              <div className="flex items-start gap-2">
+                <AlertOctagon className="shrink-0 text-amber-700" size={22} />
+                <div className="flex-1">
+                  <div className="text-base font-bold uppercase text-amber-800">
+                    Pedido sin empacar — NO cargar
+                  </div>
+                  <div className="mt-1 text-sm text-amber-900">
+                    Este pedido no está en una secuencia abierta o todavía no fue empacado.
+                  </div>
+                  <div className="mt-2 text-xs text-amber-800">
+                    Tenés que generar (o regenerar) una secuencia con este pedido y completarlo en packing antes de cargarlo al vehículo.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Bloqueo B2: rojo grande, no se puede cargar */}
           {!scanned.loadable && scanned.missingB2Items.length > 0 && (
             <div className="rounded-lg bg-red-50 px-3 py-3 ring-2 ring-red-400">
@@ -208,7 +228,7 @@ export function Dispatch() {
               <CheckCircle2 size={18} />
               Cargado al vehículo ✓
             </div>
-          ) : (
+          ) : scanned.blockReason === 'not_packed' ? null : (
             <>
               <button
                 onClick={() => markLoaded.mutate(scanned.id)}
