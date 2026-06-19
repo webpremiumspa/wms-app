@@ -3613,6 +3613,7 @@ export namespace Prisma {
     stopPosition: number | null
     customerName: string | null
     customerAddress: string | null
+    shippingMethod: string | null
     hasB2Pending: boolean | null
     bagsExpected: number | null
     allowPartialDelivery: boolean | null
@@ -3639,6 +3640,7 @@ export namespace Prisma {
     stopPosition: number | null
     customerName: string | null
     customerAddress: string | null
+    shippingMethod: string | null
     hasB2Pending: boolean | null
     bagsExpected: number | null
     allowPartialDelivery: boolean | null
@@ -3665,6 +3667,7 @@ export namespace Prisma {
     stopPosition: number
     customerName: number
     customerAddress: number
+    shippingMethod: number
     hasB2Pending: number
     bagsExpected: number
     allowPartialDelivery: number
@@ -3713,6 +3716,7 @@ export namespace Prisma {
     stopPosition?: true
     customerName?: true
     customerAddress?: true
+    shippingMethod?: true
     hasB2Pending?: true
     bagsExpected?: true
     allowPartialDelivery?: true
@@ -3739,6 +3743,7 @@ export namespace Prisma {
     stopPosition?: true
     customerName?: true
     customerAddress?: true
+    shippingMethod?: true
     hasB2Pending?: true
     bagsExpected?: true
     allowPartialDelivery?: true
@@ -3765,6 +3770,7 @@ export namespace Prisma {
     stopPosition?: true
     customerName?: true
     customerAddress?: true
+    shippingMethod?: true
     hasB2Pending?: true
     bagsExpected?: true
     allowPartialDelivery?: true
@@ -3878,6 +3884,7 @@ export namespace Prisma {
     stopPosition: number | null
     customerName: string | null
     customerAddress: string | null
+    shippingMethod: string | null
     hasB2Pending: boolean
     bagsExpected: number
     allowPartialDelivery: boolean
@@ -3923,6 +3930,7 @@ export namespace Prisma {
     stopPosition?: boolean
     customerName?: boolean
     customerAddress?: boolean
+    shippingMethod?: boolean
     hasB2Pending?: boolean
     bagsExpected?: boolean
     allowPartialDelivery?: boolean
@@ -3957,6 +3965,7 @@ export namespace Prisma {
     stopPosition?: boolean
     customerName?: boolean
     customerAddress?: boolean
+    shippingMethod?: boolean
     hasB2Pending?: boolean
     bagsExpected?: boolean
     allowPartialDelivery?: boolean
@@ -4003,6 +4012,7 @@ export namespace Prisma {
       stopPosition: number | null
       customerName: string | null
       customerAddress: string | null
+      shippingMethod: string | null
       hasB2Pending: boolean
       bagsExpected: number
       allowPartialDelivery: boolean
@@ -4401,6 +4411,7 @@ export namespace Prisma {
     readonly stopPosition: FieldRef<"Order", 'Int'>
     readonly customerName: FieldRef<"Order", 'String'>
     readonly customerAddress: FieldRef<"Order", 'String'>
+    readonly shippingMethod: FieldRef<"Order", 'String'>
     readonly hasB2Pending: FieldRef<"Order", 'Boolean'>
     readonly bagsExpected: FieldRef<"Order", 'Int'>
     readonly allowPartialDelivery: FieldRef<"Order", 'Boolean'>
@@ -8680,6 +8691,7 @@ export namespace Prisma {
     stopPosition: 'stopPosition',
     customerName: 'customerName',
     customerAddress: 'customerAddress',
+    shippingMethod: 'shippingMethod',
     hasB2Pending: 'hasB2Pending',
     bagsExpected: 'bagsExpected',
     allowPartialDelivery: 'allowPartialDelivery',
@@ -9022,6 +9034,7 @@ export namespace Prisma {
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
     customerAddress?: StringNullableFilter<"Order"> | string | null
+    shippingMethod?: StringNullableFilter<"Order"> | string | null
     hasB2Pending?: BoolFilter<"Order"> | boolean
     bagsExpected?: IntFilter<"Order"> | number
     allowPartialDelivery?: BoolFilter<"Order"> | boolean
@@ -9054,6 +9067,7 @@ export namespace Prisma {
     stopPosition?: SortOrderInput | SortOrder
     customerName?: SortOrderInput | SortOrder
     customerAddress?: SortOrderInput | SortOrder
+    shippingMethod?: SortOrderInput | SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
@@ -9089,6 +9103,7 @@ export namespace Prisma {
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
     customerAddress?: StringNullableFilter<"Order"> | string | null
+    shippingMethod?: StringNullableFilter<"Order"> | string | null
     hasB2Pending?: BoolFilter<"Order"> | boolean
     bagsExpected?: IntFilter<"Order"> | number
     allowPartialDelivery?: BoolFilter<"Order"> | boolean
@@ -9121,6 +9136,7 @@ export namespace Prisma {
     stopPosition?: SortOrderInput | SortOrder
     customerName?: SortOrderInput | SortOrder
     customerAddress?: SortOrderInput | SortOrder
+    shippingMethod?: SortOrderInput | SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
@@ -9155,6 +9171,7 @@ export namespace Prisma {
     stopPosition?: IntNullableWithAggregatesFilter<"Order"> | number | null
     customerName?: StringNullableWithAggregatesFilter<"Order"> | string | null
     customerAddress?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    shippingMethod?: StringNullableWithAggregatesFilter<"Order"> | string | null
     hasB2Pending?: BoolWithAggregatesFilter<"Order"> | boolean
     bagsExpected?: IntWithAggregatesFilter<"Order"> | number
     allowPartialDelivery?: BoolWithAggregatesFilter<"Order"> | boolean
@@ -9612,6 +9629,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -9641,6 +9659,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -9669,6 +9688,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -9698,6 +9718,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -9727,6 +9748,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -9752,6 +9774,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -9775,6 +9798,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -10413,6 +10437,7 @@ export namespace Prisma {
     stopPosition?: SortOrder
     customerName?: SortOrder
     customerAddress?: SortOrder
+    shippingMethod?: SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
@@ -10449,6 +10474,7 @@ export namespace Prisma {
     stopPosition?: SortOrder
     customerName?: SortOrder
     customerAddress?: SortOrder
+    shippingMethod?: SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
@@ -10475,6 +10501,7 @@ export namespace Prisma {
     stopPosition?: SortOrder
     customerName?: SortOrder
     customerAddress?: SortOrder
+    shippingMethod?: SortOrder
     hasB2Pending?: SortOrder
     bagsExpected?: SortOrder
     allowPartialDelivery?: SortOrder
@@ -11771,6 +11798,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -11799,6 +11827,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -11836,6 +11865,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -11864,6 +11894,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -11901,6 +11932,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -11929,6 +11961,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -12042,6 +12075,7 @@ export namespace Prisma {
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
     customerAddress?: StringNullableFilter<"Order"> | string | null
+    shippingMethod?: StringNullableFilter<"Order"> | string | null
     hasB2Pending?: BoolFilter<"Order"> | boolean
     bagsExpected?: IntFilter<"Order"> | number
     allowPartialDelivery?: BoolFilter<"Order"> | boolean
@@ -12549,6 +12583,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -12577,6 +12612,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -12643,6 +12679,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -12671,6 +12708,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -12869,6 +12907,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -12897,6 +12936,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -12974,6 +13014,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13002,6 +13043,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13066,6 +13108,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -13094,6 +13137,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -13180,6 +13224,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13208,6 +13253,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13247,6 +13293,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -13272,6 +13319,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -13297,6 +13345,7 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    shippingMethod?: string | null
     hasB2Pending?: boolean
     bagsExpected?: number
     allowPartialDelivery?: boolean
@@ -13363,6 +13412,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13391,6 +13441,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13419,6 +13470,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13443,6 +13495,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13471,6 +13524,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13499,6 +13553,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13523,6 +13578,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13551,6 +13607,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean
@@ -13579,6 +13636,7 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     hasB2Pending?: BoolFieldUpdateOperationsInput | boolean
     bagsExpected?: IntFieldUpdateOperationsInput | number
     allowPartialDelivery?: BoolFieldUpdateOperationsInput | boolean

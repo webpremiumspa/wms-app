@@ -152,6 +152,7 @@ exports.Prisma.OrderScalarFieldEnum = {
   stopPosition: 'stopPosition',
   customerName: 'customerName',
   customerAddress: 'customerAddress',
+  shippingMethod: 'shippingMethod',
   hasB2Pending: 'hasB2Pending',
   bagsExpected: 'bagsExpected',
   allowPartialDelivery: 'allowPartialDelivery',
