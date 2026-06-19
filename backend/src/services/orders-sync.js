@@ -212,6 +212,33 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
   ));
 }
 
+// Update parcial: solo route, stopPosition y shippingMethod. Se usa cuando un
+// pedido ya está en el WMS y solo queremos refrescar la metadata (ej. webhook
+// disparado por la app externa de rutas después que el pedido ya fue empacado).
+// NO toca items, status, timestamps de picker — esa info es del WMS.
+export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
+  const data = wcOrder || (await wcGetOrder(wpOrderId));
+  const route = getMeta(data, config.meta.orderRoute) || null;
+  const stopPositionRaw = getMeta(data, config.meta.orderStopPosition);
+  const stopPosition = stopPositionRaw ? Number(stopPositionRaw) : null;
+  const shippingMethod = data.shipping_lines?.[0]?.method_title || null;
+
+  const existing = await prisma.order.findUnique({
+    where: { wpOrderId: data.id },
+    select: { id: true },
+  });
+  if (!existing) return null;
+
+  return prisma.order.update({
+    where: { id: existing.id },
+    data: {
+      route,
+      stopPosition: Number.isFinite(stopPosition) ? stopPosition : null,
+      shippingMethod,
+    },
+  });
+}
+
 // Retry helper: MySQL puede tirar deadlock errors cuando varias transacciones
 // paralelas tocan los mismos índices (FK locks en order_items). Reintentamos
 // hasta 3 veces con backoff corto y aleatorio para evitar tormenta.

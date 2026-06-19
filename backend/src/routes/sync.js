@@ -7,7 +7,7 @@ import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { wcListOrders } from '../services/woocommerce.js';
-import { syncOrder, ensureProducts } from '../services/orders-sync.js';
+import { syncOrder, ensureProducts, updateOrderMetaFromWc } from '../services/orders-sync.js';
 
 // Log de debug temporal para sync. Se escribe a un archivo conocido para
 // poder diagnosticar timeouts cuando passenger no expone stderr.
@@ -203,6 +203,61 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     });
   } catch (err) {
     slog(`=== SYNC ERROR after ${Date.now() - t0}ms: ${err.message} ===`);
+    next(err);
+  }
+});
+
+// Refresca SOLO la metadata de ruta/parada/método de envío de los pedidos
+// activos del WMS (no entregados). Útil cuando la app externa de rutas asigna
+// rutas DESPUÉS del packing y queremos forzar la sincronización sin esperar
+// el webhook.
+router.post('/routes', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.LOAD, WMS_CAPS.PACK_B1), async (req, res, next) => {
+  try {
+    // Pedidos activos: cualquier estado menos delivered. Limitamos a 500 para
+    // que el endpoint no se cuelgue si hubo backlog.
+    const orders = await prisma.order.findMany({
+      where: { status: { not: 'delivered' } },
+      select: { wpOrderId: true },
+      take: 500,
+    });
+    if (orders.length === 0) {
+      return res.json({ ok: true, total: 0, updated: 0 });
+    }
+
+    const ids = orders.map((o) => o.wpOrderId);
+    const CHUNK = 100;
+    let updated = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (let i = 0; i < ids.length; i += CHUNK) {
+      const chunk = ids.slice(i, i + CHUNK);
+      const wcOrders = await wcListOrders({
+        include: chunk.join(','),
+        per_page: chunk.length,
+      });
+      // Update parcial en paralelo dentro del chunk.
+      const results = await Promise.all(
+        wcOrders.map(async (wco) => {
+          try {
+            await updateOrderMetaFromWc(wco.id, wco);
+            return { ok: true };
+          } catch (err) {
+            return { ok: false, wpOrderId: wco.id, message: err.message };
+          }
+        }),
+      );
+      for (const r of results) {
+        if (r.ok) updated += 1;
+        else {
+          failed += 1;
+          errors.push({ wpOrderId: r.wpOrderId, message: r.message });
+        }
+      }
+    }
+
+    res.json({ ok: true, total: ids.length, updated, failed, errors });
+  } catch (err) {
     next(err);
   }
 });

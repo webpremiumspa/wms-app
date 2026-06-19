@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Truck, CheckCircle2, AlertTriangle, RotateCcw, AlertOctagon, ShieldCheck } from 'lucide-react';
+import { Truck, CheckCircle2, AlertTriangle, RotateCcw, AlertOctagon, ShieldCheck, RefreshCw } from 'lucide-react';
 import { dispatchApi, type DispatchOrder } from '@/lib/dispatch';
 import { ordersApi } from '@/lib/sequences';
+import { syncApi } from '@/lib/sync';
 import { QRScanner } from '@/components/QRScanner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
@@ -43,6 +44,13 @@ export function Dispatch() {
     },
   });
 
+  const refreshRoutes = useMutation({
+    mutationFn: () => syncApi.routes(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dispatch-today'] });
+    },
+  });
+
   const approvePartial = useMutation({
     mutationFn: ({ orderId, note }: { orderId: number; note: string }) =>
       ordersApi.approvePartialDelivery(orderId, note),
@@ -78,7 +86,30 @@ export function Dispatch() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Clasificación y carga</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-xl font-semibold">Clasificación y carga</h2>
+        <button
+          type="button"
+          onClick={() => refreshRoutes.mutate()}
+          disabled={refreshRoutes.isPending}
+          title="Vuelve a leer rutas y paradas desde WooCommerce. Útil si la app de rutas asignó después de empacar."
+          className="flex items-center gap-1 rounded-lg bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-60"
+        >
+          <RefreshCw size={14} className={refreshRoutes.isPending ? 'animate-spin' : ''} />
+          {refreshRoutes.isPending ? 'Refrescando…' : 'Refrescar rutas'}
+        </button>
+      </div>
+      {refreshRoutes.data && (
+        <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-200">
+          Rutas actualizadas: {refreshRoutes.data.updated} de {refreshRoutes.data.total} pedidos.
+          {refreshRoutes.data.failed ? ` (${refreshRoutes.data.failed} fallidos)` : ''}
+        </div>
+      )}
+      {refreshRoutes.error && (
+        <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 ring-1 ring-red-200">
+          Error al refrescar rutas.
+        </div>
+      )}
 
       {!scanned && (
         <div className="card p-3">

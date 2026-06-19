@@ -26,7 +26,17 @@ export type SyncParams = {
   forceProductRefresh?: boolean;
 };
 
+export type RoutesSyncResult = {
+  ok: boolean;
+  total: number;
+  updated: number;
+  failed?: number;
+  errors?: Array<{ wpOrderId: number; message: string }>;
+};
+
 export const syncApi = {
   orders: async (params: SyncParams): Promise<SyncResult> =>
     (await api.post('/sync/orders', params)).data,
+  routes: async (): Promise<RoutesSyncResult> =>
+    (await api.post('/sync/routes')).data,
 };
