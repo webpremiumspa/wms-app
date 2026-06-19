@@ -17,7 +17,6 @@ export function SequenceNew() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [problems, setProblems] = useState<StockProblem[] | null>(null);
 
-  const [forceProductRefresh, setForceProductRefresh] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
   const { data: pending, isLoading } = useQuery({
@@ -32,9 +31,9 @@ export function SequenceNew() {
   const orderIds = useMemo(() => [...selected], [selected]);
 
   const sync = useMutation({
-    mutationFn: () => syncApi.orders({
-      forceProductRefresh: forceProductRefresh || undefined,
-    }),
+    // forceProductRefresh siempre on: garantiza que el sync detecte cambios
+    // de bodega B1/B2 en productos de WC sin depender del cache local.
+    mutationFn: () => syncApi.orders({ forceProductRefresh: true }),
     onSuccess: (result) => {
       setSyncResult(result);
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
@@ -112,18 +111,6 @@ export function SequenceNew() {
           {sync.isPending ? 'Sincronizando…' : 'Sincronizar pedidos en preparación'}
         </button>
 
-        <label className="flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 ring-1 ring-amber-200">
-          <input
-            type="checkbox"
-            checked={forceProductRefresh}
-            onChange={(e) => setForceProductRefresh(e.target.checked)}
-            className="mt-0.5 h-4 w-4 shrink-0 accent-amber-600"
-          />
-          <span className="text-xs text-amber-900">
-            <strong>Refrescar metadata de productos.</strong> Marcá esto si cambiaste la bodega (B1/B2) de algún producto en WooCommerce. Sin esto, el sync reutiliza la bodega cacheada y no detecta el cambio. Más lento (re-fetch de productos), úsalo solo cuando lo necesites.
-          </span>
-        </label>
-
         {pendingTotal > 0 && (
           <div className="flex items-center justify-between rounded-lg border border-dashed border-slate-300 px-3 py-2 text-xs">
             <span className="text-slate-600">
@@ -164,7 +151,7 @@ export function SequenceNew() {
               <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
               <div>
                 <div>
-                  WC tenía <strong>{syncResult.total}</strong> pedido{syncResult.total === 1 ? '' : 's'} en el rango.
+                  WC tenía <strong>{syncResult.total}</strong> pedido{syncResult.total === 1 ? '' : 's'} en preparación.
                 </div>
                 <div className="text-xs">
                   <strong>{syncResult.created}</strong> nuevo{syncResult.created === 1 ? '' : 's'} · <strong>{syncResult.updated}</strong> actualizado{syncResult.updated === 1 ? '' : 's'}
