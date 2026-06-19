@@ -113,6 +113,7 @@ export function Debug() {
                   <Field k="Posición carga" v={result.local.stopPosition ?? '—'} />
                   <Field k="Cliente" v={result.local.customerName ?? '—'} />
                   <Field k="Dirección" v={result.local.customerAddress ?? '—'} />
+                  <Field k="Método envío" v={result.local.shippingMethod ?? '—'} />
                   <Field k="¿B2 pendiente?" v={result.local.hasB2Pending ? 'Sí' : 'No'} />
                   <Field k="Creado" v={new Date(result.local.createdAt).toLocaleString('es-CL')} />
                   <Field k="Items" v={result.local.items.length} />

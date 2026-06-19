@@ -8,6 +8,7 @@ import { orderStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { B2Alert } from '@/components/B2Alert';
 import { Badge } from '@/components/Badge';
+import { ShippingBadge } from '@/components/ShippingBadge';
 import { QRScanner } from '@/components/QRScanner';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
@@ -121,6 +122,7 @@ export function Scan() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xl font-bold">#{order.number}</span>
             <Badge variant={isLoaded ? 'green' : 'gray'}>{orderStatusLabel(order.status)}</Badge>
+            <ShippingBadge method={order.shippingMethod} />
           </div>
           <div className="text-sm text-slate-700">{order.customerName || '—'}</div>
           {order.customerAddress && (

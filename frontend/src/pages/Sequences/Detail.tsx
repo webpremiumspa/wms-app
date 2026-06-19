@@ -7,6 +7,7 @@ import { sequencesApi, ordersApi } from '@/lib/sequences';
 import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { ShippingBadge } from '@/components/ShippingBadge';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
@@ -278,6 +279,7 @@ export function SequenceDetail() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">#{order.number}</span>
                     {order.hasB2Pending && <Badge variant="amber">B2</Badge>}
+                    <ShippingBadge method={order.shippingMethod} />
                     <Badge
                       variant={
                         order.status === 'received' || order.status === 'sequenced'

@@ -103,6 +103,13 @@ async function drawAlbaran(doc, order, opts = {}) {
 
   let cursorY = 230;
 
+  if (order.shippingMethod) {
+    doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a')
+      .text('Envío: ', 40, cursorY, { continued: true })
+      .font('Helvetica').fillColor('#1d4ed8').text(order.shippingMethod);
+    cursorY += 22;
+  }
+
   if (order.hasB2Pending) {
     doc.save();
     doc.rect(40, cursorY, 515, 60).fill('#fef3c7');

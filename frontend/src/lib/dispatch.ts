@@ -12,6 +12,7 @@ export type B2PendingPackingOrder = {
   id: number;
   number: string;
   customerName: string | null;
+  shippingMethod: string | null;
   route: string | null;
   stopPosition: number | null;
   status: string;
@@ -35,6 +36,7 @@ export type DispatchOrder = {
   stopPosition: number | null;
   customerName: string | null;
   customerAddress: string | null;
+  shippingMethod: string | null;
   hasB2Pending: boolean;
   loadedAt: string | null;
   loadable: boolean;

@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { ordersApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
 
 export function PickingB2Order() {
@@ -110,6 +111,7 @@ export function PickingB2Order() {
           {order.route && <Badge variant="blue">{order.route}</Badge>}
           {order.stopPosition != null && <Badge variant="gray">Parada {order.stopPosition}</Badge>}
           {order.allowPartialDelivery && <Badge variant="green">Entrega parcial aprobada</Badge>}
+          <ShippingBadge method={order.shippingMethod} />
           {isB2Closed && <Badge variant="green">B2 cerrado</Badge>}
         </div>
         <div className="text-sm text-slate-600">{order.customerName || '—'}</div>

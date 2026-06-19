@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { pickingB2Api } from '@/lib/dispatch';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { QRScanner } from '@/components/QRScanner';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
@@ -127,6 +128,7 @@ export function PickingB2() {
                   {o.route && <Badge variant="blue">{o.route}</Badge>}
                   {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
                   <Badge variant="amber">B2 ×{o.itemCount}</Badge>
+                  <ShippingBadge method={o.shippingMethod} />
                   {done && (
                     <Badge variant="green">
                       <CheckCircle2 size={12} className="inline" /> B2 cerrado

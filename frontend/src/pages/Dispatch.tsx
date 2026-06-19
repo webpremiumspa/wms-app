@@ -5,6 +5,7 @@ import { dispatchApi, type DispatchOrder } from '@/lib/dispatch';
 import { ordersApi } from '@/lib/sequences';
 import { QRScanner } from '@/components/QRScanner';
 import { Badge } from '@/components/Badge';
+import { ShippingBadge } from '@/components/ShippingBadge';
 import { Spinner } from '@/components/Spinner';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
@@ -166,6 +167,9 @@ export function Dispatch() {
           <div className="text-sm text-slate-600">
             <div>{scanned.customerName || '—'}</div>
             {scanned.customerAddress && <div className="text-xs text-slate-500">{scanned.customerAddress}</div>}
+            {scanned.shippingMethod && (
+              <div className="mt-1"><ShippingBadge method={scanned.shippingMethod} /></div>
+            )}
           </div>
 
           {scanned.status === 'loaded' ? (

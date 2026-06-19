@@ -12,6 +12,7 @@ export type DebugOrderResponse = {
     stopPosition: number | null;
     customerName: string | null;
     customerAddress: string | null;
+    shippingMethod: string | null;
     hasB2Pending: boolean;
     createdAt: string;
     packedAt: string | null;

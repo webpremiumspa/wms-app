@@ -7,6 +7,7 @@ import { syncApi, type SyncResult } from '@/lib/sync';
 import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { ShippingBadge } from '@/components/ShippingBadge';
 import type { StockProblem } from '@/lib/types';
 import clsx from 'clsx';
 
@@ -279,10 +280,11 @@ export function SequenceNew() {
                 )}
               >
                 <div className="min-w-0 space-y-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">#{o.number}</span>
                     {o.route && <Badge variant="blue">{o.route}</Badge>}
                     {o.hasB2Pending && <Badge variant="amber">B2</Badge>}
+                    <ShippingBadge method={o.shippingMethod} />
                   </div>
                   <div className="truncate text-xs text-slate-500">
                     {new Date(o.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })} · {o.customerName || '—'} · {o.itemCount} items

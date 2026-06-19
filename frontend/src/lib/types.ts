@@ -17,6 +17,7 @@ export type PendingOrder = {
   wpOrderId: number;
   number: string;
   customerName: string | null;
+  shippingMethod: string | null;
   route: string | null;
   hasB2Pending: boolean;
   itemCount: number;
@@ -54,6 +55,7 @@ export type SequenceOrderInfo = {
   id: number;
   number: string;
   customerName: string | null;
+  shippingMethod: string | null;
   status: OrderStatus;
   hasB2Pending: boolean;
   route: string | null;
@@ -64,6 +66,7 @@ export type PendingPackingOrder = {
   id: number;
   number: string;
   customerName: string | null;
+  shippingMethod: string | null;
   route: string | null;
   stopPosition: number | null;
   hasB2Pending: boolean;
@@ -97,6 +100,7 @@ export type OrderDetail = {
   stopPosition: number | null;
   customerName: string | null;
   customerAddress: string | null;
+  shippingMethod: string | null;
   hasB2Pending: boolean;
   allowPartialDelivery: boolean;
   partialDeliveryNote: string | null;

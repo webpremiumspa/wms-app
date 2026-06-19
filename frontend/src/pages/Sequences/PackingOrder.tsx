@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import { ordersApi, sequencesApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { useAuth } from '@/hooks/useAuth';
@@ -209,6 +210,7 @@ export function PackingOrder() {
           {order.stopPosition != null && <Badge variant="gray">Parada {order.stopPosition}</Badge>}
           {order.hasB2Pending && <Badge variant="amber">Bodega 2 pendiente</Badge>}
           {order.allowPartialDelivery && <Badge variant="green">Entrega parcial aprobada</Badge>}
+          <ShippingBadge method={order.shippingMethod} />
           {isPacked && <Badge variant="green">Empacado</Badge>}
         </div>
         <div className="text-sm text-slate-600">{order.customerName || '—'}</div>
