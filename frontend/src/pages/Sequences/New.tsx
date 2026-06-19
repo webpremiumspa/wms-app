@@ -36,7 +36,7 @@ export function SequenceNew() {
   // Sync state
   const [afterDate, setAfterDate] = useState(yesterdayISO());
   const [beforeDate, setBeforeDate] = useState(todayISO());
-  const [statuses, setStatuses] = useState<string[]>(['processing', 'on-hold', 'completed']);
+  const [statuses, setStatuses] = useState<string[]>(['en-preparacion']);
   const [forceProductRefresh, setForceProductRefresh] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
@@ -127,7 +127,7 @@ export function SequenceNew() {
           <h3 className="font-semibold text-slate-800">Sincronizar desde WooCommerce</h3>
         </div>
         <p className="text-xs text-slate-500">
-          Trae al WMS los pedidos en estado <em>processing</em>/<em>on-hold</em> dentro del rango. Los duplicados se actualizan sin crear copias.
+          Trae al WMS los pedidos en estado <em>en-preparación</em> dentro del rango. Los duplicados se actualizan sin crear copias.
         </p>
         <div className="flex flex-wrap gap-2">
           {PRESETS.map((p) => {
@@ -189,11 +189,7 @@ export function SequenceNew() {
           <div className="text-xs font-medium text-slate-600">Estados de WC a incluir</div>
           <div className="mt-1 flex flex-wrap gap-2">
             {[
-              { key: 'processing', label: 'Procesando' },
-              { key: 'on-hold', label: 'En espera' },
-              { key: 'completed', label: 'Completado' },
-              { key: 'pending', label: 'Pendiente pago' },
-              { key: 'en-ruta', label: 'En ruta' },
+              { key: 'en-preparacion', label: 'En preparación' },
             ].map((s) => {
               const active = statuses.includes(s.key);
               return (
