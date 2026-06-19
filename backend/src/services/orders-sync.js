@@ -164,7 +164,9 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
   const hasB2 = itemsData.some((it) => it.warehouse === 'B2');
 
   // 2. Tx con solo escrituras locales. Tiempo extendido por las dudas.
-  return prisma.$transaction(
+  // Retry hasta 3 veces si MySQL devuelve deadlock (puede pasar bajo cargas
+  // paralelas concurrentes en order_items por FK locks).
+  return retryOnDeadlock(() => prisma.$transaction(
     async (tx) => {
       const order = await tx.order.upsert({
         where: { wpOrderId: data.id },
@@ -207,5 +209,24 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
       });
     },
     { maxWait: 10000, timeout: 15000 },
-  );
+  ));
+}
+
+// Retry helper: MySQL puede tirar deadlock errors cuando varias transacciones
+// paralelas tocan los mismos índices (FK locks en order_items). Reintentamos
+// hasta 3 veces con backoff corto y aleatorio para evitar tormenta.
+async function retryOnDeadlock(fn, attempts = 3) {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const msg = String(err?.message || '');
+      const isDeadlock = msg.includes('deadlock') || msg.includes('Deadlock') || msg.includes('write conflict');
+      if (!isDeadlock || i === attempts - 1) throw err;
+      lastErr = err;
+      await new Promise((r) => setTimeout(r, 50 + Math.random() * 150));
+    }
+  }
+  throw lastErr;
 }
