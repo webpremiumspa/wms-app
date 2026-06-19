@@ -7,6 +7,7 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
+import { warehouseLabel } from '@/lib/labels';
 
 export function Picking() {
   const { user } = useAuth();
@@ -55,7 +56,7 @@ export function Picking() {
             <div className="card p-4 text-sm text-slate-500 ring-1 ring-amber-100">
               {b2Closed.length > 0 && !showClosed
                 ? 'No hay picking B2 pendiente. Activa "Mostrar cerradas" para ver las cerradas.'
-                : 'No hay secuencias con items B2.'}
+                : `No hay secuencias con items ${warehouseLabel('B2')}.`}
             </div>
           ) : (
             <>

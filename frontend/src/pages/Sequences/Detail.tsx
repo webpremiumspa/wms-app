@@ -161,7 +161,7 @@ export function SequenceDetail() {
             <div className="font-semibold">Flujo B2 (granel)</div>
             <div>
               {!hasB2
-                ? 'Sin items B2'
+                ? `Sin items ${warehouseLabel('B2')}`
                 : b2Closed
                 ? `Cerrado el ${new Date(seq.b2ClosedAt!).toLocaleString('es-CL')}`
                 : `${(seq.b2?.total || 0) - (seq.b2?.pending || 0)}/${seq.b2?.total} items pickeados`}
@@ -278,7 +278,7 @@ export function SequenceDetail() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">#{order.number}</span>
-                    {order.hasB2Pending && <Badge variant="amber">B2</Badge>}
+                    {order.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={order.shippingMethod} />
                     <Badge
                       variant={

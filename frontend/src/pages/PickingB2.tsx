@@ -10,6 +10,7 @@ import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { QRScanner } from '@/components/QRScanner';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
+import { warehouseLabel } from '@/lib/labels';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 
 function parseQrToWpId(raw: string): number | null {
@@ -127,7 +128,7 @@ export function PickingB2() {
                   <span className="font-semibold">#{o.number}</span>
                   {o.route && <Badge variant="blue">{o.route}</Badge>}
                   {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
-                  <Badge variant="amber">B2 ×{o.itemCount}</Badge>
+                  <Badge variant="amber">{warehouseLabel('B2')} ×{o.itemCount}</Badge>
                   <ShippingBadge method={o.shippingMethod} />
                   {done && (
                     <Badge variant="green">

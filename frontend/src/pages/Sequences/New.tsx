@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
 import { syncApi, type SyncResult } from '@/lib/sync';
-import { orderStatusLabel, sequenceStatusLabel } from '@/lib/labels';
+import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
@@ -270,7 +270,7 @@ export function SequenceNew() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">#{o.number}</span>
                     {o.route && <Badge variant="blue">{o.route}</Badge>}
-                    {o.hasB2Pending && <Badge variant="amber">B2</Badge>}
+                    {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={o.shippingMethod} />
                   </div>
                   <div className="truncate text-xs text-slate-500">

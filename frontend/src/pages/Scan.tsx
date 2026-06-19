@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Truck, Printer, CheckCircle2, AlertTriangle, Image as ImageIcon, Home, LogIn, ClipboardCheck, Camera, X } from 'lucide-react';
 import { ordersApi } from '@/lib/sequences';
 import { dispatchApi } from '@/lib/dispatch';
-import { orderStatusLabel } from '@/lib/labels';
+import { orderStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { B2Alert } from '@/components/B2Alert';
 import { Badge } from '@/components/Badge';
@@ -166,7 +166,7 @@ export function Scan() {
         <div className="card p-4">
           <h3 className="mb-2 text-sm font-semibold text-slate-700">Contenido en la bolsa</h3>
           {b1Items.length === 0 ? (
-            <div className="text-sm text-slate-500">Sin items B1.</div>
+            <div className="text-sm text-slate-500">Sin items {warehouseLabel('B1')}.</div>
           ) : (
             <ul className="space-y-2">
               {b1Items.map((it) => (

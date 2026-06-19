@@ -10,6 +10,7 @@ import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { useAuth } from '@/hooks/useAuth';
+import { warehouseLabel } from '@/lib/labels';
 import { CAPS, hasCap } from '@/lib/auth';
 
 export function PackingOrder() {
@@ -261,7 +262,7 @@ export function PackingOrder() {
           <div className="flex-1 text-sm text-emerald-900">
             <div className="font-semibold">Entrega parcial aprobada</div>
             {order.partialDeliveryNote && <div className="text-xs">{order.partialDeliveryNote}</div>}
-            <div className="text-xs">El pedido se puede cargar al vehículo aunque falten items B2 al momento de la entrega.</div>
+            <div className="text-xs">El pedido se puede cargar al vehículo aunque falten items {warehouseLabel('B2')} al momento de la entrega.</div>
           </div>
           {canManage && !isPacked && (
             <button
@@ -352,7 +353,7 @@ export function PackingOrder() {
         <div className="sticky bottom-20 z-10 bg-slate-100 pt-2 md:bottom-0">
           {!onlyB2 && !allChecked && (
             <div className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Falta marcar items B1. No se puede cerrar el pedido hasta confirmar todos.
+              Falta marcar items {warehouseLabel('B1')}. No se puede cerrar el pedido hasta confirmar todos.
             </div>
           )}
           {packError && (
@@ -409,7 +410,7 @@ export function PackingOrder() {
                   className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-100"
                 >
                   <CheckCircle2 size={14} />
-                  Aprobar entrega parcial (cliente acepta sin items B2)
+                  Aprobar entrega parcial (cliente acepta sin items {warehouseLabel('B2')})
                 </button>
               ) : (
                 <div className="space-y-2 rounded-lg bg-white p-3 ring-1 ring-emerald-200">

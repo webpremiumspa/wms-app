@@ -8,6 +8,7 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
+import { warehouseLabel } from '@/lib/labels';
 
 export function PickingB2Order() {
   const { id, orderId } = useParams();
@@ -188,7 +189,7 @@ export function PickingB2Order() {
         <div className="sticky bottom-20 z-10 bg-slate-100 pt-2 md:bottom-0">
           {!allChecked && !order.allowPartialDelivery && (
             <div className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Falta marcar items B2. No se puede cerrar el pedido hasta confirmar todos (a menos que tenga entrega parcial aprobada).
+              Falta marcar items {warehouseLabel('B2')}. No se puede cerrar el pedido hasta confirmar todos (a menos que tenga entrega parcial aprobada).
             </div>
           )}
           {packError && (

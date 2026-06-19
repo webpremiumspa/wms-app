@@ -11,6 +11,7 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { QRScanner } from '@/components/QRScanner';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
+import { warehouseLabel } from '@/lib/labels';
 
 // Extrae el wpOrderId del QR (URL nueva o legacy WMS:<id>).
 function parseQrToWpId(raw: string): number | null {
@@ -173,12 +174,12 @@ export function PackingList() {
                   <span className="font-semibold">#{o.number}</span>
                   {o.route && <Badge variant="blue">{o.route}</Badge>}
                   {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
-                  {o.hasB2Pending && <Badge variant="amber">B2</Badge>}
+                  {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                   <ShippingBadge method={o.shippingMethod} />
                   {done && <Badge variant="green">Empacado</Badge>}
                 </div>
                 <div className="truncate text-xs text-slate-500">
-                  {o.customerName || '—'} · {o.itemCount} items B1
+                  {o.customerName || '—'} · {o.itemCount} items {warehouseLabel('B1')}
                 </div>
               </div>
               {claimed && (
