@@ -37,25 +37,12 @@ export function PickingB2Day() {
     return out;
   }, [data]);
 
-  if (isLoading || !data) return <Spinner />;
-
-  const total = data.orders.length;
-  const closed = data.orders.filter((o) => !!o.b2ClosedAt).length;
-  const { routes, hasNoRoute } = extractRoutes(data.orders);
-
-  // Ordenes que pasan ruta + buscador.
-  const filteredOrders = applyRouteFilter(data.orders, routeFilter).filter((o) =>
-    matchesOrderId(o.number, search),
-  );
-
   // Para la tabla agrupada: si hay filtro de ruta, recalculamos sumando solo
   // los items de los pedidos visibles. Si no hay filtro, usa el summary global
   // del backend. Esto evita mostrar "10 SKUs" cuando filtraste a 2 pedidos.
   const summaryFiltered = useMemo(() => {
+    if (!data) return [];
     if (routeFilter === null) return data.summary;
-    const visibleWpIds = new Set(applyRouteFilter(data.orders, routeFilter).map((o) => o.id));
-    // Sumamos qty de cada SKU pero solo las "ordenes" del summary que estén
-    // en visibleWpIds. Comparamos por wpOrderId.
     const visibleNumbers = new Set(
       applyRouteFilter(data.orders, routeFilter).map((o) => o.number),
     );
@@ -70,9 +57,18 @@ export function PickingB2Day() {
       });
     }
     return rows;
-    // visibleWpIds es para futuro si necesitamos cruzar por id local
-    void visibleWpIds;
   }, [data, routeFilter]);
+
+  if (isLoading || !data) return <Spinner />;
+
+  const total = data.orders.length;
+  const closed = data.orders.filter((o) => !!o.b2ClosedAt).length;
+  const { routes, hasNoRoute } = extractRoutes(data.orders);
+
+  // Ordenes que pasan ruta + buscador.
+  const filteredOrders = applyRouteFilter(data.orders, routeFilter).filter((o) =>
+    matchesOrderId(o.number, search),
+  );
 
   return (
     <div className="space-y-4 pb-4">
