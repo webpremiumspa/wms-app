@@ -111,6 +111,8 @@ export type OrderDetail = {
   claimedAt: string | null;
   b2ClosedAt: string | null;
   b2ClosedBy: Picker | null;
+  classifiedAt?: string | null;
+  loadedAt?: string | null;
   b2Pickable?: boolean;
   sequenceLinks?: Array<{
     sequenceId: number;
@@ -118,6 +120,10 @@ export type OrderDetail = {
   }>;
   packable?: boolean;
   openSequenceId?: number | null;
+  loadable?: boolean;
+  partialApproved?: boolean;
+  missingB2Items?: Array<{ productId: number; sku: string | null; name: string | null; qty: number }>;
+  blockReason?: string | null;
   items: OrderItem[];
 };
 

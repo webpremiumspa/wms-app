@@ -140,6 +140,13 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
   const stopPositionRaw = getMeta(data, config.meta.orderStopPosition);
   const stopPosition = stopPositionRaw ? Number(stopPositionRaw) : null;
   const shippingMethod = data.shipping_lines?.[0]?.method_title || null;
+  // Driver / vehículo desde woo-delivery-groups. Parseo defensivo por si el
+  // plugin cambia el formato más adelante.
+  const driverIdRaw = getMeta(data, '_wdg_driver_id');
+  const driverId = driverIdRaw && !Number.isNaN(Number(driverIdRaw)) ? Number(driverIdRaw) : null;
+  const driverName = getMeta(data, '_wdg_driver_name') || null;
+  const vehicle = getMeta(data, '_wdg_vehicle') || null;
+  const patente = getMeta(data, '_wdg_patente') || null;
   // Usamos date_created de WC como createdAt local: refleja cuándo se hizo el
   // pedido, no cuándo lo sincronizamos.
   const wcDate = data.date_created ? new Date(data.date_created) : new Date();
@@ -179,6 +186,10 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           customerName: [data.billing?.first_name, data.billing?.last_name].filter(Boolean).join(' ') || null,
           customerAddress: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', ') || null,
           shippingMethod,
+          driverId,
+          driverName,
+          vehicle,
+          patente,
           bagsExpected: 1,
           createdAt: wcDate,
           hasB2Pending: hasB2,
@@ -190,6 +201,10 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           customerName: [data.billing?.first_name, data.billing?.last_name].filter(Boolean).join(' ') || null,
           customerAddress: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', ') || null,
           shippingMethod,
+          driverId,
+          driverName,
+          vehicle,
+          patente,
           createdAt: wcDate,
           hasB2Pending: hasB2,
         },
@@ -222,6 +237,11 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
   const stopPositionRaw = getMeta(data, config.meta.orderStopPosition);
   const stopPosition = stopPositionRaw ? Number(stopPositionRaw) : null;
   const shippingMethod = data.shipping_lines?.[0]?.method_title || null;
+  const driverIdRaw = getMeta(data, '_wdg_driver_id');
+  const driverId = driverIdRaw && !Number.isNaN(Number(driverIdRaw)) ? Number(driverIdRaw) : null;
+  const driverName = getMeta(data, '_wdg_driver_name') || null;
+  const vehicle = getMeta(data, '_wdg_vehicle') || null;
+  const patente = getMeta(data, '_wdg_patente') || null;
 
   const existing = await prisma.order.findUnique({
     where: { wpOrderId: data.id },
@@ -235,6 +255,10 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
       route,
       stopPosition: Number.isFinite(stopPosition) ? stopPosition : null,
       shippingMethod,
+      driverId,
+      driverName,
+      vehicle,
+      patente,
     },
   });
 }

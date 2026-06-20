@@ -87,6 +87,9 @@ export const pickingB2Api = {
 
 export const dispatchApi = {
   scan: async (qr: string): Promise<DispatchOrder> => (await api.post('/dispatch/scan', { qr })).data.order,
+  classify: async (orderId: number): Promise<void> => {
+    await api.post(`/dispatch/${orderId}/classify`);
+  },
   loaded: async (orderId: number): Promise<void> => {
     await api.post(`/dispatch/${orderId}/loaded`);
   },

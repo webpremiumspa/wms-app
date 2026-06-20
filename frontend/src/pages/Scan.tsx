@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Truck, Printer, CheckCircle2, AlertTriangle, Image as ImageIcon, Home, LogIn, ClipboardCheck, Camera, X } from 'lucide-react';
+import {
+  Truck,
+  Printer,
+  CheckCircle2,
+  AlertTriangle,
+  Image as ImageIcon,
+  Home,
+  LogIn,
+  ClipboardCheck,
+  Camera,
+  X,
+  AlertOctagon,
+  ShieldCheck,
+} from 'lucide-react';
 import { ordersApi } from '@/lib/sequences';
 import { dispatchApi } from '@/lib/dispatch';
 import { orderStatusLabel, warehouseLabel } from '@/lib/labels';
@@ -10,11 +23,10 @@ import { B2Alert } from '@/components/B2Alert';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { QRScanner } from '@/components/QRScanner';
+import { RouteProgressPills } from '@/components/RouteProgressPills';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 
-// Extrae wpOrderId del payload del QR. Soporta URL nueva (/scan/<id>) y
-// legacy (WMS:<id>). Devuelve null si no reconoce el formato.
 function parseQrToWpId(raw: string): number | null {
   const trimmed = raw.trim();
   const urlMatch = trimmed.match(/\/scan\/(\d+)(?:[/?#]|$)/);
@@ -34,55 +46,96 @@ export function Scan() {
   const canLoad = hasCap(user, CAPS.LOAD);
   const canPack = hasCap(user, CAPS.PACK_B1);
   const canPickB2 = hasCap(user, CAPS.PACK_B2);
+  const canApprovePartial = canPack || hasCap(user, CAPS.SUPERVISE);
+
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [showSelector, setShowSelector] = useState(false);
+  const [showPartialForm, setShowPartialForm] = useState(false);
+  const [partialNote, setPartialNote] = useState('');
+  const [partialError, setPartialError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  // Endpoint público: no requiere auth, devuelve datos del pedido + items.
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order-public', idNum],
     queryFn: () => ordersApi.getPublicByWpId(idNum),
     enabled: Number.isFinite(idNum) && idNum > 0,
   });
 
-  const markLoaded = useMutation({
-    mutationFn: () => dispatchApi.loaded(order!.id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['order-public', idNum] }),
+  const { data: routesProgress } = useQuery({
+    queryKey: ['dispatch-today'],
+    queryFn: () => dispatchApi.today(),
+    enabled: !!user && canLoad && !!order && ['packed', 'classified', 'loaded'].includes(order.status),
+    refetchInterval: 8_000,
   });
 
-  // Computa qué acciones aplican a este pedido para este usuario.
-  // Si solo aplica 1 → auto-redirect (sin pregunta).
-  // Si aplican 2+ → mostramos selector para que el operador elija.
-  // Si 0 → landing normal con info del pedido.
-  const availableActions: Array<'pack' | 'pickB2' | 'load'> = (() => {
-    if (!user || !order) return [];
-    const actions: Array<'pack' | 'pickB2' | 'load'> = [];
-    if (canPack && order.packable && order.openSequenceId) actions.push('pack');
-    if (canPickB2 && order.b2Pickable && order.openSequenceId) actions.push('pickB2');
-    if (canLoad && ['packed', 'classified'].includes(order.status)) actions.push('load');
-    return actions;
+  const classify = useMutation({
+    mutationFn: () => dispatchApi.classify(order!.id),
+    onSuccess: () => {
+      setActionError(null);
+      queryClient.invalidateQueries({ queryKey: ['order-public', idNum] });
+      queryClient.invalidateQueries({ queryKey: ['dispatch-today'] });
+    },
+    onError: (err: any) => {
+      setActionError(err.response?.data?.message || 'No se pudo clasificar el pedido');
+    },
+  });
+
+  const markLoaded = useMutation({
+    mutationFn: () => dispatchApi.loaded(order!.id),
+    onSuccess: () => {
+      setActionError(null);
+      queryClient.invalidateQueries({ queryKey: ['order-public', idNum] });
+      queryClient.invalidateQueries({ queryKey: ['dispatch-today'] });
+    },
+    onError: (err: any) => {
+      setActionError(err.response?.data?.message || 'No se pudo confirmar la carga');
+    },
+  });
+
+  const approvePartial = useMutation({
+    mutationFn: () => ordersApi.approvePartialDelivery(order!.id, partialNote),
+    onSuccess: () => {
+      setShowPartialForm(false);
+      setPartialNote('');
+      setPartialError(null);
+      queryClient.invalidateQueries({ queryKey: ['order-public', idNum] });
+    },
+    onError: (err: any) => {
+      setPartialError(err.response?.data?.message || 'No se pudo aprobar la entrega parcial');
+    },
+  });
+
+  // Auto-redirect a packing/picking-b2 si solo aplica una de esas acciones.
+  // Para 'classify' y 'load' no redirige — se muestran en esta misma pantalla.
+  const navAction: 'pack' | 'pickB2' | null = (() => {
+    if (!user || !order) return null;
+    const opts: Array<'pack' | 'pickB2'> = [];
+    if (canPack && order.packable && order.openSequenceId) opts.push('pack');
+    if (canPickB2 && order.b2Pickable && order.openSequenceId) opts.push('pickB2');
+    return opts.length === 1 ? opts[0] : null;
+  })();
+
+  const showSelectorNow = (() => {
+    if (!user || !order) return false;
+    const opts: number = (canPack && order.packable && order.openSequenceId ? 1 : 0)
+      + (canPickB2 && order.b2Pickable && order.openSequenceId ? 1 : 0);
+    return opts >= 2;
   })();
 
   useEffect(() => {
-    if (!user || !order || availableActions.length === 0) return;
-    // Una sola acción → auto-redirect a la vista correspondiente (excepto
-    // 'load' que es un botón en la misma página, no una navegación).
-    if (availableActions.length === 1) {
-      const only = availableActions[0];
-      if (only === 'pack') {
-        navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`, { replace: true });
-      } else if (only === 'pickB2') {
-        navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`, { replace: true });
-      }
-      // 'load' → se queda en /scan y muestra el botón estándar.
-      return;
+    if (!user || !order) return;
+    if (navAction === 'pack') {
+      navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`, { replace: true });
+    } else if (navAction === 'pickB2') {
+      navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`, { replace: true });
+    } else if (showSelectorNow) {
+      setShowSelector(true);
     }
-    // 2+ acciones → mostrar selector.
-    setShowSelector(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, order?.id, order?.status, availableActions.length]);
+  }, [user?.id, order?.id, order?.status]);
 
-  function pickAction(kind: 'pack' | 'pickB2' | 'load') {
+  function pickSelectorAction(kind: 'pack' | 'pickB2') {
     setShowSelector(false);
     if (!order) return;
     if (kind === 'pack' && order.openSequenceId) {
@@ -90,8 +143,6 @@ export function Scan() {
     } else if (kind === 'pickB2' && order.openSequenceId) {
       navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`);
     }
-    // 'load' → no navega; el usuario verá el botón "Confirmar carga al vehículo"
-    // junto con el banner B2 si aplica (queda en /scan).
   }
 
   if (!Number.isFinite(idNum) || idNum <= 0) {
@@ -101,10 +152,8 @@ export function Scan() {
   if (error || !order) {
     return (
       <ScanShell>
-        <div className="space-y-3">
-          <div className="card p-6 text-center text-slate-600">
-            Pedido <strong>#{wpOrderId}</strong> no encontrado en el WMS.
-          </div>
+        <div className="card p-6 text-center text-slate-600">
+          Pedido <strong>#{wpOrderId}</strong> no encontrado en el WMS.
         </div>
       </ScanShell>
     );
@@ -112,16 +161,26 @@ export function Scan() {
 
   const b1Items = order.items.filter((i) => i.warehouse === 'B1');
   const b2Items = order.items.filter((i) => i.warehouse === 'B2');
-  const isLoaded = order.status === 'loaded' || order.status === 'delivered';
+
+  // Estados derivados para la UI
+  const justClassified = classify.isSuccess && order.status === 'classified';
+  const justLoaded = markLoaded.isSuccess && order.status === 'loaded';
+  const showClassifyFlow = canLoad && order.status === 'packed' && !justClassified;
+  const showLoadFlow = canLoad && order.status === 'classified' && !justLoaded;
+  const isAlreadyLoaded = order.status === 'loaded' || order.status === 'delivered';
+
+  const noRouteYet = !order.route && (showClassifyFlow || showLoadFlow);
+  const isBlocked = order.status === 'blocked';
+  const isNotPacked = ['received', 'sequenced', 'picked'].includes(order.status) && !order.packable && !order.b2Pickable;
 
   return (
     <ScanShell>
       <div className="space-y-4 pb-4">
-        {/* Header con datos clave */}
+        {/* Header */}
         <div className="card space-y-2 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xl font-bold">#{order.number}</span>
-            <Badge variant={isLoaded ? 'green' : 'gray'}>{orderStatusLabel(order.status)}</Badge>
+            <Badge variant={isAlreadyLoaded ? 'green' : 'gray'}>{orderStatusLabel(order.status)}</Badge>
             <ShippingBadge method={order.shippingMethod} />
           </div>
           <div className="text-sm text-slate-700">{order.customerName || '—'}</div>
@@ -130,10 +189,8 @@ export function Scan() {
           )}
         </div>
 
-        {/* Bloque grande de ruta — clave para el operador de clasificación.
-            Si el pedido todavía no tiene ruta, lo decimos explícitamente
-            (acá sí, porque al escanear es momento de saberlo). */}
-        {order.route ? (
+        {/* Ruta + parada (siempre visible si existe) */}
+        {order.route && (
           <div className="rounded-xl bg-brand-50 p-4 ring-1 ring-brand-100">
             <div className="text-xs uppercase tracking-wide text-brand-700">Ruta · Parada</div>
             <div className="mt-1 flex items-baseline gap-3">
@@ -143,15 +200,17 @@ export function Scan() {
               )}
             </div>
           </div>
-        ) : (
+        )}
+
+        {noRouteYet && (
           <div className="flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 ring-1 ring-amber-200">
             <AlertTriangle size={16} />
-            Este pedido aún no tiene ruta asignada.
+            Este pedido aún no tiene ruta asignada. No se puede clasificar/cargar hasta que la app de rutas la asigne.
           </div>
         )}
 
-        {/* Alerta gigante con sonido + vibración si hay B2 */}
-        {order.hasB2Pending && (
+        {/* Alerta B2 visual (no bloqueante por sí sola; el bloqueo viene de loadable) */}
+        {order.hasB2Pending && !showClassifyFlow && !showLoadFlow && (
           <B2Alert
             items={b2Items.map((i) => ({
               sku: i.product.sku,
@@ -162,12 +221,199 @@ export function Scan() {
           />
         )}
 
-        {/* Contenido en la bolsa */}
-        <div className="card p-4">
-          <h3 className="mb-2 text-sm font-semibold text-slate-700">Contenido en la bolsa</h3>
-          {b1Items.length === 0 ? (
-            <div className="text-sm text-slate-500">Sin items {warehouseLabel('B1')}.</div>
-          ) : (
+        {/* ─────────── Bloqueo B2 (para clasificación / carga) ─────────── */}
+        {(showClassifyFlow || showLoadFlow) && !order.loadable && (order.missingB2Items?.length ?? 0) > 0 && (
+          <div className="rounded-lg bg-red-50 px-3 py-3 ring-2 ring-red-400">
+            <div className="flex items-start gap-2">
+              <AlertOctagon className="shrink-0 text-red-700" size={22} />
+              <div className="flex-1">
+                <div className="text-base font-bold uppercase text-red-800">{warehouseLabel('B2')} incompleto — NO {showLoadFlow ? 'cargar' : 'clasificar'}</div>
+                <div className="mt-1 text-sm text-red-900">
+                  Falta{(order.missingB2Items!.length === 1 ? '' : 'n')} <strong>{order.missingB2Items!.length} item{order.missingB2Items!.length === 1 ? '' : 's'}</strong> del granel {warehouseLabel('B2')}:
+                </div>
+                <ul className="mt-1 list-disc pl-5 text-xs text-red-900">
+                  {order.missingB2Items!.map((it) => (
+                    <li key={it.productId}>
+                      {it.qty}× {it.name || `Producto ${it.productId}`} {it.sku && <span className="text-red-700">({it.sku})</span>}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2 text-xs text-red-800">
+                  Dejá la bolsa hasta que se complete {warehouseLabel('B2')}, o autorizá entrega parcial si el cliente acepta.
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {(showClassifyFlow || showLoadFlow) && order.partialApproved && (
+          <div className="rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-300">
+            <div className="flex items-start gap-2">
+              <ShieldCheck className="shrink-0 text-emerald-700" size={18} />
+              <div className="flex-1 text-sm text-emerald-900">
+                <div className="font-semibold">Entrega parcial aprobada</div>
+                {order.partialDeliveryNote && <div className="text-xs">{order.partialDeliveryNote}</div>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ─────────── CLASIFICACIÓN ─────────── */}
+        {showClassifyFlow && (
+          <div className="card space-y-3 p-4 ring-1 ring-brand-100">
+            <div>
+              <div className="text-xs uppercase text-brand-700">Acción · Clasificación</div>
+              <div className="text-base font-semibold text-slate-800">Confirmá que este pedido fue separado a su ruma de ruta.</div>
+            </div>
+            <RouteProgressPills routes={routesProgress || []} mode="classified" highlightRoute={order.route} />
+            {actionError && (
+              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div>
+            )}
+            <button
+              onClick={() => classify.mutate()}
+              disabled={classify.isPending || !order.route || !order.loadable}
+              className="btn-primary w-full"
+            >
+              <CheckCircle2 size={18} />
+              {classify.isPending ? 'Clasificando…' : 'Confirmar clasificación'}
+            </button>
+            {!order.loadable && canApprovePartial && !showPartialForm && (
+              <button
+                type="button"
+                onClick={() => { setPartialError(null); setShowPartialForm(true); }}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-300 hover:bg-emerald-100"
+              >
+                <ShieldCheck size={14} />
+                Autorizar entrega parcial (cliente acepta sin estos items)
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* ─────────── CARGA ─────────── */}
+        {showLoadFlow && (
+          <div className="card space-y-3 p-4 ring-1 ring-emerald-100">
+            <div>
+              <div className="text-xs uppercase text-emerald-700">Acción · Carga al vehículo</div>
+              <div className="text-base font-semibold text-slate-800">Confirmá que esta bolsa subió a la camioneta.</div>
+            </div>
+            <RouteProgressPills routes={routesProgress || []} mode="loaded" highlightRoute={order.route} />
+            {actionError && (
+              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div>
+            )}
+            <button
+              onClick={() => markLoaded.mutate()}
+              disabled={markLoaded.isPending || !order.route || !order.loadable}
+              className="btn-primary w-full"
+            >
+              <Truck size={18} />
+              {markLoaded.isPending ? 'Marcando…' : 'Confirmar carga al vehículo'}
+            </button>
+            {!order.loadable && canApprovePartial && !showPartialForm && (
+              <button
+                type="button"
+                onClick={() => { setPartialError(null); setShowPartialForm(true); }}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-300 hover:bg-emerald-100"
+              >
+                <ShieldCheck size={14} />
+                Autorizar entrega parcial (cliente acepta sin estos items)
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Form de aprobación parcial (compartido por classify y load flow) */}
+        {(showClassifyFlow || showLoadFlow) && showPartialForm && (
+          <div className="card space-y-2 p-3 ring-1 ring-emerald-200">
+            <div className="text-xs font-medium text-slate-700">Nota de aprobación (queda en el log)</div>
+            <textarea
+              value={partialNote}
+              onChange={(e) => setPartialNote(e.target.value)}
+              maxLength={500}
+              rows={2}
+              placeholder="Ej: Cliente acepta sin Beneful 10kg — quedó en deuda para el próximo envío."
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+            {partialError && (
+              <div className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">{partialError}</div>
+            )}
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => { setShowPartialForm(false); setPartialNote(''); }}
+                className="text-xs text-slate-600 hover:underline"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => approvePartial.mutate()}
+                disabled={approvePartial.isPending}
+                className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {approvePartial.isPending ? 'Aprobando…' : 'Confirmar aprobación'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ─────────── Éxito clasificación / carga ─────────── */}
+        {justClassified && (
+          <SuccessCard
+            title="✓ Pedido clasificado"
+            description={`Pedido #${order.number} agrupado en la ruma de ${order.route || 'su ruta'}.`}
+          />
+        )}
+        {justLoaded && (
+          <SuccessCard
+            title="✓ Cargado al vehículo"
+            description={`Pedido #${order.number} subido a la camioneta de ${order.route || 'su ruta'}.`}
+          />
+        )}
+
+        {/* ─────────── Estados informativos ─────────── */}
+        {isAlreadyLoaded && !justLoaded && (
+          <div className="card space-y-1 p-4 ring-1 ring-emerald-200">
+            <div className="flex items-center gap-2 text-emerald-800">
+              <CheckCircle2 size={18} />
+              <strong>{order.status === 'delivered' ? 'Entregado' : 'Ya cargado al vehículo'}</strong>
+            </div>
+            {order.loadedAt && (
+              <div className="text-xs text-slate-500">
+                Cargado el {new Date(order.loadedAt).toLocaleString('es-CL')}.
+              </div>
+            )}
+          </div>
+        )}
+
+        {isBlocked && (
+          <div className="card space-y-1 p-4 ring-1 ring-red-200">
+            <div className="flex items-center gap-2 text-red-700">
+              <AlertOctagon size={18} />
+              <strong>Pedido bloqueado</strong>
+            </div>
+            <div className="text-xs text-slate-500">
+              Fue removido de su secuencia. Tiene que volver a entrar a una nueva secuencia.
+            </div>
+          </div>
+        )}
+
+        {isNotPacked && (
+          <div className="card space-y-1 p-4 ring-1 ring-amber-200">
+            <div className="flex items-center gap-2 text-amber-800">
+              <AlertTriangle size={18} />
+              <strong>Pedido aún no empacado</strong>
+            </div>
+            <div className="text-xs text-slate-500">
+              Tiene que pasar por packing antes de clasificar o cargar.
+            </div>
+          </div>
+        )}
+
+        {/* Contenido en la bolsa (siempre visible cuando hay items B1) */}
+        {b1Items.length > 0 && (
+          <div className="card p-4">
+            <h3 className="mb-2 text-sm font-semibold text-slate-700">Contenido en la bolsa</h3>
             <ul className="space-y-2">
               {b1Items.map((it) => (
                 <li key={it.id} className="flex items-center gap-3">
@@ -186,47 +432,13 @@ export function Scan() {
                 </li>
               ))}
             </ul>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Acciones */}
+        {/* Acciones secundarias / login */}
         <div className="space-y-2">
           {user ? (
             <>
-              {canPack && order.packable && order.openSequenceId && (
-                <button
-                  onClick={() => navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`)}
-                  className="btn-primary w-full"
-                >
-                  <ClipboardCheck size={18} />
-                  Empacar este pedido
-                </button>
-              )}
-              {canPickB2 && order.b2Pickable && order.openSequenceId && !order.packable && (
-                <button
-                  onClick={() => navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`)}
-                  className="btn-primary w-full"
-                >
-                  <ClipboardCheck size={18} />
-                  Pickear B2 de este pedido
-                </button>
-              )}
-              {canLoad && order.status === 'packed' && (
-                <button
-                  onClick={() => markLoaded.mutate()}
-                  disabled={markLoaded.isPending}
-                  className="btn-primary w-full"
-                >
-                  <Truck size={18} />
-                  {markLoaded.isPending ? 'Marcando…' : 'Confirmar carga al vehículo'}
-                </button>
-              )}
-              {canLoad && isLoaded && (
-                <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                  <CheckCircle2 size={18} />
-                  Cargado al vehículo ✓
-                </div>
-              )}
               <button
                 type="button"
                 onClick={() => ordersApi.openAlbaran(order.id).catch((e) => console.error(e))}
@@ -235,12 +447,6 @@ export function Scan() {
                 <Printer size={18} />
                 Reimprimir albarán
               </button>
-
-              {/* Para repartidores y operadores de carga: cámara embebida para
-                  escanear el siguiente pedido sin volver a abrir la cámara
-                  externa cada vez. */}
-              {/* Cualquier usuario logueado puede usar el escáner embebido —
-                  útil para repartidores que no tienen un cap específico. */}
               {!showScanner && (
                 <button
                   type="button"
@@ -279,7 +485,6 @@ export function Scan() {
                   )}
                 </div>
               )}
-
               <Link to="/" className="btn-ghost w-full border border-slate-300">
                 <Home size={16} />
                 Volver al inicio
@@ -290,11 +495,7 @@ export function Scan() {
               <div className="flex items-start gap-2 text-amber-800">
                 <AlertTriangle size={18} className="mt-0.5 shrink-0" />
                 <div className="text-sm">
-                  {order.packable
-                    ? 'Inicia sesión para empacar este pedido (queda registrado a tu nombre).'
-                    : order.status === 'packed'
-                    ? 'Inicia sesión para confirmar carga al vehículo o reimprimir el albarán.'
-                    : 'Inicia sesión para acceder a este pedido.'}
+                  Inicia sesión para clasificar, cargar o reimprimir el albarán.
                 </div>
               </div>
               <Link
@@ -309,10 +510,10 @@ export function Scan() {
         </div>
       </div>
 
-      {/* Modal selector cuando el usuario tiene 2+ acciones posibles para
-          este pedido (ej. caps B1+B2, o B2+Load). Si solo aplica 1 acción,
-          el useEffect ya redirigió. Si 0, no se muestra. */}
-      {showSelector && availableActions.length >= 2 && (
+      {/* Modal selector cuando hay 2+ acciones de PACKING posibles
+          (cap B1 + cap B2 sobre el mismo pedido). Las acciones load/classify
+          NO entran al selector porque ahora se ejecutan inline. */}
+      {showSelector && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="card w-full max-w-md space-y-3 p-4">
             <div>
@@ -321,34 +522,24 @@ export function Scan() {
                 Tu cuenta tiene varios roles aplicables a #{order.number}. Elige una acción.
               </p>
             </div>
-
             <div className="space-y-2">
-              {availableActions.includes('pack') && (
+              {canPack && order.packable && (
                 <SelectorAction
                   icon={<ClipboardCheck size={20} />}
-                  title="Empacar B1"
-                  description="Armar la bolsa con los items de Bodega 1 y cerrar el pedido."
-                  onClick={() => pickAction('pack')}
+                  title={`Empacar ${warehouseLabel('B1')}`}
+                  description={`Armar la bolsa con los items de ${warehouseLabel('B1')} y cerrar el pedido.`}
+                  onClick={() => pickSelectorAction('pack')}
                 />
               )}
-              {availableActions.includes('pickB2') && (
+              {canPickB2 && order.b2Pickable && (
                 <SelectorAction
                   icon={<ClipboardCheck size={20} />}
-                  title="Pickear B2"
-                  description="Armar la sub-bolsa con los items de Bodega 2 y cerrar el B2."
-                  onClick={() => pickAction('pickB2')}
-                />
-              )}
-              {availableActions.includes('load') && (
-                <SelectorAction
-                  icon={<Truck size={20} />}
-                  title="Cargar al vehículo"
-                  description="Confirmar que la bolsa está cargada en la camioneta de la ruta."
-                  onClick={() => pickAction('load')}
+                  title={`Pickear ${warehouseLabel('B2')}`}
+                  description={`Armar la sub-bolsa con los items de ${warehouseLabel('B2')} y cerrar el ${warehouseLabel('B2')}.`}
+                  onClick={() => pickSelectorAction('pickB2')}
                 />
               )}
             </div>
-
             <button
               type="button"
               onClick={() => setShowSelector(false)}
@@ -360,6 +551,18 @@ export function Scan() {
         </div>
       )}
     </ScanShell>
+  );
+}
+
+function SuccessCard({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="card space-y-1 p-4 ring-2 ring-emerald-300 bg-emerald-50">
+      <div className="text-base font-bold text-emerald-800">{title}</div>
+      <div className="text-xs text-emerald-700">{description}</div>
+      <div className="pt-1 text-[11px] italic text-emerald-700">
+        Escaneá el siguiente pedido con el botón de abajo para seguir.
+      </div>
+    </div>
   );
 }
 
@@ -389,7 +592,6 @@ function SelectorAction({
   );
 }
 
-// Shell minimal sin sidebar, accesible sin login.
 function ScanShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-100">

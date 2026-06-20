@@ -59,6 +59,10 @@ model Order {
   customerName    String?  @map("customer_name") @db.VarChar(200)
   customerAddress String?  @map("customer_address") @db.VarChar(500)
   shippingMethod  String?  @map("shipping_method") @db.VarChar(200)
+  driverId        Int?     @map("driver_id")
+  driverName      String?  @map("driver_name") @db.VarChar(200)
+  vehicle         String?  @db.VarChar(200)
+  patente         String?  @db.VarChar(50)
   hasB2Pending    Boolean  @default(false) @map("has_b2_pending")
   bagsExpected    Int      @default(1) @map("bags_expected")
   // Entrega parcial aprobada: si el cliente acepta recibir el pedido aunque

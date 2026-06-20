@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
+import { getOrderLoadability } from '../services/order-actions.js';
 
 const router = Router();
 
@@ -36,6 +37,11 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
       && openSequenceId != null
       && !['blocked', 'delivered'].includes(order.status);
 
+    // Loadability: para que la UI de scan post-packing pueda mostrar el
+    // bloqueo B2 o el banner de entrega parcial. Se incluye en la respuesta
+    // pública porque cualquiera con el albarán físico ya conoce los items.
+    const loadability = await getOrderLoadability(order.id);
+
     res.json({
       order: {
         id: order.id,
@@ -50,9 +56,15 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
         hasB2Pending: order.hasB2Pending,
         allowPartialDelivery: order.allowPartialDelivery,
         partialDeliveryNote: order.partialDeliveryNote,
+        classifiedAt: order.classifiedAt,
+        loadedAt: order.loadedAt,
         packable,
         b2Pickable,
         openSequenceId,
+        loadable: loadability.loadable,
+        partialApproved: loadability.partialApproved,
+        missingB2Items: loadability.missingB2Items || [],
+        blockReason: loadability.reason || null,
         items: order.items.map((it) => ({
           id: it.id,
           qty: it.qty,

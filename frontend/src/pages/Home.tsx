@@ -1,20 +1,30 @@
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import { Link } from 'react-router-dom';
-import { Package, Scan, ClipboardList, BarChart3 } from 'lucide-react';
+import { Package, ClipboardList, BarChart3, Truck } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { dispatchApi } from '@/lib/dispatch';
+import { RouteProgressPills } from '@/components/RouteProgressPills';
 
 type Tile = { to: string; label: string; icon: typeof Package; caps: string[] };
 
 const TILES: Tile[] = [
   { to: '/sequences/new', label: 'Generar secuencia', icon: ClipboardList, caps: [CAPS.PACK_B1] },
   { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PACK_B2] },
-  { to: '/dispatch', label: 'Clasificación y carga', icon: Scan, caps: [CAPS.LOAD] },
   { to: '/dashboard', label: 'Supervisión', icon: BarChart3, caps: [CAPS.SUPERVISE] },
 ];
 
 export function Home() {
   const { user } = useAuth();
   const tiles = TILES.filter((t) => t.caps.some((c) => hasCap(user, c)));
+  const canSeeDispatch = hasCap(user, CAPS.LOAD) || hasCap(user, CAPS.SUPERVISE);
+
+  const { data: routes } = useQuery({
+    queryKey: ['dispatch-today'],
+    queryFn: () => dispatchApi.today(),
+    enabled: canSeeDispatch,
+    refetchInterval: 10_000,
+  });
 
   return (
     <div className="space-y-6">
@@ -43,6 +53,28 @@ export function Home() {
               <div className="text-sm font-medium text-slate-800">{label}</div>
             </Link>
           ))}
+        </div>
+      )}
+
+      {canSeeDispatch && (
+        <div className="space-y-3">
+          <div className="card space-y-2 p-4">
+            <div className="flex items-center gap-2">
+              <Truck size={16} className="text-brand-700" />
+              <h3 className="text-sm font-semibold text-slate-800">Progreso del día — clasificación</h3>
+            </div>
+            <RouteProgressPills routes={routes || []} mode="classified" />
+          </div>
+          <div className="card space-y-2 p-4">
+            <div className="flex items-center gap-2">
+              <Truck size={16} className="text-emerald-700" />
+              <h3 className="text-sm font-semibold text-slate-800">Progreso del día — carga al vehículo</h3>
+            </div>
+            <RouteProgressPills routes={routes || []} mode="loaded" />
+          </div>
+          <div className="text-center text-xs text-slate-500">
+            Para clasificar o cargar: escaneá el QR del pedido con la cámara o con el botón "Escanear otro pedido" después de cualquier scan.
+          </div>
         </div>
       )}
     </div>

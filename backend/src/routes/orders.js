@@ -67,6 +67,108 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
   }
 });
 
+// Seguimiento completo de un pedido: snapshot actual + timeline cronológica
+// de eventos con actor humano (nombre del usuario WP). Solo supervisores.
+router.get('/by-wp/:wpOrderId/tracking', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const wpOrderId = Number(req.params.wpOrderId);
+    if (!wpOrderId) throw new HttpError(400, 'Invalid wpOrderId');
+
+    const order = await prisma.order.findUnique({
+      where: { wpOrderId },
+      include: {
+        items: { include: { product: true } },
+        packedBy: { select: { wpUserId: true, displayName: true, username: true } },
+        pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
+        b2ClosedBy: { select: { wpUserId: true, displayName: true, username: true } },
+        sequenceLinks: {
+          include: { sequence: { select: { id: true, createdAt: true, status: true } } },
+        },
+      },
+    });
+    if (!order) throw new HttpError(404, `Pedido ${wpOrderId} no encontrado en el WMS`);
+
+    // Eventos del pedido + lookup de los actores (display name desde users_meta).
+    const events = await prisma.event.findMany({
+      where: { orderId: order.id },
+      orderBy: { createdAt: 'asc' },
+    });
+    const actorIds = [...new Set(events.map((e) => e.actorId).filter((v) => v != null))];
+    const actors = actorIds.length
+      ? await prisma.userMeta.findMany({
+          where: { wpUserId: { in: actorIds } },
+          select: { wpUserId: true, displayName: true, username: true },
+        })
+      : [];
+    const actorMap = new Map(actors.map((a) => [a.wpUserId, a]));
+
+    const timeline = events.map((e) => ({
+      id: e.id,
+      type: e.type,
+      createdAt: e.createdAt,
+      actorId: e.actorId,
+      actor: e.actorId ? actorMap.get(e.actorId) || null : null,
+      meta: e.meta || null,
+    }));
+
+    res.json({
+      order: {
+        id: order.id,
+        wpOrderId: order.wpOrderId,
+        number: order.number,
+        status: order.status,
+        route: order.route,
+        stopPosition: order.stopPosition,
+        customerName: order.customerName,
+        customerAddress: order.customerAddress,
+        shippingMethod: order.shippingMethod,
+        driverId: order.driverId,
+        driverName: order.driverName,
+        vehicle: order.vehicle,
+        patente: order.patente,
+        hasB2Pending: order.hasB2Pending,
+        allowPartialDelivery: order.allowPartialDelivery,
+        partialDeliveryNote: order.partialDeliveryNote,
+        bagsExpected: order.bagsExpected,
+        createdAt: order.createdAt,
+        claimedAt: order.claimedAt,
+        packedAt: order.packedAt,
+        b2ClosedAt: order.b2ClosedAt,
+        classifiedAt: order.classifiedAt,
+        loadedAt: order.loadedAt,
+        deliveredAt: order.deliveredAt,
+        updatedAt: order.updatedAt,
+        pickedBy: order.pickedBy,
+        packedBy: order.packedBy,
+        b2ClosedBy: order.b2ClosedBy,
+        sequenceLinks: order.sequenceLinks.map((sl) => ({
+          sequenceId: sl.sequenceId,
+          sequence: sl.sequence,
+        })),
+        items: order.items.map((it) => ({
+          id: it.id,
+          productId: it.productId,
+          qty: it.qty,
+          warehouse: it.warehouse,
+          pickedAt: it.pickedAt,
+          packedAt: it.packedAt,
+          product: it.product
+            ? {
+                wpProductId: it.product.wpProductId,
+                sku: it.product.sku,
+                name: it.product.name,
+                thumbnailUrl: it.product.thumbnailUrl,
+              }
+            : null,
+        })),
+      },
+      timeline,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Lookup por wpOrderId (el ID que viene del QR escaneado).
 router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (req, res, next) => {
   try {

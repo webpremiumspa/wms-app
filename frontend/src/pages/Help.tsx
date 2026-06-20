@@ -16,6 +16,7 @@ import {
   BookOpen,
   Stethoscope,
   Theater,
+  Activity,
 } from 'lucide-react';
 import clsx from 'clsx';
 
@@ -195,13 +196,7 @@ const SECTIONS: Section[] = [
         <p>Una secuencia agrupa varios pedidos para procesarlos juntos. Es <strong>agnóstica de bodega</strong>: arrastra tanto el picking B1 (para empacar) como el picking B2 (a granel) de los pedidos seleccionados. Cada flujo cierra por separado.</p>
 
         <h4>Paso 1 · Sincronizar pedidos desde WooCommerce</h4>
-        <p>Si los pedidos del día todavía no están en el WMS:</p>
-        <ol>
-          <li>Elige un rango de fechas (presets: <em>Hoy</em>, <em>Ayer</em>, <em>Últimos 2 días</em>, o calendario manual).</li>
-          <li>Marca los estados de WC a incluir: <em>Procesando</em>, <em>En espera</em>, <em>Completado</em>, <em>Pendiente pago</em>, <em>En ruta</em>.</li>
-          <li>Si cambiaste la <strong>bodega</strong> de algún producto en WC y quieres que el WMS lo refleje, marca <em>Refrescar metadata de productos</em>.</li>
-          <li>Click <strong>Sincronizar</strong>.</li>
-        </ol>
+        <p>Click único <strong>Sincronizar pedidos en preparación</strong>. Trae al WMS todos los pedidos en estado <code>en-preparacion</code> desde WC. No hay filtro de fecha porque el estado es transitorio — solo trae lo que está activo. Se refresca también la bodega B1/B2 de los productos automáticamente.</p>
 
         <h4>Paso 2 · Seleccionar pedidos y generar</h4>
         <ol>
@@ -352,6 +347,18 @@ const SECTIONS: Section[] = [
           <li>Toca <strong>Escanear pedido</strong> o vuelve a la lista para el siguiente.</li>
         </ol>
 
+        <h4>Vista del día (cross-secuencia)</h4>
+        <p>Si hay varias secuencias abiertas con B2 pendiente, en lugar de entrar a cada una, abrí <strong>Picking → Picking B2 · Vista del día</strong>. Vas a ver:</p>
+        <ul>
+          <li><strong>Tabla agrupada por SKU</strong>: cuánto necesitás sacar total de cada producto + a qué pedidos va distribuido. Sirve como guía para recorrer la bodega una sola vez.</li>
+          <li><strong>Filtro por ruta</strong> en pills con contador <code>R1 - Juan (3/8)</code>. Cuando lo activás, la tabla agrupada también se filtra.</li>
+          <li><strong>Lista de pedidos B2 pendientes</strong> de todas las secuencias, ordenados por ruta + parada. Cada uno linkea a su vista per-pedido para cerrar.</li>
+          <li><strong>Buscador</strong> por número de pedido (resalta la coincidencia).</li>
+        </ul>
+        <p className="text-slate-600">
+          El cierre sigue siendo per-pedido (sub-bolsa atada). La vista del día es solo organización + visibilidad.
+        </p>
+
         <h4>Cierre automático del flujo B2 de la secuencia</h4>
         <p>
           Cuando todos los pedidos con items B2 de una secuencia tienen su B2 cerrado, el flujo B2 de esa secuencia se cierra automáticamente. No hay un botón "cerrar B2 de la secuencia" — es transparente.
@@ -375,39 +382,68 @@ const SECTIONS: Section[] = [
     icon: Scan,
     body: (
       <>
-        <p>Cuando llega el camión de B2, las bolsas de B1 ya están armadas. El operador de carga debe distribuir cada bolsa a su camioneta correspondiente.</p>
+        <p>La clasificación (agrupar por ruta) y la carga al vehículo son <strong>dos momentos físicos distintos</strong>. Antes estaban juntos en un solo paso; ahora cada uno es un escaneo de QR explícito en su propio momento. <strong>No hay menú "Clasificación"</strong> — todo arranca escaneando el QR del albarán con la cámara del celular.</p>
+
+        <h4>1 · Clasificar (agrupar por ruta)</h4>
         <ol>
-          <li>Abre <strong>Clasificación</strong>. La cámara se activa.</li>
-          <li>Apunta al QR del albarán de la bolsa. En 1-2 segundos el sistema muestra:
-            <ul>
-              <li>Ruta asignada (R1, R2, ...)</li>
-              <li>Posición de carga dentro de la ruta (parada 1, 2, ...)</li>
-              <li>Si hay productos B2 pendientes</li>
-            </ul>
-          </li>
-          <li>Lleva la bolsa a la zona de su camioneta.</li>
-          <li>Cuando la subes al vehículo, vuelve a escanear (o si ya la tienes en pantalla) y toca <strong>Confirmar carga al vehículo</strong>.</li>
-          <li>El panel de "Progreso por ruta" abajo te dice cuántas bolsas faltan por clasificar y cargar para cada camioneta.</li>
+          <li>Abrí la cámara nativa del celular y apuntá al QR del albarán de un pedido empacado.</li>
+          <li>El QR abre la app del WMS. La vista cambia según el estado del pedido — para uno empacado vas a ver la <strong>Vista de Clasificación</strong>: ruta destacada (R1 - Juan), parada, alerta B2 si aplica.</li>
+          <li>Arriba ves las <strong>pills de progreso por ruta</strong>: <code>R1 - Juan (3/8)</code>, <code>R2 - Pedro (5/5)</code>, etc. La de tu pedido queda destacada en azul.</li>
+          <li>Llevá la bolsa a la ruma física de esa ruta.</li>
+          <li>Tocá <strong>Confirmar clasificación</strong>.</li>
+          <li>Aparece una tarjeta verde "✓ Pedido clasificado" + botón <strong>Escanear otro pedido</strong> (abre cámara in-app, más rápido que volver a abrir la cámara del SO). Repetí.</li>
         </ol>
-        <p className="text-slate-600">
-          La distinción <em>clasificada</em> vs <em>cargada</em> permite detectar bolsas que quedaron en el piso después de la clasificación.
-        </p>
+
+        <h4>2 · Cargar al vehículo</h4>
+        <p>Cuando las rumas están listas y llegan las camionetas:</p>
+        <ol>
+          <li>Escaneá nuevamente el QR del pedido (cámara externa o botón "Escanear otro pedido" si seguís adentro).</li>
+          <li>Como el pedido ya está clasificado, esta vez ves la <strong>Vista de Carga</strong>: pills de progreso <em>cargados</em> por ruta, ruta destacada, botón <strong>Confirmar carga al vehículo</strong>.</li>
+          <li>Subí la bolsa al vehículo y tocá el botón.</li>
+          <li>Tarjeta verde "✓ Cargado al vehículo" + Escanear otro.</li>
+        </ol>
 
         <h4>Bloqueo automático por B2 incompleto</h4>
         <p>
-          Si al escanear ves un <strong className="text-red-700">banner rojo grande "⚠ B2 INCOMPLETO — NO CARGAR"</strong> con la lista de items faltantes, significa que la pickeadora B2 no encontró stock para ese pedido y nadie autorizó la entrega parcial. El botón <em>"Confirmar carga al vehículo"</em> queda deshabilitado.
+          Si al escanear ves un <strong className="text-red-700">banner rojo grande "⚠ B2 INCOMPLETO — NO {`{clasificar/cargar}`}"</strong> con la lista de items faltantes, significa que el picker B2 no encontró stock para ese pedido y nadie autorizó la entrega parcial. El botón de confirmar queda deshabilitado.
         </p>
         <ul>
-          <li>Deja la bolsa en un rincón "no cargar" hasta que se resuelva.</li>
-          <li>Avisa al encargado de B1 para que llame al cliente o gestione el stock.</li>
-          <li>Si el cliente acepta entrega parcial y tienes el rol <code>wms_pack_b1</code> o <code>wms_supervise</code>, puedes autorizarla desde este mismo banner (botón verde <em>"Autorizar entrega parcial"</em>) y cargar al vehículo.</li>
+          <li>Dejá la bolsa en un rincón "no cargar".</li>
+          <li>Si tenés rol <code>wms_pack_b1</code> o <code>wms_supervise</code>, podés autorizar entrega parcial desde el mismo banner (botón verde).</li>
         </ul>
 
-        <h4>Indicadores especiales en la pantalla del pedido</h4>
-        <ul>
-          <li><strong>Banda verde "✓ Entrega parcial aprobada"</strong>: el pedido se va a cargar aunque le falten items B2 — el cliente ya lo aceptó. Mauricio verá la nota al escanear en la entrega.</li>
-          <li><strong>Banner amarillo "Contiene B2"</strong>: el pedido tiene items B2 completos. Recordatorio para no olvidarse del cargamento a granel.</li>
-        </ul>
+        <h4>Progreso por ruta — en Inicio</h4>
+        <p>En la pantalla <strong>Inicio</strong> vas a ver dos widgets con todas las pills de progreso: "Clasificación del día" y "Carga al vehículo del día". Sirve para chequear el estado global antes de arrancar o entre escaneos.</p>
+
+        <h4>Botón "Refrescar rutas" en Inicio</h4>
+        <p>Si la app externa asigna rutas DESPUÉS de empacar (caso normal), el webhook de WC ya las trae automáticamente al WMS. Si por algún motivo no llegan, presioná <strong>Refrescar rutas</strong> en Inicio y se sincronizan a mano todas las rutas/paradas/conductor/patente de los pedidos activos.</p>
+      </>
+    ),
+  },
+  {
+    id: 'tracking',
+    title: 'Seguimiento de un pedido (supervisores)',
+    icon: Activity,
+    body: (
+      <>
+        <p>Cuando un cliente pregunta "¿qué pasó con mi pedido?" o necesitás auditar qué hizo cada operador, abrí <strong>Seguimiento</strong> en el menú (solo visible con cap <code>wms_supervise</code>).</p>
+        <ol>
+          <li>Ingresá el <code>wpOrderId</code> (el número que ves en WC, ej. <code>1133335</code>) y tocá Buscar.</li>
+          <li>Aparece toda la trazabilidad del pedido en bloques:
+            <ul>
+              <li><strong>Estado actual</strong> + badges (status, B2, entrega parcial, método de envío).</li>
+              <li><strong>Cliente</strong> — nombre, dirección, método de envío.</li>
+              <li><strong>Ruta y reparto</strong> — ruta, parada, conductor (nombre), vehículo, patente. Si no aparecen, es porque el plugin externo no asignó aún.</li>
+              <li><strong>Hitos del proceso</strong> — quién y cuándo: claim, packing, cierre B2, clasificación, carga, entrega.</li>
+              <li><strong>Productos</strong> — items con bodega + indicador P/E (pickeado / empacado).</li>
+              <li><strong>Secuencias asociadas</strong> — historial si el pedido entró a varias secuencias (ej. una se eliminó y volvió a entrar a otra).</li>
+              <li><strong>Timeline de eventos</strong> — línea cronológica de cada acción del log con actor, tipo de evento y timestamp exacto.</li>
+            </ul>
+          </li>
+        </ol>
+        <p className="text-slate-600">
+          Los datos del conductor (id, nombre, patente, vehículo) vienen del plugin woo-delivery-groups vía las metas <code>_wdg_driver_id</code>, <code>_wdg_driver_name</code>, <code>_wdg_vehicle</code>, <code>_wdg_patente</code>. Se actualizan automáticamente vía webhook cada vez que se asigna una ruta.
+        </p>
       </>
     ),
   },

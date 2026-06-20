@@ -32,26 +32,16 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
 
     const loadability = await getOrderLoadability(order.id);
 
-    // Solo marcamos clasificado si está empacado Y es loadable (o tiene entrega
-    // parcial aprobada). Si está bloqueado por B2 incompleto, queda en `packed`.
-    let nextStatus = order.status;
-    if (order.status === 'packed' && loadability.loadable) {
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { status: 'classified', classifiedAt: new Date() },
-      });
-      await prisma.event.create({
-        data: { type: 'dispatch.classified', actorId: req.user.wpUserId, orderId: order.id },
-      });
-      nextStatus = 'classified';
-    }
-
+    // El scan ya NO clasifica automáticamente. La clasificación es ahora un
+    // paso explícito vía POST /dispatch/:id/classify, separado del proceso de
+    // carga al vehículo. Esto refleja la operación real: primero se agrupan
+    // los pedidos por ruta (clasificación), después se cargan los camiones.
     res.json({
       order: {
         id: order.id,
         wpOrderId: order.wpOrderId,
         number: order.number,
-        status: nextStatus,
+        status: order.status,
         route: order.route,
         stopPosition: order.stopPosition,
         customerName: order.customerName,
@@ -59,6 +49,7 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
         shippingMethod: order.shippingMethod,
         hasB2Pending: order.hasB2Pending,
         loadedAt: order.loadedAt,
+        classifiedAt: order.classifiedAt,
         loadable: loadability.loadable,
         partialApproved: loadability.partialApproved,
         partialDeliveryNote: order.partialDeliveryNote,
@@ -66,6 +57,46 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
         blockReason: loadability.reason || null,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Clasificación: separación física por ruta de los pedidos empacados. El
+// operador escanea el QR y confirma. Transición packed → classified. Requiere
+// ruta asignada y B2 completo (o entrega parcial aprobada).
+router.post('/:orderId/classify', requireCap(WMS_CAPS.LOAD), async (req, res, next) => {
+  try {
+    const id = Number(req.params.orderId);
+    const order = await prisma.order.findUnique({ where: { id } });
+    if (!order) throw new HttpError(404, 'Order not found');
+    if (order.status === 'classified' || order.status === 'loaded' || order.status === 'delivered') {
+      return res.json({ ok: true, alreadyClassified: true });
+    }
+    if (order.status !== 'packed') {
+      throw new HttpError(409, `Cannot classify order in status "${order.status}". Must be packed first.`);
+    }
+    if (!order.route) throw new HttpError(409, 'Order has no route assigned yet');
+
+    const loadability = await getOrderLoadability(id);
+    if (!loadability.loadable) {
+      throw new HttpError(409, 'Order has B2 items missing and partial delivery is not approved', {
+        missingB2Items: loadability.missingB2Items,
+        blockReason: loadability.reason,
+      });
+    }
+
+    await prisma.$transaction([
+      prisma.order.update({
+        where: { id },
+        data: { status: 'classified', classifiedAt: new Date() },
+      }),
+      prisma.event.create({
+        data: { type: 'dispatch.classified', actorId: req.user.wpUserId, orderId: id },
+      }),
+    ]);
+
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }
@@ -81,6 +112,9 @@ router.post('/:orderId/loaded', requireCap(WMS_CAPS.LOAD), async (req, res, next
     if (!order.route) throw new HttpError(409, 'Order has no route assigned yet');
     if (order.status === 'loaded' || order.status === 'delivered') {
       return res.json({ ok: true, alreadyLoaded: true });
+    }
+    if (order.status !== 'classified') {
+      throw new HttpError(409, `Cannot load order in status "${order.status}". Must be classified first.`);
     }
 
     const loadability = await getOrderLoadability(id);

@@ -15,8 +15,8 @@ import { PickingB2 } from '@/pages/PickingB2';
 import { PickingB2Day } from '@/pages/PickingB2Day';
 import { PickingB2Order } from '@/pages/Sequences/PickingB2Order';
 import { Picking } from '@/pages/Picking';
-import { Dispatch } from '@/pages/Dispatch';
 import { Dashboard } from '@/pages/Dashboard';
+import { Tracking } from '@/pages/Tracking';
 import { Help } from '@/pages/Help';
 import { Debug } from '@/pages/Debug';
 import { Scan } from '@/pages/Scan';
@@ -51,8 +51,8 @@ export default function App() {
               <Route path="picking/b2-day" element={<PickingB2Day />} />
               <Route path="sequences/:id/picking-b2" element={<PickingB2 />} />
               <Route path="sequences/:id/picking-b2/:orderId" element={<PickingB2Order />} />
-              <Route path="dispatch" element={<Dispatch />} />
               <Route path="dashboard" element={<Dashboard />} />
+              <Route path="tracking" element={<Tracking />} />
               <Route path="debug" element={<Debug />} />
               <Route path="help" element={<Help />} />
             </Route>
