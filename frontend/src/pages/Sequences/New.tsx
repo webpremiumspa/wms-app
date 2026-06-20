@@ -8,6 +8,7 @@ import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/lab
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 import type { StockProblem } from '@/lib/types';
 import clsx from 'clsx';
 
@@ -16,6 +17,7 @@ export function SequenceNew() {
   const queryClient = useQueryClient();
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [problems, setProblems] = useState<StockProblem[] | null>(null);
+  const [search, setSearch] = useState('');
 
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
@@ -254,8 +256,9 @@ export function SequenceNew() {
               Mostrando {pendingList.length} de {pendingTotal} pedidos pendientes. Si necesitas ver el resto, contactá soporte para aumentar el límite.
             </div>
           )}
+        <OrderSearchBox value={search} onChange={setSearch} />
         <div className="space-y-2">
-          {pendingList.map((o) => {
+          {pendingList.filter((o) => matchesOrderId(o.number, search)).map((o) => {
             const isSel = selected.has(o.id);
             return (
               <button
@@ -268,7 +271,9 @@ export function SequenceNew() {
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">#{o.number}</span>
+                    <span className="font-semibold">
+                      #<HighlightedNumber text={o.number} match={search} />
+                    </span>
                     {o.route && <Badge variant="blue">{o.route}</Badge>}
                     {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={o.shippingMethod} />

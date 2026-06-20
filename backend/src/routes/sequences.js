@@ -240,13 +240,21 @@ router.get('/:id/albaranes.pdf', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE
       orderBy: { id: 'asc' },
     });
 
-    if (orders.length === 0) {
+    // Filtro opcional: excluir pedidos sin items B1 (todo el contenido es B2).
+    // Estos pedidos no necesitan albarán impreso porque el picker B2 los maneja
+    // desde el celular con la app.
+    const excludeOnlyB2 = req.query.excludeOnlyB2 === '1' || req.query.excludeOnlyB2 === 'true';
+    const filtered = excludeOnlyB2
+      ? orders.filter((o) => o.items.some((it) => it.warehouse === 'B1'))
+      : orders;
+
+    if (filtered.length === 0) {
       throw new HttpError(409, 'No printable orders in this sequence');
     }
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="secuencia-${id}-albaranes.pdf"`);
-    await renderSequenceAlbaranesPdf(orders, res);
+    await renderSequenceAlbaranesPdf(filtered, res);
   } catch (err) {
     next(err);
   }

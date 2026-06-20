@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, CheckCircle2, Image as ImageIcon, List, Package } from 'lucide-react';
@@ -8,13 +8,15 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
-import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
+import { RouteFilter, NO_ROUTE_KEY, type RouteFilterValue, type RouteCount } from '@/components/RouteFilter';
 import { warehouseLabel } from '@/lib/labels';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
+import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 
 export function PickingB2Day() {
   const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
   const [showSummary, setShowSummary] = useState(true);
+  const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['picking-b2-today'],
@@ -22,12 +24,55 @@ export function PickingB2Day() {
     refetchInterval: 5000,
   });
 
+  // Contador (cerrados/total) por ruta para mostrar en cada pill.
+  const routeCounts = useMemo<Record<string, RouteCount>>(() => {
+    if (!data) return {};
+    const out: Record<string, RouteCount> = {};
+    for (const o of data.orders) {
+      const key = o.route || NO_ROUTE_KEY;
+      if (!out[key]) out[key] = { closed: 0, total: 0 };
+      out[key].total += 1;
+      if (o.b2ClosedAt) out[key].closed += 1;
+    }
+    return out;
+  }, [data]);
+
   if (isLoading || !data) return <Spinner />;
 
   const total = data.orders.length;
   const closed = data.orders.filter((o) => !!o.b2ClosedAt).length;
   const { routes, hasNoRoute } = extractRoutes(data.orders);
-  const sorted = applyRouteFilter(data.orders, routeFilter);
+
+  // Ordenes que pasan ruta + buscador.
+  const filteredOrders = applyRouteFilter(data.orders, routeFilter).filter((o) =>
+    matchesOrderId(o.number, search),
+  );
+
+  // Para la tabla agrupada: si hay filtro de ruta, recalculamos sumando solo
+  // los items de los pedidos visibles. Si no hay filtro, usa el summary global
+  // del backend. Esto evita mostrar "10 SKUs" cuando filtraste a 2 pedidos.
+  const summaryFiltered = useMemo(() => {
+    if (routeFilter === null) return data.summary;
+    const visibleWpIds = new Set(applyRouteFilter(data.orders, routeFilter).map((o) => o.id));
+    // Sumamos qty de cada SKU pero solo las "ordenes" del summary que estén
+    // en visibleWpIds. Comparamos por wpOrderId.
+    const visibleNumbers = new Set(
+      applyRouteFilter(data.orders, routeFilter).map((o) => o.number),
+    );
+    const rows = [];
+    for (const row of data.summary) {
+      const myOrders = row.orders.filter((ro) => visibleNumbers.has(ro.number));
+      if (myOrders.length === 0) continue;
+      rows.push({
+        ...row,
+        totalQty: myOrders.reduce((acc, ro) => acc + ro.qty, 0),
+        orders: myOrders,
+      });
+    }
+    return rows;
+    // visibleWpIds es para futuro si necesitamos cruzar por id local
+    void visibleWpIds;
+  }, [data, routeFilter]);
 
   return (
     <div className="space-y-4 pb-4">
@@ -45,6 +90,15 @@ export function PickingB2Day() {
 
       <ProgressBar value={closed} total={total} label="Pedidos B2 cerrados" />
 
+      {/* Filtro de ruta primero (con contadores por pill) */}
+      <RouteFilter
+        selected={routeFilter}
+        routes={routes}
+        hasNoRoute={hasNoRoute}
+        onChange={setRouteFilter}
+        counts={routeCounts}
+      />
+
       {/* ────────────── Tabla informativa (guía para recorrer la bodega) ────────────── */}
       <div className="card overflow-hidden">
         <button
@@ -57,15 +111,16 @@ export function PickingB2Day() {
             <span className="text-sm font-semibold text-slate-800">
               Productos a sacar de {warehouseLabel('B2')}
             </span>
-            <Badge variant="amber">{data.summary.length} SKU</Badge>
+            <Badge variant="amber">{summaryFiltered.length} SKU</Badge>
+            {routeFilter && <Badge variant="blue">filtrado por ruta</Badge>}
           </div>
           <List size={16} className={clsx('text-slate-400 transition', !showSummary && 'rotate-180')} />
         </button>
         {showSummary && (
           <div className="border-t border-slate-200 px-2 py-2">
-            {data.summary.length === 0 ? (
+            {summaryFiltered.length === 0 ? (
               <div className="px-2 py-4 text-center text-xs text-slate-500">
-                Sin items pendientes. Todos los pedidos cerraron B2.
+                Sin items pendientes con este filtro.
               </div>
             ) : (
               <table className="w-full text-xs">
@@ -78,7 +133,7 @@ export function PickingB2Day() {
                   </tr>
                 </thead>
                 <tbody>
-                  {data.summary.map((row) => (
+                  {summaryFiltered.map((row) => (
                     <tr key={row.productId} className="border-t border-slate-100 align-top">
                       <td className="px-2 py-2">
                         <div className="flex items-center gap-2">
@@ -113,19 +168,18 @@ export function PickingB2Day() {
         )}
       </div>
 
-      {/* ────────────── Filtros y lista de pedidos ────────────── */}
-      {routes.length > 0 || hasNoRoute ? (
-        <RouteFilter routes={routes} hasNoRoute={hasNoRoute} value={routeFilter} onChange={setRouteFilter} />
-      ) : null}
-
+      {/* ────────────── Buscador + lista de pedidos ────────────── */}
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">Pedidos pendientes</h3>
-        {sorted.length === 0 ? (
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-slate-700">Pedidos pendientes</h3>
+        </div>
+        <OrderSearchBox value={search} onChange={setSearch} />
+        {filteredOrders.length === 0 ? (
           <div className="card p-6 text-center text-sm text-slate-500">
-            Sin pedidos B2 pendientes con este filtro.
+            {search ? 'Sin pedidos que coincidan con la búsqueda.' : 'Sin pedidos B2 pendientes con este filtro.'}
           </div>
         ) : (
-          sorted.map((o) => {
+          filteredOrders.map((o) => {
             const done = !!o.b2ClosedAt;
             const to = o.sequenceId ? `/sequences/${o.sequenceId}/picking-b2/${o.id}` : '#';
             return (
@@ -139,7 +193,9 @@ export function PickingB2Day() {
               >
                 <div className="min-w-0 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">#{o.number}</span>
+                    <span className="font-semibold">
+                      #<HighlightedNumber text={o.number} match={search} />
+                    </span>
                     {o.route && <Badge variant="blue">{o.route}</Badge>}
                     {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
                     <Badge variant="amber">{warehouseLabel('B2')} ×{o.itemCount}</Badge>

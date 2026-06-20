@@ -12,6 +12,7 @@ import { QRScanner } from '@/components/QRScanner';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { warehouseLabel } from '@/lib/labels';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
+import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 
 function parseQrToWpId(raw: string): number | null {
   const t = raw.trim();
@@ -29,6 +30,7 @@ export function PickingB2() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
+  const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['picking-b2-sequence', seqId],
@@ -110,8 +112,9 @@ export function PickingB2() {
         </div>
       )}
 
+      <OrderSearchBox value={search} onChange={setSearch} />
       <div className="space-y-2">
-        {sorted.map((o) => {
+        {sorted.filter((o) => matchesOrderId(o.number, search)).map((o) => {
           const done = !!o.b2ClosedAt;
           return (
             <Link
@@ -125,7 +128,9 @@ export function PickingB2() {
             >
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">#{o.number}</span>
+                  <span className="font-semibold">
+                    #<HighlightedNumber text={o.number} match={search} />
+                  </span>
                   {o.route && <Badge variant="blue">{o.route}</Badge>}
                   {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
                   <Badge variant="amber">{warehouseLabel('B2')} ×{o.itemCount}</Badge>

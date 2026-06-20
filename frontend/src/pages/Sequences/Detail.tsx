@@ -10,6 +10,7 @@ import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
+import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
@@ -72,6 +73,7 @@ export function SequenceDetail() {
   const [removeTarget, setRemoveTarget] = useState<{ id: number; number: string } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
+  const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['sequence', seqId],
@@ -261,7 +263,10 @@ export function SequenceDetail() {
             />
           );
         })()}
-        {applyRouteFilter(seq.orders.map(({ order }) => order), routeFilter).map((order) => {
+        <OrderSearchBox value={search} onChange={setSearch} />
+        {applyRouteFilter(seq.orders.map(({ order }) => order), routeFilter)
+          .filter((order) => matchesOrderId(order.number, search))
+          .map((order) => {
           const isOpen = expanded.has(order.id);
           const tooLateToRemove = ['classified', 'loaded', 'delivered'].includes(order.status);
           return (
@@ -277,7 +282,9 @@ export function SequenceDetail() {
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold">#{order.number}</span>
+                    <span className="font-semibold">
+                      #<HighlightedNumber text={order.number} match={search} />
+                    </span>
                     {order.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={order.shippingMethod} />
                     <Badge

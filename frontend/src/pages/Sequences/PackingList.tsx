@@ -12,6 +12,7 @@ import { QRScanner } from '@/components/QRScanner';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 import { warehouseLabel } from '@/lib/labels';
+import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 
 // Extrae el wpOrderId del QR (URL nueva o legacy WMS:<id>).
 function parseQrToWpId(raw: string): number | null {
@@ -32,6 +33,8 @@ export function PackingList() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
+  const [excludeOnlyB2, setExcludeOnlyB2] = useState(true);
+  const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['sequence', seqId, 'pending-packing'],
@@ -57,7 +60,7 @@ export function PackingList() {
     setPrintError(null);
     setPrinting(true);
     try {
-      await sequencesApi.openAlbaranesBatch(seqId);
+      await sequencesApi.openAlbaranesBatch(seqId, { excludeOnlyB2 });
     } catch (e: any) {
       setPrintError(e.response?.data?.message || 'No se pudieron generar los albaranes');
     } finally {
@@ -92,22 +95,35 @@ export function PackingList() {
       {/* Bloque de impresión visible solo en desktop (md+). En el móvil del
           picker no tiene sentido — la impresora está en la estación de trabajo. */}
       {printable > 0 && (
-        <div className="card hidden items-center justify-between gap-3 p-3 ring-1 ring-brand-100 md:flex">
-          <div className="min-w-0">
-            <div className="text-sm font-semibold text-slate-800">Imprimir albaranes de la secuencia</div>
-            <div className="text-xs text-slate-500">
-              Genera un único PDF con los {printable} albaranes ({sorted.filter(o => !['packed', 'classified', 'loaded', 'delivered'].includes(o.status)).length} pendientes). Cada hoja trae su QR — los pickers la escanean para tomar el pedido.
+        <div className="card hidden flex-col gap-3 p-3 ring-1 ring-brand-100 md:flex">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-slate-800">Imprimir albaranes de la secuencia</div>
+              <div className="text-xs text-slate-500">
+                Genera un único PDF con los albaranes. Cada hoja trae su QR — los pickers la escanean para tomar el pedido.
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={printAll}
+              disabled={printing}
+              className="btn-primary shrink-0"
+            >
+              <Printer size={16} />
+              {printing ? 'Generando…' : 'Imprimir todos'}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={printAll}
-            disabled={printing}
-            className="btn-primary shrink-0"
-          >
-            <Printer size={16} />
-            {printing ? 'Generando…' : 'Imprimir todos'}
-          </button>
+          <label className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2 ring-1 ring-slate-200">
+            <input
+              type="checkbox"
+              checked={excludeOnlyB2}
+              onChange={(e) => setExcludeOnlyB2(e.target.checked)}
+              className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
+            />
+            <span className="text-xs text-slate-700">
+              <strong>Excluir pedidos solo {warehouseLabel('B2')}.</strong> Los pedidos sin items de {warehouseLabel('B1')} (todo va a granel) no se imprimen — su picking se hace desde el celular con la app.
+            </span>
+          </label>
         </div>
       )}
       {printError && (
@@ -154,8 +170,9 @@ export function PackingList() {
         </div>
       )}
 
+      <OrderSearchBox value={search} onChange={setSearch} />
       <div className="space-y-2">
-        {sorted.map((o) => {
+        {sorted.filter((o) => matchesOrderId(o.number, search)).map((o) => {
           const done = o.status === 'packed' || o.status === 'classified' || o.status === 'loaded' || o.status === 'delivered';
           const claimed = !!o.pickedBy && !done;
           return (
@@ -171,7 +188,9 @@ export function PackingList() {
             >
               <div className="min-w-0 space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-semibold">#{o.number}</span>
+                  <span className="font-semibold">
+                    #<HighlightedNumber text={o.number} match={search} />
+                  </span>
                   {o.route && <Badge variant="blue">{o.route}</Badge>}
                   {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
                   {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}

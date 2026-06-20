@@ -6,18 +6,23 @@ export const NO_ROUTE_KEY = '__NO_ROUTE__';
 
 export type RouteFilterValue = string | null; // null = "Todas"
 
+// Contador opcional por pill: muestra (cerrados/total) — útil cuando la
+// vista quiere reflejar progreso por ruta. Si no se pasa, no se muestra.
+export type RouteCount = { closed: number; total: number };
+
 type Props = {
   selected: RouteFilterValue;
   routes: string[];      // rutas únicas presentes en los pedidos
   hasNoRoute: boolean;   // ¿hay al menos un pedido con route=null?
   onChange: (selected: RouteFilterValue) => void;
+  // Por-pill: counts[ruta] o counts[NO_ROUTE_KEY] → muestra "(closed/total)"
+  counts?: Record<string, RouteCount>;
 };
 
 // Pastillas para filtrar la lista de pedidos por ruta. Dinámicas: solo
 // muestra rutas presentes en el dataset. Si no hay rutas ni pedidos sin
 // ruta, no renderiza nada.
-export function RouteFilter({ selected, routes, hasNoRoute, onChange }: Props) {
-  if (routes.length === 0 && !hasNoRoute) return null;
+export function RouteFilter({ selected, routes, hasNoRoute, onChange, counts }: Props) {
   if (routes.length === 0 && !hasNoRoute) return null;
 
   return (
@@ -26,14 +31,17 @@ export function RouteFilter({ selected, routes, hasNoRoute, onChange }: Props) {
       <Pill active={selected === null} onClick={() => onChange(null)}>
         Todas
       </Pill>
-      {routes.map((r) => (
-        <Pill key={r} active={selected === r} onClick={() => onChange(r)}>
-          {r}
-        </Pill>
-      ))}
+      {routes.map((r) => {
+        const c = counts?.[r];
+        return (
+          <Pill key={r} active={selected === r} onClick={() => onChange(r)}>
+            {r}{c ? ` (${c.closed}/${c.total})` : ''}
+          </Pill>
+        );
+      })}
       {hasNoRoute && (
         <Pill active={selected === NO_ROUTE_KEY} onClick={() => onChange(NO_ROUTE_KEY)}>
-          Sin ruta
+          Sin ruta{counts?.[NO_ROUTE_KEY] ? ` (${counts[NO_ROUTE_KEY].closed}/${counts[NO_ROUTE_KEY].total})` : ''}
         </Pill>
       )}
     </div>

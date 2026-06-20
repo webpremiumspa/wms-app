@@ -39,10 +39,15 @@ export const sequencesApi = {
   closeB1: async (id: number, actualBags?: number): Promise<Sequence> =>
     (await api.post(`/sequences/${id}/close-b1`, actualBags !== undefined ? { actualBags } : {})).data.sequence,
 
-  // Descarga el PDF con TODOS los albaranes de la secuencia y lo abre en una
+  // Descarga el PDF con los albaranes de la secuencia y lo abre en una
   // pestaña nueva. Cada albarán es una página (los pickers escanean el QR).
-  openAlbaranesBatch: async (id: number): Promise<void> => {
-    const res = await api.get(`/sequences/${id}/albaranes.pdf`, { responseType: 'blob' });
+  // Si `excludeOnlyB2` es true, omite pedidos sin items B1 (su picking se
+  // hace desde el celular, no necesitan impresión).
+  openAlbaranesBatch: async (id: number, opts?: { excludeOnlyB2?: boolean }): Promise<void> => {
+    const res = await api.get(`/sequences/${id}/albaranes.pdf`, {
+      responseType: 'blob',
+      params: opts?.excludeOnlyB2 ? { excludeOnlyB2: '1' } : undefined,
+    });
     const url = URL.createObjectURL(res.data);
     window.open(url, '_blank', 'noopener');
     setTimeout(() => URL.revokeObjectURL(url), 60_000);

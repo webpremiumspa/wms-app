@@ -22,7 +22,10 @@ export function Sidebar() {
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-slate-200 md:bg-white">
-      <div className="flex h-16 items-center px-6 text-lg font-bold text-brand-800">WMS Chimuelo</div>
+      <div className="w-full bg-brand-600">
+        <img src="/chimuelo-logo.png" alt="Chimuelo" className="block h-auto w-full" />
+      </div>
+      <div className="flex h-12 items-center px-6 text-base font-bold text-brand-800">WMS Chimuelo</div>
       <nav className="flex-1 space-y-1 px-3 py-2">
         {visible.map(({ to, label, icon: Icon }) => (
           <NavLink
@@ -47,6 +50,9 @@ export function Sidebar() {
           <LogOut size={16} />
           Salir
         </button>
+        <div className="px-3 pt-2 text-[10px] text-slate-400">
+          v{__APP_VERSION__} · {__GIT_HASH__}
+        </div>
       </div>
     </aside>
   );
