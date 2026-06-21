@@ -60,6 +60,52 @@ const SECTIONS: Section[] = [
     ),
   },
   {
+    id: 'procesos',
+    title: 'Procesos de preparación y carga',
+    icon: Truck,
+    body: (
+      <>
+        <p>
+          El <strong>Proceso de preparación y carga</strong> es la unidad operativa de más alto nivel. Cada turno (matutino o vespertino) tiene su propio proceso. Dentro de un proceso vivien todas las secuencias del día.
+        </p>
+
+        <h4>Restricciones</h4>
+        <ul>
+          <li><strong>Solo puede haber 1 proceso abierto a la vez</strong>. Para abrir otro hay que cerrar el actual.</li>
+          <li><strong>Toda secuencia pertenece a un proceso</strong>. No se puede generar secuencias sin un proceso activo.</li>
+          <li><strong>El picking Bodega 2 - El Sol es a nivel del proceso</strong>, no de secuencia individual. Se hace una sola vez para todas las secuencias del proceso.</li>
+        </ul>
+
+        <h4>Ciclo de vida</h4>
+        <ol>
+          <li><strong>Crear</strong>: el encargado va a <strong>Procesos → Nuevo proceso</strong>. El sistema sugiere un nombre según hora actual ("Matutino DD/MM" o "Vespertino DD/MM"), editable.</li>
+          <li><strong>Generar secuencias</strong>: desde el detalle del proceso, "Generar nueva secuencia" → selecciona pedidos del día → quedan asociadas automáticamente al proceso.</li>
+          <li><strong>Empacar</strong>: cada picker B1 escanea albaranes y empaca pedido por pedido. La secuencia se cierra con el packing completo.</li>
+          <li><strong>Picking B2 del proceso</strong>: una persona del equipo B2 abre <em>Picking Bodega 2 - El Sol del proceso</em> y recolecta todos los items B2 de todas las secuencias en una sola corrida.</li>
+          <li><strong>Clasificar y cargar</strong>: el operador de carga escanea cada bolsa empacada, el sistema dispara la vista de clasificación → confirma → después de un segundo escaneo dispara la vista de carga → confirma.</li>
+          <li><strong>Cierre automático</strong>: cuando todos los pedidos del proceso están cargados (o entregados), el proceso se cierra solo. Override manual disponible para supervisores en el detalle del proceso.</li>
+        </ol>
+
+        <h4>Vista del proceso</h4>
+        <ul>
+          <li><strong>KPI grande arriba</strong>: barra de progreso "cargados / total" con verde al 100%.</li>
+          <li><strong>Lista de secuencias</strong> del proceso, con conteo de empacados / total.</li>
+          <li><strong>Kanban</strong> (toggle desde Lista): pedidos agrupados por estado en 6 columnas — Pendiente · Empacado · Clasificado · Cargado · Entregado · Bloqueado. Útil para supervisión.</li>
+          <li><strong>Refrescar rutas</strong>: si la app externa de rutas asignó después de empacar, forzá una resync de rutas/conductor/patente para todos los pedidos del proceso.</li>
+        </ul>
+
+        <h4>Vista calendario</h4>
+        <p>
+          En <strong>Procesos → Calendario</strong>, ves el mes con cada día coloreado según haya procesos abiertos (ámbar) o cerrados (verde). Tocá un día para expandir sus procesos. Útil para ver la cadencia (idealmente 1-2 procesos por día).
+        </p>
+
+        <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700 ring-1 ring-slate-200">
+          <strong>Acceso:</strong> el menú lateral solo tiene <em>Procesos</em>. Secuencias y picking ya no tienen item propio en el sidebar — todo se accede entrando primero al proceso.
+        </div>
+      </>
+    ),
+  },
+  {
     id: 'use-case',
     title: 'Caso de uso · un día completo en el WMS',
     icon: Theater,
@@ -81,7 +127,7 @@ const SECTIONS: Section[] = [
 
         <h4>🌆 Día 1 · 18:00 — Carmen prepara las secuencias</h4>
         <p>
-          Carmen va a <strong>Secuencias → Generar</strong>, sincroniza 50 pedidos del día desde WC. Click <strong>Generar secuencia (50)</strong> → se crea la Secuencia #12.
+          Carmen abre <strong>Procesos → Nuevo proceso</strong>, confirma el nombre sugerido "Vespertino DD/MM" y queda activo. Desde el detalle del proceso toca <strong>Generar nueva secuencia</strong>, sincroniza 50 pedidos del día desde WC y los selecciona → se crea la Secuencia #12 dentro del proceso.
         </p>
         <p>
           Después va a <strong>Secuencia #12 → Empacar pedidos</strong> y toca <strong>"Imprimir todos"</strong>. Se genera un PDF con 50 páginas (un albarán por pedido). Lo manda a la impresora. Las hojas salen y las deja apiladas en el área de picking.
@@ -124,7 +170,7 @@ const SECTIONS: Section[] = [
 
         <h4>🌅 Día 2 · 8:15 — Carmen cierra el flujo B1</h4>
         <p>
-          En <strong>Secuencia #12 → Cerrar flujo B1</strong>: 49/49 empacados (el <code>expectedBags</code> se actualizó solo cuando se removió #1104520). Confirma cierre B1.
+          En <strong>Secuencia #12 → Cerrar secuencia</strong>: 49/49 empacados (el <code>expectedBags</code> se actualizó solo cuando se removió #1104520). Confirma cierre. La secuencia pasa a <em>Cerrada</em>. Los items B2 que tiene esta secuencia se procesarán a granel desde el proceso, no aquí.
         </p>
 
         <h4>🌅 Día 2 · 8:30 — Diego clasifica y carga</h4>
@@ -155,7 +201,7 @@ const SECTIONS: Section[] = [
           <li><strong>Plan</strong>: cuando llegue el stock del producto Z, reactivar #1104520 (botón en el pedido) → vuelve a <em>Recibido</em> → entra a la próxima secuencia.</li>
         </ul>
         <p>
-          Patricia termina de pickear los items B2 que llegaron en la tarde. Cierra el flujo B2 de la Secuencia #12. La secuencia entera pasa a <strong>Cerrada</strong>.
+          Patricia termina de pickear los items B2 que llegaron en la tarde desde <strong>Picking Bodega 2 - El Sol del proceso</strong>. Cuando todos los pedidos del proceso están cargados/entregados, el proceso entero se cierra solo.
         </p>
 
         <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700 ring-1 ring-slate-200">
