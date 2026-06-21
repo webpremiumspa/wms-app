@@ -8,6 +8,7 @@ import healthRoutes from './routes/health.js';
 import authRoutes from './routes/auth.js';
 import orderRoutes from './routes/orders.js';
 import sequenceRoutes from './routes/sequences.js';
+import processRoutes from './routes/processes.js';
 import webhookRoutes from './routes/webhooks.js';
 import devRoutes from './routes/dev.js';
 import pickingB2Routes from './routes/picking-b2.js';
@@ -26,6 +27,7 @@ function mountJsonRoutes(app, prefix = '') {
   app.use(`${prefix}/health`, healthRoutes);
   app.use(`${prefix}/auth`, authRoutes);
   app.use(`${prefix}/orders`, orderRoutes);
+  app.use(`${prefix}/processes`, processRoutes);
   app.use(`${prefix}/sequences`, sequenceRoutes);
   app.use(`${prefix}/picking/b2`, pickingB2Routes);
   app.use(`${prefix}/dispatch`, dispatchRoutes);

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Package, ClipboardList, LogOut, BarChart3, HelpCircle, Stethoscope, Activity } from 'lucide-react';
+import { Home, Package, ClipboardList, LogOut, BarChart3, HelpCircle, Stethoscope, Activity, Truck } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import clsx from 'clsx';
@@ -8,6 +8,7 @@ type NavItem = { to: string; label: string; icon: typeof Home; caps?: string[] }
 
 const NAV: NavItem[] = [
   { to: '/', label: 'Inicio', icon: Home },
+  { to: '/processes', label: 'Procesos', icon: Truck, caps: [CAPS.PACK_B1, CAPS.PACK_B2, CAPS.LOAD, CAPS.SUPERVISE] },
   { to: '/sequences', label: 'Secuencias', icon: ClipboardList, caps: [CAPS.PACK_B1] },
   { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PACK_B2] },
   { to: '/dashboard', label: 'Supervisión', icon: BarChart3, caps: [CAPS.SUPERVISE] },

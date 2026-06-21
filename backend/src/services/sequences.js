@@ -52,6 +52,16 @@ export async function createSequence({ orderIds, createdById }) {
     throw new HttpError(400, 'orderIds required');
   }
 
+  // Toda secuencia debe pertenecer a un proceso abierto. Si no hay ninguno,
+  // bloqueamos con un mensaje claro para que el operador lo cree primero.
+  const activeProcess = await prisma.deliveryProcess.findFirst({
+    where: { status: 'open' },
+    select: { id: true },
+  });
+  if (!activeProcess) {
+    throw new HttpError(409, 'No hay un proceso de preparación y carga abierto. Creá uno antes de generar secuencias.');
+  }
+
   return prisma.$transaction(async (tx) => {
     const orders = await tx.order.findMany({
       where: { id: { in: orderIds }, status: 'received' },
@@ -62,6 +72,7 @@ export async function createSequence({ orderIds, createdById }) {
 
     const seq = await tx.sequence.create({
       data: {
+        processId: activeProcess.id,
         createdById,
         expectedBags: orders.length,
         orders: {

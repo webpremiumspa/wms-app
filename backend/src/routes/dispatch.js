@@ -6,6 +6,7 @@ import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { parseQrPayload } from '../services/qr.js';
 import { getOrderLoadability } from '../services/order-actions.js';
+import { maybeAutoCloseProcess } from '../services/processes.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -134,6 +135,20 @@ router.post('/:orderId/loaded', requireCap(WMS_CAPS.LOAD), async (req, res, next
         data: { type: 'dispatch.loaded', actorId: req.user.wpUserId, orderId: id },
       }),
     ]);
+
+    // Auto-cierre del proceso si este era el último pedido pendiente.
+    // Busca el processId de la secuencia del pedido (cualquiera; debería
+    // ser único porque solo hay 1 proceso abierto a la vez).
+    const seqLink = await prisma.sequenceOrder.findFirst({
+      where: { orderId: id },
+      select: { sequence: { select: { processId: true } } },
+    });
+    if (seqLink?.sequence?.processId) {
+      await maybeAutoCloseProcess({
+        processId: seqLink.sequence.processId,
+        actorId: req.user.wpUserId,
+      });
+    }
 
     res.json({ ok: true });
   } catch (err) {

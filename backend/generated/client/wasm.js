@@ -184,8 +184,19 @@ exports.Prisma.OrderItemScalarFieldEnum = {
   packedAt: 'packedAt'
 };
 
+exports.Prisma.DeliveryProcessScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  scheduledAt: 'scheduledAt',
+  createdById: 'createdById',
+  createdAt: 'createdAt',
+  closedAt: 'closedAt',
+  status: 'status'
+};
+
 exports.Prisma.SequenceScalarFieldEnum = {
   id: 'id',
+  processId: 'processId',
   createdById: 'createdById',
   createdAt: 'createdAt',
   closedAt: 'closedAt',
@@ -250,6 +261,11 @@ exports.OrderStatus = exports.$Enums.OrderStatus = {
   blocked: 'blocked'
 };
 
+exports.ProcessStatus = exports.$Enums.ProcessStatus = {
+  open: 'open',
+  closed: 'closed'
+};
+
 exports.SequenceStatus = exports.$Enums.SequenceStatus = {
   open: 'open',
   closed: 'closed'
@@ -260,6 +276,7 @@ exports.Prisma.ModelName = {
   ProductMeta: 'ProductMeta',
   Order: 'Order',
   OrderItem: 'OrderItem',
+  DeliveryProcess: 'DeliveryProcess',
   Sequence: 'Sequence',
   SequenceOrder: 'SequenceOrder',
   Event: 'Event'

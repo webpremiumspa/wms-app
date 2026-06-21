@@ -23,10 +23,11 @@ model UserMeta {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  sequencesCreated Sequence[] @relation("SequenceCreator")
-  packedOrders     Order[]    @relation("OrderPacker")
-  pickedOrders     Order[]    @relation("OrderPicker")
-  b2ClosedOrders   Order[]    @relation("OrderB2Closer")
+  processesCreated DeliveryProcess[] @relation("ProcessCreator")
+  sequencesCreated Sequence[]        @relation("SequenceCreator")
+  packedOrders     Order[]           @relation("OrderPacker")
+  pickedOrders     Order[]           @relation("OrderPicker")
+  b2ClosedOrders   Order[]           @relation("OrderB2Closer")
   events           Event[]
 
   @@map("users_meta")
@@ -127,8 +128,29 @@ model OrderItem {
 // Modelo simplificado: solo existe el flujo "por pedido" (cada picker escanea
 // el QR del albarán impreso y empaca un pedido completo). El modo "por SKU"
 // fue eliminado del modelo (era poco usado y agregaba complejidad).
+// Proceso de preparación y carga. Es el contenedor del trabajo de un turno
+// (matutino o vespertino). Agrupa N secuencias y se cierra automáticamente
+// cuando todos sus pedidos están cargados al vehículo. Restricción de negocio:
+// solo puede haber 1 proceso abierto a la vez.
+model DeliveryProcess {
+  id          Int           @id @default(autoincrement())
+  name        String        @db.VarChar(200)
+  scheduledAt DateTime?     @map("scheduled_at")
+  createdById Int           @map("created_by_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  closedAt    DateTime?     @map("closed_at")
+  status      ProcessStatus @default(open)
+
+  createdBy UserMeta   @relation("ProcessCreator", fields: [createdById], references: [wpUserId])
+  sequences Sequence[]
+
+  @@index([status])
+  @@map("delivery_processes")
+}
+
 model Sequence {
   id           Int            @id @default(autoincrement())
+  processId    Int            @map("process_id")
   createdById  Int            @map("created_by_id")
   createdAt    DateTime       @default(now()) @map("created_at")
   closedAt     DateTime?      @map("closed_at")
@@ -138,9 +160,11 @@ model Sequence {
   actualBags   Int            @default(0) @map("actual_bags")
   status       SequenceStatus @default(open)
 
+  process   DeliveryProcess @relation(fields: [processId], references: [id])
   createdBy UserMeta        @relation("SequenceCreator", fields: [createdById], references: [wpUserId])
   orders    SequenceOrder[]
 
+  @@index([processId])
   @@map("sequences")
 }
 
@@ -189,6 +213,11 @@ enum OrderStatus {
 }
 
 enum SequenceStatus {
+  open
+  closed
+}
+
+enum ProcessStatus {
   open
   closed
 }

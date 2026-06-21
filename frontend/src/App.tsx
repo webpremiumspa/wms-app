@@ -5,6 +5,9 @@ import { Layout } from '@/components/Layout';
 import { RequireAuth } from '@/components/RequireAuth';
 import { Login } from '@/pages/Login';
 import { Home } from '@/pages/Home';
+import { ProcessesIndex } from '@/pages/Processes/Index';
+import { ProcessNew } from '@/pages/Processes/New';
+import { ProcessDetail } from '@/pages/Processes/Detail';
 import { SequencesIndex } from '@/pages/Sequences/Index';
 import { SequenceNew } from '@/pages/Sequences/New';
 import { SequenceDetail } from '@/pages/Sequences/Detail';
@@ -41,6 +44,9 @@ export default function App() {
               }
             >
               <Route index element={<Home />} />
+              <Route path="processes" element={<ProcessesIndex />} />
+              <Route path="processes/new" element={<ProcessNew />} />
+              <Route path="processes/:id" element={<ProcessDetail />} />
               <Route path="sequences" element={<SequencesIndex />} />
               <Route path="sequences/new" element={<SequenceNew />} />
               <Route path="sequences/:id" element={<SequenceDetail />} />

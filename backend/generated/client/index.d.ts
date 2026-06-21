@@ -34,6 +34,11 @@ export type Order = $Result.DefaultSelection<Prisma.$OrderPayload>
  */
 export type OrderItem = $Result.DefaultSelection<Prisma.$OrderItemPayload>
 /**
+ * Model DeliveryProcess
+ * 
+ */
+export type DeliveryProcess = $Result.DefaultSelection<Prisma.$DeliveryProcessPayload>
+/**
  * Model Sequence
  * 
  */
@@ -75,6 +80,14 @@ export const OrderStatus: {
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus]
 
 
+export const ProcessStatus: {
+  open: 'open',
+  closed: 'closed'
+};
+
+export type ProcessStatus = (typeof ProcessStatus)[keyof typeof ProcessStatus]
+
+
 export const SequenceStatus: {
   open: 'open',
   closed: 'closed'
@@ -91,6 +104,10 @@ export const Warehouse: typeof $Enums.Warehouse
 export type OrderStatus = $Enums.OrderStatus
 
 export const OrderStatus: typeof $Enums.OrderStatus
+
+export type ProcessStatus = $Enums.ProcessStatus
+
+export const ProcessStatus: typeof $Enums.ProcessStatus
 
 export type SequenceStatus = $Enums.SequenceStatus
 
@@ -258,6 +275,16 @@ export class PrismaClient<
     * ```
     */
   get orderItem(): Prisma.OrderItemDelegate<ExtArgs>;
+
+  /**
+   * `prisma.deliveryProcess`: Exposes CRUD operations for the **DeliveryProcess** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more DeliveryProcesses
+    * const deliveryProcesses = await prisma.deliveryProcess.findMany()
+    * ```
+    */
+  get deliveryProcess(): Prisma.DeliveryProcessDelegate<ExtArgs>;
 
   /**
    * `prisma.sequence`: Exposes CRUD operations for the **Sequence** model.
@@ -733,6 +760,7 @@ export namespace Prisma {
     ProductMeta: 'ProductMeta',
     Order: 'Order',
     OrderItem: 'OrderItem',
+    DeliveryProcess: 'DeliveryProcess',
     Sequence: 'Sequence',
     SequenceOrder: 'SequenceOrder',
     Event: 'Event'
@@ -751,7 +779,7 @@ export namespace Prisma {
 
   export type TypeMap<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, ClientOptions = {}> = {
     meta: {
-      modelProps: "userMeta" | "productMeta" | "order" | "orderItem" | "sequence" | "sequenceOrder" | "event"
+      modelProps: "userMeta" | "productMeta" | "order" | "orderItem" | "deliveryProcess" | "sequence" | "sequenceOrder" | "event"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1016,6 +1044,72 @@ export namespace Prisma {
           count: {
             args: Prisma.OrderItemCountArgs<ExtArgs>
             result: $Utils.Optional<OrderItemCountAggregateOutputType> | number
+          }
+        }
+      }
+      DeliveryProcess: {
+        payload: Prisma.$DeliveryProcessPayload<ExtArgs>
+        fields: Prisma.DeliveryProcessFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.DeliveryProcessFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.DeliveryProcessFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload>
+          }
+          findFirst: {
+            args: Prisma.DeliveryProcessFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.DeliveryProcessFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload>
+          }
+          findMany: {
+            args: Prisma.DeliveryProcessFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload>[]
+          }
+          create: {
+            args: Prisma.DeliveryProcessCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload>
+          }
+          createMany: {
+            args: Prisma.DeliveryProcessCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          delete: {
+            args: Prisma.DeliveryProcessDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload>
+          }
+          update: {
+            args: Prisma.DeliveryProcessUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload>
+          }
+          deleteMany: {
+            args: Prisma.DeliveryProcessDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.DeliveryProcessUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          upsert: {
+            args: Prisma.DeliveryProcessUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$DeliveryProcessPayload>
+          }
+          aggregate: {
+            args: Prisma.DeliveryProcessAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateDeliveryProcess>
+          }
+          groupBy: {
+            args: Prisma.DeliveryProcessGroupByArgs<ExtArgs>
+            result: $Utils.Optional<DeliveryProcessGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.DeliveryProcessCountArgs<ExtArgs>
+            result: $Utils.Optional<DeliveryProcessCountAggregateOutputType> | number
           }
         }
       }
@@ -1378,6 +1472,7 @@ export namespace Prisma {
    */
 
   export type UserMetaCountOutputType = {
+    processesCreated: number
     sequencesCreated: number
     packedOrders: number
     pickedOrders: number
@@ -1386,6 +1481,7 @@ export namespace Prisma {
   }
 
   export type UserMetaCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    processesCreated?: boolean | UserMetaCountOutputTypeCountProcessesCreatedArgs
     sequencesCreated?: boolean | UserMetaCountOutputTypeCountSequencesCreatedArgs
     packedOrders?: boolean | UserMetaCountOutputTypeCountPackedOrdersArgs
     pickedOrders?: boolean | UserMetaCountOutputTypeCountPickedOrdersArgs
@@ -1402,6 +1498,13 @@ export namespace Prisma {
      * Select specific fields to fetch from the UserMetaCountOutputType
      */
     select?: UserMetaCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * UserMetaCountOutputType without action
+   */
+  export type UserMetaCountOutputTypeCountProcessesCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DeliveryProcessWhereInput
   }
 
   /**
@@ -1517,6 +1620,37 @@ export namespace Prisma {
    */
   export type OrderCountOutputTypeCountEventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: EventWhereInput
+  }
+
+
+  /**
+   * Count Type DeliveryProcessCountOutputType
+   */
+
+  export type DeliveryProcessCountOutputType = {
+    sequences: number
+  }
+
+  export type DeliveryProcessCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    sequences?: boolean | DeliveryProcessCountOutputTypeCountSequencesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * DeliveryProcessCountOutputType without action
+   */
+  export type DeliveryProcessCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcessCountOutputType
+     */
+    select?: DeliveryProcessCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * DeliveryProcessCountOutputType without action
+   */
+  export type DeliveryProcessCountOutputTypeCountSequencesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SequenceWhereInput
   }
 
 
@@ -1781,6 +1915,7 @@ export namespace Prisma {
     lastLoginAt?: boolean
     createdAt?: boolean
     updatedAt?: boolean
+    processesCreated?: boolean | UserMeta$processesCreatedArgs<ExtArgs>
     sequencesCreated?: boolean | UserMeta$sequencesCreatedArgs<ExtArgs>
     packedOrders?: boolean | UserMeta$packedOrdersArgs<ExtArgs>
     pickedOrders?: boolean | UserMeta$pickedOrdersArgs<ExtArgs>
@@ -1803,6 +1938,7 @@ export namespace Prisma {
   }
 
   export type UserMetaInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    processesCreated?: boolean | UserMeta$processesCreatedArgs<ExtArgs>
     sequencesCreated?: boolean | UserMeta$sequencesCreatedArgs<ExtArgs>
     packedOrders?: boolean | UserMeta$packedOrdersArgs<ExtArgs>
     pickedOrders?: boolean | UserMeta$pickedOrdersArgs<ExtArgs>
@@ -1814,6 +1950,7 @@ export namespace Prisma {
   export type $UserMetaPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "UserMeta"
     objects: {
+      processesCreated: Prisma.$DeliveryProcessPayload<ExtArgs>[]
       sequencesCreated: Prisma.$SequencePayload<ExtArgs>[]
       packedOrders: Prisma.$OrderPayload<ExtArgs>[]
       pickedOrders: Prisma.$OrderPayload<ExtArgs>[]
@@ -2170,6 +2307,7 @@ export namespace Prisma {
    */
   export interface Prisma__UserMetaClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    processesCreated<T extends UserMeta$processesCreatedArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$processesCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "findMany"> | Null>
     sequencesCreated<T extends UserMeta$sequencesCreatedArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$sequencesCreatedArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SequencePayload<ExtArgs>, T, "findMany"> | Null>
     packedOrders<T extends UserMeta$packedOrdersArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$packedOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany"> | Null>
     pickedOrders<T extends UserMeta$pickedOrdersArgs<ExtArgs> = {}>(args?: Subset<T, UserMeta$pickedOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany"> | Null>
@@ -2509,6 +2647,26 @@ export namespace Prisma {
      * Filter which UserMetas to delete
      */
     where?: UserMetaWhereInput
+  }
+
+  /**
+   * UserMeta.processesCreated
+   */
+  export type UserMeta$processesCreatedArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    where?: DeliveryProcessWhereInput
+    orderBy?: DeliveryProcessOrderByWithRelationInput | DeliveryProcessOrderByWithRelationInput[]
+    cursor?: DeliveryProcessWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: DeliveryProcessScalarFieldEnum | DeliveryProcessScalarFieldEnum[]
   }
 
   /**
@@ -5845,6 +6003,971 @@ export namespace Prisma {
 
 
   /**
+   * Model DeliveryProcess
+   */
+
+  export type AggregateDeliveryProcess = {
+    _count: DeliveryProcessCountAggregateOutputType | null
+    _avg: DeliveryProcessAvgAggregateOutputType | null
+    _sum: DeliveryProcessSumAggregateOutputType | null
+    _min: DeliveryProcessMinAggregateOutputType | null
+    _max: DeliveryProcessMaxAggregateOutputType | null
+  }
+
+  export type DeliveryProcessAvgAggregateOutputType = {
+    id: number | null
+    createdById: number | null
+  }
+
+  export type DeliveryProcessSumAggregateOutputType = {
+    id: number | null
+    createdById: number | null
+  }
+
+  export type DeliveryProcessMinAggregateOutputType = {
+    id: number | null
+    name: string | null
+    scheduledAt: Date | null
+    createdById: number | null
+    createdAt: Date | null
+    closedAt: Date | null
+    status: $Enums.ProcessStatus | null
+  }
+
+  export type DeliveryProcessMaxAggregateOutputType = {
+    id: number | null
+    name: string | null
+    scheduledAt: Date | null
+    createdById: number | null
+    createdAt: Date | null
+    closedAt: Date | null
+    status: $Enums.ProcessStatus | null
+  }
+
+  export type DeliveryProcessCountAggregateOutputType = {
+    id: number
+    name: number
+    scheduledAt: number
+    createdById: number
+    createdAt: number
+    closedAt: number
+    status: number
+    _all: number
+  }
+
+
+  export type DeliveryProcessAvgAggregateInputType = {
+    id?: true
+    createdById?: true
+  }
+
+  export type DeliveryProcessSumAggregateInputType = {
+    id?: true
+    createdById?: true
+  }
+
+  export type DeliveryProcessMinAggregateInputType = {
+    id?: true
+    name?: true
+    scheduledAt?: true
+    createdById?: true
+    createdAt?: true
+    closedAt?: true
+    status?: true
+  }
+
+  export type DeliveryProcessMaxAggregateInputType = {
+    id?: true
+    name?: true
+    scheduledAt?: true
+    createdById?: true
+    createdAt?: true
+    closedAt?: true
+    status?: true
+  }
+
+  export type DeliveryProcessCountAggregateInputType = {
+    id?: true
+    name?: true
+    scheduledAt?: true
+    createdById?: true
+    createdAt?: true
+    closedAt?: true
+    status?: true
+    _all?: true
+  }
+
+  export type DeliveryProcessAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DeliveryProcess to aggregate.
+     */
+    where?: DeliveryProcessWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DeliveryProcesses to fetch.
+     */
+    orderBy?: DeliveryProcessOrderByWithRelationInput | DeliveryProcessOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: DeliveryProcessWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DeliveryProcesses from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DeliveryProcesses.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned DeliveryProcesses
+    **/
+    _count?: true | DeliveryProcessCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: DeliveryProcessAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: DeliveryProcessSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: DeliveryProcessMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: DeliveryProcessMaxAggregateInputType
+  }
+
+  export type GetDeliveryProcessAggregateType<T extends DeliveryProcessAggregateArgs> = {
+        [P in keyof T & keyof AggregateDeliveryProcess]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateDeliveryProcess[P]>
+      : GetScalarType<T[P], AggregateDeliveryProcess[P]>
+  }
+
+
+
+
+  export type DeliveryProcessGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: DeliveryProcessWhereInput
+    orderBy?: DeliveryProcessOrderByWithAggregationInput | DeliveryProcessOrderByWithAggregationInput[]
+    by: DeliveryProcessScalarFieldEnum[] | DeliveryProcessScalarFieldEnum
+    having?: DeliveryProcessScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: DeliveryProcessCountAggregateInputType | true
+    _avg?: DeliveryProcessAvgAggregateInputType
+    _sum?: DeliveryProcessSumAggregateInputType
+    _min?: DeliveryProcessMinAggregateInputType
+    _max?: DeliveryProcessMaxAggregateInputType
+  }
+
+  export type DeliveryProcessGroupByOutputType = {
+    id: number
+    name: string
+    scheduledAt: Date | null
+    createdById: number
+    createdAt: Date
+    closedAt: Date | null
+    status: $Enums.ProcessStatus
+    _count: DeliveryProcessCountAggregateOutputType | null
+    _avg: DeliveryProcessAvgAggregateOutputType | null
+    _sum: DeliveryProcessSumAggregateOutputType | null
+    _min: DeliveryProcessMinAggregateOutputType | null
+    _max: DeliveryProcessMaxAggregateOutputType | null
+  }
+
+  type GetDeliveryProcessGroupByPayload<T extends DeliveryProcessGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<DeliveryProcessGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof DeliveryProcessGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], DeliveryProcessGroupByOutputType[P]>
+            : GetScalarType<T[P], DeliveryProcessGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type DeliveryProcessSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    name?: boolean
+    scheduledAt?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    closedAt?: boolean
+    status?: boolean
+    createdBy?: boolean | UserMetaDefaultArgs<ExtArgs>
+    sequences?: boolean | DeliveryProcess$sequencesArgs<ExtArgs>
+    _count?: boolean | DeliveryProcessCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["deliveryProcess"]>
+
+
+  export type DeliveryProcessSelectScalar = {
+    id?: boolean
+    name?: boolean
+    scheduledAt?: boolean
+    createdById?: boolean
+    createdAt?: boolean
+    closedAt?: boolean
+    status?: boolean
+  }
+
+  export type DeliveryProcessInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    createdBy?: boolean | UserMetaDefaultArgs<ExtArgs>
+    sequences?: boolean | DeliveryProcess$sequencesArgs<ExtArgs>
+    _count?: boolean | DeliveryProcessCountOutputTypeDefaultArgs<ExtArgs>
+  }
+
+  export type $DeliveryProcessPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "DeliveryProcess"
+    objects: {
+      createdBy: Prisma.$UserMetaPayload<ExtArgs>
+      sequences: Prisma.$SequencePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      name: string
+      scheduledAt: Date | null
+      createdById: number
+      createdAt: Date
+      closedAt: Date | null
+      status: $Enums.ProcessStatus
+    }, ExtArgs["result"]["deliveryProcess"]>
+    composites: {}
+  }
+
+  type DeliveryProcessGetPayload<S extends boolean | null | undefined | DeliveryProcessDefaultArgs> = $Result.GetResult<Prisma.$DeliveryProcessPayload, S>
+
+  type DeliveryProcessCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = 
+    Omit<DeliveryProcessFindManyArgs, 'select' | 'include' | 'distinct'> & {
+      select?: DeliveryProcessCountAggregateInputType | true
+    }
+
+  export interface DeliveryProcessDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['DeliveryProcess'], meta: { name: 'DeliveryProcess' } }
+    /**
+     * Find zero or one DeliveryProcess that matches the filter.
+     * @param {DeliveryProcessFindUniqueArgs} args - Arguments to find a DeliveryProcess
+     * @example
+     * // Get one DeliveryProcess
+     * const deliveryProcess = await prisma.deliveryProcess.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends DeliveryProcessFindUniqueArgs>(args: SelectSubset<T, DeliveryProcessFindUniqueArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "findUnique"> | null, null, ExtArgs>
+
+    /**
+     * Find one DeliveryProcess that matches the filter or throw an error with `error.code='P2025'` 
+     * if no matches were found.
+     * @param {DeliveryProcessFindUniqueOrThrowArgs} args - Arguments to find a DeliveryProcess
+     * @example
+     * // Get one DeliveryProcess
+     * const deliveryProcess = await prisma.deliveryProcess.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends DeliveryProcessFindUniqueOrThrowArgs>(args: SelectSubset<T, DeliveryProcessFindUniqueOrThrowArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "findUniqueOrThrow">, never, ExtArgs>
+
+    /**
+     * Find the first DeliveryProcess that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeliveryProcessFindFirstArgs} args - Arguments to find a DeliveryProcess
+     * @example
+     * // Get one DeliveryProcess
+     * const deliveryProcess = await prisma.deliveryProcess.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends DeliveryProcessFindFirstArgs>(args?: SelectSubset<T, DeliveryProcessFindFirstArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "findFirst"> | null, null, ExtArgs>
+
+    /**
+     * Find the first DeliveryProcess that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeliveryProcessFindFirstOrThrowArgs} args - Arguments to find a DeliveryProcess
+     * @example
+     * // Get one DeliveryProcess
+     * const deliveryProcess = await prisma.deliveryProcess.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends DeliveryProcessFindFirstOrThrowArgs>(args?: SelectSubset<T, DeliveryProcessFindFirstOrThrowArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "findFirstOrThrow">, never, ExtArgs>
+
+    /**
+     * Find zero or more DeliveryProcesses that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeliveryProcessFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all DeliveryProcesses
+     * const deliveryProcesses = await prisma.deliveryProcess.findMany()
+     * 
+     * // Get first 10 DeliveryProcesses
+     * const deliveryProcesses = await prisma.deliveryProcess.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const deliveryProcessWithIdOnly = await prisma.deliveryProcess.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends DeliveryProcessFindManyArgs>(args?: SelectSubset<T, DeliveryProcessFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "findMany">>
+
+    /**
+     * Create a DeliveryProcess.
+     * @param {DeliveryProcessCreateArgs} args - Arguments to create a DeliveryProcess.
+     * @example
+     * // Create one DeliveryProcess
+     * const DeliveryProcess = await prisma.deliveryProcess.create({
+     *   data: {
+     *     // ... data to create a DeliveryProcess
+     *   }
+     * })
+     * 
+     */
+    create<T extends DeliveryProcessCreateArgs>(args: SelectSubset<T, DeliveryProcessCreateArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "create">, never, ExtArgs>
+
+    /**
+     * Create many DeliveryProcesses.
+     * @param {DeliveryProcessCreateManyArgs} args - Arguments to create many DeliveryProcesses.
+     * @example
+     * // Create many DeliveryProcesses
+     * const deliveryProcess = await prisma.deliveryProcess.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends DeliveryProcessCreateManyArgs>(args?: SelectSubset<T, DeliveryProcessCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Delete a DeliveryProcess.
+     * @param {DeliveryProcessDeleteArgs} args - Arguments to delete one DeliveryProcess.
+     * @example
+     * // Delete one DeliveryProcess
+     * const DeliveryProcess = await prisma.deliveryProcess.delete({
+     *   where: {
+     *     // ... filter to delete one DeliveryProcess
+     *   }
+     * })
+     * 
+     */
+    delete<T extends DeliveryProcessDeleteArgs>(args: SelectSubset<T, DeliveryProcessDeleteArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "delete">, never, ExtArgs>
+
+    /**
+     * Update one DeliveryProcess.
+     * @param {DeliveryProcessUpdateArgs} args - Arguments to update one DeliveryProcess.
+     * @example
+     * // Update one DeliveryProcess
+     * const deliveryProcess = await prisma.deliveryProcess.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends DeliveryProcessUpdateArgs>(args: SelectSubset<T, DeliveryProcessUpdateArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "update">, never, ExtArgs>
+
+    /**
+     * Delete zero or more DeliveryProcesses.
+     * @param {DeliveryProcessDeleteManyArgs} args - Arguments to filter DeliveryProcesses to delete.
+     * @example
+     * // Delete a few DeliveryProcesses
+     * const { count } = await prisma.deliveryProcess.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends DeliveryProcessDeleteManyArgs>(args?: SelectSubset<T, DeliveryProcessDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more DeliveryProcesses.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeliveryProcessUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many DeliveryProcesses
+     * const deliveryProcess = await prisma.deliveryProcess.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends DeliveryProcessUpdateManyArgs>(args: SelectSubset<T, DeliveryProcessUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create or update one DeliveryProcess.
+     * @param {DeliveryProcessUpsertArgs} args - Arguments to update or create a DeliveryProcess.
+     * @example
+     * // Update or create a DeliveryProcess
+     * const deliveryProcess = await prisma.deliveryProcess.upsert({
+     *   create: {
+     *     // ... data to create a DeliveryProcess
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the DeliveryProcess we want to update
+     *   }
+     * })
+     */
+    upsert<T extends DeliveryProcessUpsertArgs>(args: SelectSubset<T, DeliveryProcessUpsertArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "upsert">, never, ExtArgs>
+
+
+    /**
+     * Count the number of DeliveryProcesses.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeliveryProcessCountArgs} args - Arguments to filter DeliveryProcesses to count.
+     * @example
+     * // Count the number of DeliveryProcesses
+     * const count = await prisma.deliveryProcess.count({
+     *   where: {
+     *     // ... the filter for the DeliveryProcesses we want to count
+     *   }
+     * })
+    **/
+    count<T extends DeliveryProcessCountArgs>(
+      args?: Subset<T, DeliveryProcessCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], DeliveryProcessCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a DeliveryProcess.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeliveryProcessAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends DeliveryProcessAggregateArgs>(args: Subset<T, DeliveryProcessAggregateArgs>): Prisma.PrismaPromise<GetDeliveryProcessAggregateType<T>>
+
+    /**
+     * Group by DeliveryProcess.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {DeliveryProcessGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends DeliveryProcessGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: DeliveryProcessGroupByArgs['orderBy'] }
+        : { orderBy?: DeliveryProcessGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, DeliveryProcessGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetDeliveryProcessGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the DeliveryProcess model
+   */
+  readonly fields: DeliveryProcessFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for DeliveryProcess.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__DeliveryProcessClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    createdBy<T extends UserMetaDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserMetaDefaultArgs<ExtArgs>>): Prisma__UserMetaClient<$Result.GetResult<Prisma.$UserMetaPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    sequences<T extends DeliveryProcess$sequencesArgs<ExtArgs> = {}>(args?: Subset<T, DeliveryProcess$sequencesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SequencePayload<ExtArgs>, T, "findMany"> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the DeliveryProcess model
+   */ 
+  interface DeliveryProcessFieldRefs {
+    readonly id: FieldRef<"DeliveryProcess", 'Int'>
+    readonly name: FieldRef<"DeliveryProcess", 'String'>
+    readonly scheduledAt: FieldRef<"DeliveryProcess", 'DateTime'>
+    readonly createdById: FieldRef<"DeliveryProcess", 'Int'>
+    readonly createdAt: FieldRef<"DeliveryProcess", 'DateTime'>
+    readonly closedAt: FieldRef<"DeliveryProcess", 'DateTime'>
+    readonly status: FieldRef<"DeliveryProcess", 'ProcessStatus'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * DeliveryProcess findUnique
+   */
+  export type DeliveryProcessFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * Filter, which DeliveryProcess to fetch.
+     */
+    where: DeliveryProcessWhereUniqueInput
+  }
+
+  /**
+   * DeliveryProcess findUniqueOrThrow
+   */
+  export type DeliveryProcessFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * Filter, which DeliveryProcess to fetch.
+     */
+    where: DeliveryProcessWhereUniqueInput
+  }
+
+  /**
+   * DeliveryProcess findFirst
+   */
+  export type DeliveryProcessFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * Filter, which DeliveryProcess to fetch.
+     */
+    where?: DeliveryProcessWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DeliveryProcesses to fetch.
+     */
+    orderBy?: DeliveryProcessOrderByWithRelationInput | DeliveryProcessOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DeliveryProcesses.
+     */
+    cursor?: DeliveryProcessWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DeliveryProcesses from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DeliveryProcesses.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DeliveryProcesses.
+     */
+    distinct?: DeliveryProcessScalarFieldEnum | DeliveryProcessScalarFieldEnum[]
+  }
+
+  /**
+   * DeliveryProcess findFirstOrThrow
+   */
+  export type DeliveryProcessFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * Filter, which DeliveryProcess to fetch.
+     */
+    where?: DeliveryProcessWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DeliveryProcesses to fetch.
+     */
+    orderBy?: DeliveryProcessOrderByWithRelationInput | DeliveryProcessOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for DeliveryProcesses.
+     */
+    cursor?: DeliveryProcessWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DeliveryProcesses from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DeliveryProcesses.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of DeliveryProcesses.
+     */
+    distinct?: DeliveryProcessScalarFieldEnum | DeliveryProcessScalarFieldEnum[]
+  }
+
+  /**
+   * DeliveryProcess findMany
+   */
+  export type DeliveryProcessFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * Filter, which DeliveryProcesses to fetch.
+     */
+    where?: DeliveryProcessWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of DeliveryProcesses to fetch.
+     */
+    orderBy?: DeliveryProcessOrderByWithRelationInput | DeliveryProcessOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing DeliveryProcesses.
+     */
+    cursor?: DeliveryProcessWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` DeliveryProcesses from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` DeliveryProcesses.
+     */
+    skip?: number
+    distinct?: DeliveryProcessScalarFieldEnum | DeliveryProcessScalarFieldEnum[]
+  }
+
+  /**
+   * DeliveryProcess create
+   */
+  export type DeliveryProcessCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * The data needed to create a DeliveryProcess.
+     */
+    data: XOR<DeliveryProcessCreateInput, DeliveryProcessUncheckedCreateInput>
+  }
+
+  /**
+   * DeliveryProcess createMany
+   */
+  export type DeliveryProcessCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many DeliveryProcesses.
+     */
+    data: DeliveryProcessCreateManyInput | DeliveryProcessCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * DeliveryProcess update
+   */
+  export type DeliveryProcessUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * The data needed to update a DeliveryProcess.
+     */
+    data: XOR<DeliveryProcessUpdateInput, DeliveryProcessUncheckedUpdateInput>
+    /**
+     * Choose, which DeliveryProcess to update.
+     */
+    where: DeliveryProcessWhereUniqueInput
+  }
+
+  /**
+   * DeliveryProcess updateMany
+   */
+  export type DeliveryProcessUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update DeliveryProcesses.
+     */
+    data: XOR<DeliveryProcessUpdateManyMutationInput, DeliveryProcessUncheckedUpdateManyInput>
+    /**
+     * Filter which DeliveryProcesses to update
+     */
+    where?: DeliveryProcessWhereInput
+  }
+
+  /**
+   * DeliveryProcess upsert
+   */
+  export type DeliveryProcessUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * The filter to search for the DeliveryProcess to update in case it exists.
+     */
+    where: DeliveryProcessWhereUniqueInput
+    /**
+     * In case the DeliveryProcess found by the `where` argument doesn't exist, create a new DeliveryProcess with this data.
+     */
+    create: XOR<DeliveryProcessCreateInput, DeliveryProcessUncheckedCreateInput>
+    /**
+     * In case the DeliveryProcess was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<DeliveryProcessUpdateInput, DeliveryProcessUncheckedUpdateInput>
+  }
+
+  /**
+   * DeliveryProcess delete
+   */
+  export type DeliveryProcessDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+    /**
+     * Filter which DeliveryProcess to delete.
+     */
+    where: DeliveryProcessWhereUniqueInput
+  }
+
+  /**
+   * DeliveryProcess deleteMany
+   */
+  export type DeliveryProcessDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which DeliveryProcesses to delete
+     */
+    where?: DeliveryProcessWhereInput
+  }
+
+  /**
+   * DeliveryProcess.sequences
+   */
+  export type DeliveryProcess$sequencesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Sequence
+     */
+    select?: SequenceSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SequenceInclude<ExtArgs> | null
+    where?: SequenceWhereInput
+    orderBy?: SequenceOrderByWithRelationInput | SequenceOrderByWithRelationInput[]
+    cursor?: SequenceWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SequenceScalarFieldEnum | SequenceScalarFieldEnum[]
+  }
+
+  /**
+   * DeliveryProcess without action
+   */
+  export type DeliveryProcessDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the DeliveryProcess
+     */
+    select?: DeliveryProcessSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: DeliveryProcessInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Model Sequence
    */
 
@@ -5858,6 +6981,7 @@ export namespace Prisma {
 
   export type SequenceAvgAggregateOutputType = {
     id: number | null
+    processId: number | null
     createdById: number | null
     expectedBags: number | null
     actualBags: number | null
@@ -5865,6 +6989,7 @@ export namespace Prisma {
 
   export type SequenceSumAggregateOutputType = {
     id: number | null
+    processId: number | null
     createdById: number | null
     expectedBags: number | null
     actualBags: number | null
@@ -5872,6 +6997,7 @@ export namespace Prisma {
 
   export type SequenceMinAggregateOutputType = {
     id: number | null
+    processId: number | null
     createdById: number | null
     createdAt: Date | null
     closedAt: Date | null
@@ -5884,6 +7010,7 @@ export namespace Prisma {
 
   export type SequenceMaxAggregateOutputType = {
     id: number | null
+    processId: number | null
     createdById: number | null
     createdAt: Date | null
     closedAt: Date | null
@@ -5896,6 +7023,7 @@ export namespace Prisma {
 
   export type SequenceCountAggregateOutputType = {
     id: number
+    processId: number
     createdById: number
     createdAt: number
     closedAt: number
@@ -5910,6 +7038,7 @@ export namespace Prisma {
 
   export type SequenceAvgAggregateInputType = {
     id?: true
+    processId?: true
     createdById?: true
     expectedBags?: true
     actualBags?: true
@@ -5917,6 +7046,7 @@ export namespace Prisma {
 
   export type SequenceSumAggregateInputType = {
     id?: true
+    processId?: true
     createdById?: true
     expectedBags?: true
     actualBags?: true
@@ -5924,6 +7054,7 @@ export namespace Prisma {
 
   export type SequenceMinAggregateInputType = {
     id?: true
+    processId?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -5936,6 +7067,7 @@ export namespace Prisma {
 
   export type SequenceMaxAggregateInputType = {
     id?: true
+    processId?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -5948,6 +7080,7 @@ export namespace Prisma {
 
   export type SequenceCountAggregateInputType = {
     id?: true
+    processId?: true
     createdById?: true
     createdAt?: true
     closedAt?: true
@@ -6047,6 +7180,7 @@ export namespace Prisma {
 
   export type SequenceGroupByOutputType = {
     id: number
+    processId: number
     createdById: number
     createdAt: Date
     closedAt: Date | null
@@ -6078,6 +7212,7 @@ export namespace Prisma {
 
   export type SequenceSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
+    processId?: boolean
     createdById?: boolean
     createdAt?: boolean
     closedAt?: boolean
@@ -6086,6 +7221,7 @@ export namespace Prisma {
     expectedBags?: boolean
     actualBags?: boolean
     status?: boolean
+    process?: boolean | DeliveryProcessDefaultArgs<ExtArgs>
     createdBy?: boolean | UserMetaDefaultArgs<ExtArgs>
     orders?: boolean | Sequence$ordersArgs<ExtArgs>
     _count?: boolean | SequenceCountOutputTypeDefaultArgs<ExtArgs>
@@ -6094,6 +7230,7 @@ export namespace Prisma {
 
   export type SequenceSelectScalar = {
     id?: boolean
+    processId?: boolean
     createdById?: boolean
     createdAt?: boolean
     closedAt?: boolean
@@ -6105,6 +7242,7 @@ export namespace Prisma {
   }
 
   export type SequenceInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    process?: boolean | DeliveryProcessDefaultArgs<ExtArgs>
     createdBy?: boolean | UserMetaDefaultArgs<ExtArgs>
     orders?: boolean | Sequence$ordersArgs<ExtArgs>
     _count?: boolean | SequenceCountOutputTypeDefaultArgs<ExtArgs>
@@ -6113,11 +7251,13 @@ export namespace Prisma {
   export type $SequencePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Sequence"
     objects: {
+      process: Prisma.$DeliveryProcessPayload<ExtArgs>
       createdBy: Prisma.$UserMetaPayload<ExtArgs>
       orders: Prisma.$SequenceOrderPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
+      processId: number
       createdById: number
       createdAt: Date
       closedAt: Date | null
@@ -6466,6 +7606,7 @@ export namespace Prisma {
    */
   export interface Prisma__SequenceClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    process<T extends DeliveryProcessDefaultArgs<ExtArgs> = {}>(args?: Subset<T, DeliveryProcessDefaultArgs<ExtArgs>>): Prisma__DeliveryProcessClient<$Result.GetResult<Prisma.$DeliveryProcessPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     createdBy<T extends UserMetaDefaultArgs<ExtArgs> = {}>(args?: Subset<T, UserMetaDefaultArgs<ExtArgs>>): Prisma__UserMetaClient<$Result.GetResult<Prisma.$UserMetaPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     orders<T extends Sequence$ordersArgs<ExtArgs> = {}>(args?: Subset<T, Sequence$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SequenceOrderPayload<ExtArgs>, T, "findMany"> | Null>
     /**
@@ -6498,6 +7639,7 @@ export namespace Prisma {
    */ 
   interface SequenceFieldRefs {
     readonly id: FieldRef<"Sequence", 'Int'>
+    readonly processId: FieldRef<"Sequence", 'Int'>
     readonly createdById: FieldRef<"Sequence", 'Int'>
     readonly createdAt: FieldRef<"Sequence", 'DateTime'>
     readonly closedAt: FieldRef<"Sequence", 'DateTime'>
@@ -8777,8 +9919,22 @@ export namespace Prisma {
   export type OrderItemScalarFieldEnum = (typeof OrderItemScalarFieldEnum)[keyof typeof OrderItemScalarFieldEnum]
 
 
+  export const DeliveryProcessScalarFieldEnum: {
+    id: 'id',
+    name: 'name',
+    scheduledAt: 'scheduledAt',
+    createdById: 'createdById',
+    createdAt: 'createdAt',
+    closedAt: 'closedAt',
+    status: 'status'
+  };
+
+  export type DeliveryProcessScalarFieldEnum = (typeof DeliveryProcessScalarFieldEnum)[keyof typeof DeliveryProcessScalarFieldEnum]
+
+
   export const SequenceScalarFieldEnum: {
     id: 'id',
+    processId: 'processId',
     createdById: 'createdById',
     createdAt: 'createdAt',
     closedAt: 'closedAt',
@@ -8907,6 +10063,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'ProcessStatus'
+   */
+  export type EnumProcessStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ProcessStatus'>
+    
+
+
+  /**
    * Reference to a field of type 'SequenceStatus'
    */
   export type EnumSequenceStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'SequenceStatus'>
@@ -8936,6 +10099,7 @@ export namespace Prisma {
     lastLoginAt?: DateTimeNullableFilter<"UserMeta"> | Date | string | null
     createdAt?: DateTimeFilter<"UserMeta"> | Date | string
     updatedAt?: DateTimeFilter<"UserMeta"> | Date | string
+    processesCreated?: DeliveryProcessListRelationFilter
     sequencesCreated?: SequenceListRelationFilter
     packedOrders?: OrderListRelationFilter
     pickedOrders?: OrderListRelationFilter
@@ -8953,6 +10117,7 @@ export namespace Prisma {
     lastLoginAt?: SortOrderInput | SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
+    processesCreated?: DeliveryProcessOrderByRelationAggregateInput
     sequencesCreated?: SequenceOrderByRelationAggregateInput
     packedOrders?: OrderOrderByRelationAggregateInput
     pickedOrders?: OrderOrderByRelationAggregateInput
@@ -8973,6 +10138,7 @@ export namespace Prisma {
     lastLoginAt?: DateTimeNullableFilter<"UserMeta"> | Date | string | null
     createdAt?: DateTimeFilter<"UserMeta"> | Date | string
     updatedAt?: DateTimeFilter<"UserMeta"> | Date | string
+    processesCreated?: DeliveryProcessListRelationFilter
     sequencesCreated?: SequenceListRelationFilter
     packedOrders?: OrderListRelationFilter
     pickedOrders?: OrderListRelationFilter
@@ -9331,11 +10497,82 @@ export namespace Prisma {
     packedAt?: DateTimeNullableWithAggregatesFilter<"OrderItem"> | Date | string | null
   }
 
+  export type DeliveryProcessWhereInput = {
+    AND?: DeliveryProcessWhereInput | DeliveryProcessWhereInput[]
+    OR?: DeliveryProcessWhereInput[]
+    NOT?: DeliveryProcessWhereInput | DeliveryProcessWhereInput[]
+    id?: IntFilter<"DeliveryProcess"> | number
+    name?: StringFilter<"DeliveryProcess"> | string
+    scheduledAt?: DateTimeNullableFilter<"DeliveryProcess"> | Date | string | null
+    createdById?: IntFilter<"DeliveryProcess"> | number
+    createdAt?: DateTimeFilter<"DeliveryProcess"> | Date | string
+    closedAt?: DateTimeNullableFilter<"DeliveryProcess"> | Date | string | null
+    status?: EnumProcessStatusFilter<"DeliveryProcess"> | $Enums.ProcessStatus
+    createdBy?: XOR<UserMetaRelationFilter, UserMetaWhereInput>
+    sequences?: SequenceListRelationFilter
+  }
+
+  export type DeliveryProcessOrderByWithRelationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    scheduledAt?: SortOrderInput | SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    closedAt?: SortOrderInput | SortOrder
+    status?: SortOrder
+    createdBy?: UserMetaOrderByWithRelationInput
+    sequences?: SequenceOrderByRelationAggregateInput
+  }
+
+  export type DeliveryProcessWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: DeliveryProcessWhereInput | DeliveryProcessWhereInput[]
+    OR?: DeliveryProcessWhereInput[]
+    NOT?: DeliveryProcessWhereInput | DeliveryProcessWhereInput[]
+    name?: StringFilter<"DeliveryProcess"> | string
+    scheduledAt?: DateTimeNullableFilter<"DeliveryProcess"> | Date | string | null
+    createdById?: IntFilter<"DeliveryProcess"> | number
+    createdAt?: DateTimeFilter<"DeliveryProcess"> | Date | string
+    closedAt?: DateTimeNullableFilter<"DeliveryProcess"> | Date | string | null
+    status?: EnumProcessStatusFilter<"DeliveryProcess"> | $Enums.ProcessStatus
+    createdBy?: XOR<UserMetaRelationFilter, UserMetaWhereInput>
+    sequences?: SequenceListRelationFilter
+  }, "id">
+
+  export type DeliveryProcessOrderByWithAggregationInput = {
+    id?: SortOrder
+    name?: SortOrder
+    scheduledAt?: SortOrderInput | SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    closedAt?: SortOrderInput | SortOrder
+    status?: SortOrder
+    _count?: DeliveryProcessCountOrderByAggregateInput
+    _avg?: DeliveryProcessAvgOrderByAggregateInput
+    _max?: DeliveryProcessMaxOrderByAggregateInput
+    _min?: DeliveryProcessMinOrderByAggregateInput
+    _sum?: DeliveryProcessSumOrderByAggregateInput
+  }
+
+  export type DeliveryProcessScalarWhereWithAggregatesInput = {
+    AND?: DeliveryProcessScalarWhereWithAggregatesInput | DeliveryProcessScalarWhereWithAggregatesInput[]
+    OR?: DeliveryProcessScalarWhereWithAggregatesInput[]
+    NOT?: DeliveryProcessScalarWhereWithAggregatesInput | DeliveryProcessScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"DeliveryProcess"> | number
+    name?: StringWithAggregatesFilter<"DeliveryProcess"> | string
+    scheduledAt?: DateTimeNullableWithAggregatesFilter<"DeliveryProcess"> | Date | string | null
+    createdById?: IntWithAggregatesFilter<"DeliveryProcess"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"DeliveryProcess"> | Date | string
+    closedAt?: DateTimeNullableWithAggregatesFilter<"DeliveryProcess"> | Date | string | null
+    status?: EnumProcessStatusWithAggregatesFilter<"DeliveryProcess"> | $Enums.ProcessStatus
+  }
+
   export type SequenceWhereInput = {
     AND?: SequenceWhereInput | SequenceWhereInput[]
     OR?: SequenceWhereInput[]
     NOT?: SequenceWhereInput | SequenceWhereInput[]
     id?: IntFilter<"Sequence"> | number
+    processId?: IntFilter<"Sequence"> | number
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -9344,12 +10581,14 @@ export namespace Prisma {
     expectedBags?: IntFilter<"Sequence"> | number
     actualBags?: IntFilter<"Sequence"> | number
     status?: EnumSequenceStatusFilter<"Sequence"> | $Enums.SequenceStatus
+    process?: XOR<DeliveryProcessRelationFilter, DeliveryProcessWhereInput>
     createdBy?: XOR<UserMetaRelationFilter, UserMetaWhereInput>
     orders?: SequenceOrderListRelationFilter
   }
 
   export type SequenceOrderByWithRelationInput = {
     id?: SortOrder
+    processId?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrderInput | SortOrder
@@ -9358,6 +10597,7 @@ export namespace Prisma {
     expectedBags?: SortOrder
     actualBags?: SortOrder
     status?: SortOrder
+    process?: DeliveryProcessOrderByWithRelationInput
     createdBy?: UserMetaOrderByWithRelationInput
     orders?: SequenceOrderOrderByRelationAggregateInput
   }
@@ -9367,6 +10607,7 @@ export namespace Prisma {
     AND?: SequenceWhereInput | SequenceWhereInput[]
     OR?: SequenceWhereInput[]
     NOT?: SequenceWhereInput | SequenceWhereInput[]
+    processId?: IntFilter<"Sequence"> | number
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -9375,12 +10616,14 @@ export namespace Prisma {
     expectedBags?: IntFilter<"Sequence"> | number
     actualBags?: IntFilter<"Sequence"> | number
     status?: EnumSequenceStatusFilter<"Sequence"> | $Enums.SequenceStatus
+    process?: XOR<DeliveryProcessRelationFilter, DeliveryProcessWhereInput>
     createdBy?: XOR<UserMetaRelationFilter, UserMetaWhereInput>
     orders?: SequenceOrderListRelationFilter
   }, "id">
 
   export type SequenceOrderByWithAggregationInput = {
     id?: SortOrder
+    processId?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrderInput | SortOrder
@@ -9401,6 +10644,7 @@ export namespace Prisma {
     OR?: SequenceScalarWhereWithAggregatesInput[]
     NOT?: SequenceScalarWhereWithAggregatesInput | SequenceScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"Sequence"> | number
+    processId?: IntWithAggregatesFilter<"Sequence"> | number
     createdById?: IntWithAggregatesFilter<"Sequence"> | number
     createdAt?: DateTimeWithAggregatesFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableWithAggregatesFilter<"Sequence"> | Date | string | null
@@ -9532,6 +10776,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
@@ -9549,6 +10794,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessUncheckedCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
@@ -9566,6 +10812,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
@@ -9583,6 +10830,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUncheckedUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
@@ -9981,6 +11229,76 @@ export namespace Prisma {
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
 
+  export type DeliveryProcessCreateInput = {
+    name: string
+    scheduledAt?: Date | string | null
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    status?: $Enums.ProcessStatus
+    createdBy: UserMetaCreateNestedOneWithoutProcessesCreatedInput
+    sequences?: SequenceCreateNestedManyWithoutProcessInput
+  }
+
+  export type DeliveryProcessUncheckedCreateInput = {
+    id?: number
+    name: string
+    scheduledAt?: Date | string | null
+    createdById: number
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    status?: $Enums.ProcessStatus
+    sequences?: SequenceUncheckedCreateNestedManyWithoutProcessInput
+  }
+
+  export type DeliveryProcessUpdateInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+    createdBy?: UserMetaUpdateOneRequiredWithoutProcessesCreatedNestedInput
+    sequences?: SequenceUpdateManyWithoutProcessNestedInput
+  }
+
+  export type DeliveryProcessUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdById?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+    sequences?: SequenceUncheckedUpdateManyWithoutProcessNestedInput
+  }
+
+  export type DeliveryProcessCreateManyInput = {
+    id?: number
+    name: string
+    scheduledAt?: Date | string | null
+    createdById: number
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    status?: $Enums.ProcessStatus
+  }
+
+  export type DeliveryProcessUpdateManyMutationInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+  }
+
+  export type DeliveryProcessUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdById?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+  }
+
   export type SequenceCreateInput = {
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -9989,12 +11307,14 @@ export namespace Prisma {
     expectedBags?: number
     actualBags?: number
     status?: $Enums.SequenceStatus
+    process: DeliveryProcessCreateNestedOneWithoutSequencesInput
     createdBy: UserMetaCreateNestedOneWithoutSequencesCreatedInput
     orders?: SequenceOrderCreateNestedManyWithoutSequenceInput
   }
 
   export type SequenceUncheckedCreateInput = {
     id?: number
+    processId: number
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -10014,12 +11334,14 @@ export namespace Prisma {
     expectedBags?: IntFieldUpdateOperationsInput | number
     actualBags?: IntFieldUpdateOperationsInput | number
     status?: EnumSequenceStatusFieldUpdateOperationsInput | $Enums.SequenceStatus
+    process?: DeliveryProcessUpdateOneRequiredWithoutSequencesNestedInput
     createdBy?: UserMetaUpdateOneRequiredWithoutSequencesCreatedNestedInput
     orders?: SequenceOrderUpdateManyWithoutSequenceNestedInput
   }
 
   export type SequenceUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
+    processId?: IntFieldUpdateOperationsInput | number
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10033,6 +11355,7 @@ export namespace Prisma {
 
   export type SequenceCreateManyInput = {
     id?: number
+    processId: number
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -10055,6 +11378,7 @@ export namespace Prisma {
 
   export type SequenceUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
+    processId?: IntFieldUpdateOperationsInput | number
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -10245,6 +11569,12 @@ export namespace Prisma {
     not?: NestedDateTimeFilter<$PrismaModel> | Date | string
   }
 
+  export type DeliveryProcessListRelationFilter = {
+    every?: DeliveryProcessWhereInput
+    some?: DeliveryProcessWhereInput
+    none?: DeliveryProcessWhereInput
+  }
+
   export type SequenceListRelationFilter = {
     every?: SequenceWhereInput
     some?: SequenceWhereInput
@@ -10266,6 +11596,10 @@ export namespace Prisma {
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
+  }
+
+  export type DeliveryProcessOrderByRelationAggregateInput = {
+    _count?: SortOrder
   }
 
   export type SequenceOrderByRelationAggregateInput = {
@@ -10740,11 +12074,11 @@ export namespace Prisma {
     _max?: NestedEnumWarehouseFilter<$PrismaModel>
   }
 
-  export type EnumSequenceStatusFilter<$PrismaModel = never> = {
-    equals?: $Enums.SequenceStatus | EnumSequenceStatusFieldRefInput<$PrismaModel>
-    in?: $Enums.SequenceStatus[]
-    notIn?: $Enums.SequenceStatus[]
-    not?: NestedEnumSequenceStatusFilter<$PrismaModel> | $Enums.SequenceStatus
+  export type EnumProcessStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ProcessStatus | EnumProcessStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ProcessStatus[]
+    notIn?: $Enums.ProcessStatus[]
+    not?: NestedEnumProcessStatusFilter<$PrismaModel> | $Enums.ProcessStatus
   }
 
   export type UserMetaRelationFilter = {
@@ -10752,8 +12086,71 @@ export namespace Prisma {
     isNot?: UserMetaWhereInput
   }
 
+  export type DeliveryProcessCountOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    scheduledAt?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    closedAt?: SortOrder
+    status?: SortOrder
+  }
+
+  export type DeliveryProcessAvgOrderByAggregateInput = {
+    id?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type DeliveryProcessMaxOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    scheduledAt?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    closedAt?: SortOrder
+    status?: SortOrder
+  }
+
+  export type DeliveryProcessMinOrderByAggregateInput = {
+    id?: SortOrder
+    name?: SortOrder
+    scheduledAt?: SortOrder
+    createdById?: SortOrder
+    createdAt?: SortOrder
+    closedAt?: SortOrder
+    status?: SortOrder
+  }
+
+  export type DeliveryProcessSumOrderByAggregateInput = {
+    id?: SortOrder
+    createdById?: SortOrder
+  }
+
+  export type EnumProcessStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ProcessStatus | EnumProcessStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ProcessStatus[]
+    notIn?: $Enums.ProcessStatus[]
+    not?: NestedEnumProcessStatusWithAggregatesFilter<$PrismaModel> | $Enums.ProcessStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumProcessStatusFilter<$PrismaModel>
+    _max?: NestedEnumProcessStatusFilter<$PrismaModel>
+  }
+
+  export type EnumSequenceStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.SequenceStatus | EnumSequenceStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.SequenceStatus[]
+    notIn?: $Enums.SequenceStatus[]
+    not?: NestedEnumSequenceStatusFilter<$PrismaModel> | $Enums.SequenceStatus
+  }
+
+  export type DeliveryProcessRelationFilter = {
+    is?: DeliveryProcessWhereInput
+    isNot?: DeliveryProcessWhereInput
+  }
+
   export type SequenceCountOrderByAggregateInput = {
     id?: SortOrder
+    processId?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -10766,6 +12163,7 @@ export namespace Prisma {
 
   export type SequenceAvgOrderByAggregateInput = {
     id?: SortOrder
+    processId?: SortOrder
     createdById?: SortOrder
     expectedBags?: SortOrder
     actualBags?: SortOrder
@@ -10773,6 +12171,7 @@ export namespace Prisma {
 
   export type SequenceMaxOrderByAggregateInput = {
     id?: SortOrder
+    processId?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -10785,6 +12184,7 @@ export namespace Prisma {
 
   export type SequenceMinOrderByAggregateInput = {
     id?: SortOrder
+    processId?: SortOrder
     createdById?: SortOrder
     createdAt?: SortOrder
     closedAt?: SortOrder
@@ -10797,6 +12197,7 @@ export namespace Prisma {
 
   export type SequenceSumOrderByAggregateInput = {
     id?: SortOrder
+    processId?: SortOrder
     createdById?: SortOrder
     expectedBags?: SortOrder
     actualBags?: SortOrder
@@ -10936,6 +12337,13 @@ export namespace Prisma {
     _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
+  export type DeliveryProcessCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<DeliveryProcessCreateWithoutCreatedByInput, DeliveryProcessUncheckedCreateWithoutCreatedByInput> | DeliveryProcessCreateWithoutCreatedByInput[] | DeliveryProcessUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: DeliveryProcessCreateOrConnectWithoutCreatedByInput | DeliveryProcessCreateOrConnectWithoutCreatedByInput[]
+    createMany?: DeliveryProcessCreateManyCreatedByInputEnvelope
+    connect?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+  }
+
   export type SequenceCreateNestedManyWithoutCreatedByInput = {
     create?: XOR<SequenceCreateWithoutCreatedByInput, SequenceUncheckedCreateWithoutCreatedByInput> | SequenceCreateWithoutCreatedByInput[] | SequenceUncheckedCreateWithoutCreatedByInput[]
     connectOrCreate?: SequenceCreateOrConnectWithoutCreatedByInput | SequenceCreateOrConnectWithoutCreatedByInput[]
@@ -10969,6 +12377,13 @@ export namespace Prisma {
     connectOrCreate?: EventCreateOrConnectWithoutActorInput | EventCreateOrConnectWithoutActorInput[]
     createMany?: EventCreateManyActorInputEnvelope
     connect?: EventWhereUniqueInput | EventWhereUniqueInput[]
+  }
+
+  export type DeliveryProcessUncheckedCreateNestedManyWithoutCreatedByInput = {
+    create?: XOR<DeliveryProcessCreateWithoutCreatedByInput, DeliveryProcessUncheckedCreateWithoutCreatedByInput> | DeliveryProcessCreateWithoutCreatedByInput[] | DeliveryProcessUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: DeliveryProcessCreateOrConnectWithoutCreatedByInput | DeliveryProcessCreateOrConnectWithoutCreatedByInput[]
+    createMany?: DeliveryProcessCreateManyCreatedByInputEnvelope
+    connect?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
   }
 
   export type SequenceUncheckedCreateNestedManyWithoutCreatedByInput = {
@@ -11032,6 +12447,20 @@ export namespace Prisma {
 
   export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string
+  }
+
+  export type DeliveryProcessUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<DeliveryProcessCreateWithoutCreatedByInput, DeliveryProcessUncheckedCreateWithoutCreatedByInput> | DeliveryProcessCreateWithoutCreatedByInput[] | DeliveryProcessUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: DeliveryProcessCreateOrConnectWithoutCreatedByInput | DeliveryProcessCreateOrConnectWithoutCreatedByInput[]
+    upsert?: DeliveryProcessUpsertWithWhereUniqueWithoutCreatedByInput | DeliveryProcessUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: DeliveryProcessCreateManyCreatedByInputEnvelope
+    set?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+    disconnect?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+    delete?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+    connect?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+    update?: DeliveryProcessUpdateWithWhereUniqueWithoutCreatedByInput | DeliveryProcessUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: DeliveryProcessUpdateManyWithWhereWithoutCreatedByInput | DeliveryProcessUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: DeliveryProcessScalarWhereInput | DeliveryProcessScalarWhereInput[]
   }
 
   export type SequenceUpdateManyWithoutCreatedByNestedInput = {
@@ -11102,6 +12531,20 @@ export namespace Prisma {
     update?: EventUpdateWithWhereUniqueWithoutActorInput | EventUpdateWithWhereUniqueWithoutActorInput[]
     updateMany?: EventUpdateManyWithWhereWithoutActorInput | EventUpdateManyWithWhereWithoutActorInput[]
     deleteMany?: EventScalarWhereInput | EventScalarWhereInput[]
+  }
+
+  export type DeliveryProcessUncheckedUpdateManyWithoutCreatedByNestedInput = {
+    create?: XOR<DeliveryProcessCreateWithoutCreatedByInput, DeliveryProcessUncheckedCreateWithoutCreatedByInput> | DeliveryProcessCreateWithoutCreatedByInput[] | DeliveryProcessUncheckedCreateWithoutCreatedByInput[]
+    connectOrCreate?: DeliveryProcessCreateOrConnectWithoutCreatedByInput | DeliveryProcessCreateOrConnectWithoutCreatedByInput[]
+    upsert?: DeliveryProcessUpsertWithWhereUniqueWithoutCreatedByInput | DeliveryProcessUpsertWithWhereUniqueWithoutCreatedByInput[]
+    createMany?: DeliveryProcessCreateManyCreatedByInputEnvelope
+    set?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+    disconnect?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+    delete?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+    connect?: DeliveryProcessWhereUniqueInput | DeliveryProcessWhereUniqueInput[]
+    update?: DeliveryProcessUpdateWithWhereUniqueWithoutCreatedByInput | DeliveryProcessUpdateWithWhereUniqueWithoutCreatedByInput[]
+    updateMany?: DeliveryProcessUpdateManyWithWhereWithoutCreatedByInput | DeliveryProcessUpdateManyWithWhereWithoutCreatedByInput[]
+    deleteMany?: DeliveryProcessScalarWhereInput | DeliveryProcessScalarWhereInput[]
   }
 
   export type SequenceUncheckedUpdateManyWithoutCreatedByNestedInput = {
@@ -11438,6 +12881,72 @@ export namespace Prisma {
     update?: XOR<XOR<ProductMetaUpdateToOneWithWhereWithoutOrderItemsInput, ProductMetaUpdateWithoutOrderItemsInput>, ProductMetaUncheckedUpdateWithoutOrderItemsInput>
   }
 
+  export type UserMetaCreateNestedOneWithoutProcessesCreatedInput = {
+    create?: XOR<UserMetaCreateWithoutProcessesCreatedInput, UserMetaUncheckedCreateWithoutProcessesCreatedInput>
+    connectOrCreate?: UserMetaCreateOrConnectWithoutProcessesCreatedInput
+    connect?: UserMetaWhereUniqueInput
+  }
+
+  export type SequenceCreateNestedManyWithoutProcessInput = {
+    create?: XOR<SequenceCreateWithoutProcessInput, SequenceUncheckedCreateWithoutProcessInput> | SequenceCreateWithoutProcessInput[] | SequenceUncheckedCreateWithoutProcessInput[]
+    connectOrCreate?: SequenceCreateOrConnectWithoutProcessInput | SequenceCreateOrConnectWithoutProcessInput[]
+    createMany?: SequenceCreateManyProcessInputEnvelope
+    connect?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+  }
+
+  export type SequenceUncheckedCreateNestedManyWithoutProcessInput = {
+    create?: XOR<SequenceCreateWithoutProcessInput, SequenceUncheckedCreateWithoutProcessInput> | SequenceCreateWithoutProcessInput[] | SequenceUncheckedCreateWithoutProcessInput[]
+    connectOrCreate?: SequenceCreateOrConnectWithoutProcessInput | SequenceCreateOrConnectWithoutProcessInput[]
+    createMany?: SequenceCreateManyProcessInputEnvelope
+    connect?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+  }
+
+  export type EnumProcessStatusFieldUpdateOperationsInput = {
+    set?: $Enums.ProcessStatus
+  }
+
+  export type UserMetaUpdateOneRequiredWithoutProcessesCreatedNestedInput = {
+    create?: XOR<UserMetaCreateWithoutProcessesCreatedInput, UserMetaUncheckedCreateWithoutProcessesCreatedInput>
+    connectOrCreate?: UserMetaCreateOrConnectWithoutProcessesCreatedInput
+    upsert?: UserMetaUpsertWithoutProcessesCreatedInput
+    connect?: UserMetaWhereUniqueInput
+    update?: XOR<XOR<UserMetaUpdateToOneWithWhereWithoutProcessesCreatedInput, UserMetaUpdateWithoutProcessesCreatedInput>, UserMetaUncheckedUpdateWithoutProcessesCreatedInput>
+  }
+
+  export type SequenceUpdateManyWithoutProcessNestedInput = {
+    create?: XOR<SequenceCreateWithoutProcessInput, SequenceUncheckedCreateWithoutProcessInput> | SequenceCreateWithoutProcessInput[] | SequenceUncheckedCreateWithoutProcessInput[]
+    connectOrCreate?: SequenceCreateOrConnectWithoutProcessInput | SequenceCreateOrConnectWithoutProcessInput[]
+    upsert?: SequenceUpsertWithWhereUniqueWithoutProcessInput | SequenceUpsertWithWhereUniqueWithoutProcessInput[]
+    createMany?: SequenceCreateManyProcessInputEnvelope
+    set?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+    disconnect?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+    delete?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+    connect?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+    update?: SequenceUpdateWithWhereUniqueWithoutProcessInput | SequenceUpdateWithWhereUniqueWithoutProcessInput[]
+    updateMany?: SequenceUpdateManyWithWhereWithoutProcessInput | SequenceUpdateManyWithWhereWithoutProcessInput[]
+    deleteMany?: SequenceScalarWhereInput | SequenceScalarWhereInput[]
+  }
+
+  export type SequenceUncheckedUpdateManyWithoutProcessNestedInput = {
+    create?: XOR<SequenceCreateWithoutProcessInput, SequenceUncheckedCreateWithoutProcessInput> | SequenceCreateWithoutProcessInput[] | SequenceUncheckedCreateWithoutProcessInput[]
+    connectOrCreate?: SequenceCreateOrConnectWithoutProcessInput | SequenceCreateOrConnectWithoutProcessInput[]
+    upsert?: SequenceUpsertWithWhereUniqueWithoutProcessInput | SequenceUpsertWithWhereUniqueWithoutProcessInput[]
+    createMany?: SequenceCreateManyProcessInputEnvelope
+    set?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+    disconnect?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+    delete?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+    connect?: SequenceWhereUniqueInput | SequenceWhereUniqueInput[]
+    update?: SequenceUpdateWithWhereUniqueWithoutProcessInput | SequenceUpdateWithWhereUniqueWithoutProcessInput[]
+    updateMany?: SequenceUpdateManyWithWhereWithoutProcessInput | SequenceUpdateManyWithWhereWithoutProcessInput[]
+    deleteMany?: SequenceScalarWhereInput | SequenceScalarWhereInput[]
+  }
+
+  export type DeliveryProcessCreateNestedOneWithoutSequencesInput = {
+    create?: XOR<DeliveryProcessCreateWithoutSequencesInput, DeliveryProcessUncheckedCreateWithoutSequencesInput>
+    connectOrCreate?: DeliveryProcessCreateOrConnectWithoutSequencesInput
+    connect?: DeliveryProcessWhereUniqueInput
+  }
+
   export type UserMetaCreateNestedOneWithoutSequencesCreatedInput = {
     create?: XOR<UserMetaCreateWithoutSequencesCreatedInput, UserMetaUncheckedCreateWithoutSequencesCreatedInput>
     connectOrCreate?: UserMetaCreateOrConnectWithoutSequencesCreatedInput
@@ -11460,6 +12969,14 @@ export namespace Prisma {
 
   export type EnumSequenceStatusFieldUpdateOperationsInput = {
     set?: $Enums.SequenceStatus
+  }
+
+  export type DeliveryProcessUpdateOneRequiredWithoutSequencesNestedInput = {
+    create?: XOR<DeliveryProcessCreateWithoutSequencesInput, DeliveryProcessUncheckedCreateWithoutSequencesInput>
+    connectOrCreate?: DeliveryProcessCreateOrConnectWithoutSequencesInput
+    upsert?: DeliveryProcessUpsertWithoutSequencesInput
+    connect?: DeliveryProcessWhereUniqueInput
+    update?: XOR<XOR<DeliveryProcessUpdateToOneWithWhereWithoutSequencesInput, DeliveryProcessUpdateWithoutSequencesInput>, DeliveryProcessUncheckedUpdateWithoutSequencesInput>
   }
 
   export type UserMetaUpdateOneRequiredWithoutSequencesCreatedNestedInput = {
@@ -11832,6 +13349,23 @@ export namespace Prisma {
     _max?: NestedEnumWarehouseFilter<$PrismaModel>
   }
 
+  export type NestedEnumProcessStatusFilter<$PrismaModel = never> = {
+    equals?: $Enums.ProcessStatus | EnumProcessStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ProcessStatus[]
+    notIn?: $Enums.ProcessStatus[]
+    not?: NestedEnumProcessStatusFilter<$PrismaModel> | $Enums.ProcessStatus
+  }
+
+  export type NestedEnumProcessStatusWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: $Enums.ProcessStatus | EnumProcessStatusFieldRefInput<$PrismaModel>
+    in?: $Enums.ProcessStatus[]
+    notIn?: $Enums.ProcessStatus[]
+    not?: NestedEnumProcessStatusWithAggregatesFilter<$PrismaModel> | $Enums.ProcessStatus
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedEnumProcessStatusFilter<$PrismaModel>
+    _max?: NestedEnumProcessStatusFilter<$PrismaModel>
+  }
+
   export type NestedEnumSequenceStatusFilter<$PrismaModel = never> = {
     equals?: $Enums.SequenceStatus | EnumSequenceStatusFieldRefInput<$PrismaModel>
     in?: $Enums.SequenceStatus[]
@@ -11871,6 +13405,35 @@ export namespace Prisma {
     not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
   }
 
+  export type DeliveryProcessCreateWithoutCreatedByInput = {
+    name: string
+    scheduledAt?: Date | string | null
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    status?: $Enums.ProcessStatus
+    sequences?: SequenceCreateNestedManyWithoutProcessInput
+  }
+
+  export type DeliveryProcessUncheckedCreateWithoutCreatedByInput = {
+    id?: number
+    name: string
+    scheduledAt?: Date | string | null
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    status?: $Enums.ProcessStatus
+    sequences?: SequenceUncheckedCreateNestedManyWithoutProcessInput
+  }
+
+  export type DeliveryProcessCreateOrConnectWithoutCreatedByInput = {
+    where: DeliveryProcessWhereUniqueInput
+    create: XOR<DeliveryProcessCreateWithoutCreatedByInput, DeliveryProcessUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type DeliveryProcessCreateManyCreatedByInputEnvelope = {
+    data: DeliveryProcessCreateManyCreatedByInput | DeliveryProcessCreateManyCreatedByInput[]
+    skipDuplicates?: boolean
+  }
+
   export type SequenceCreateWithoutCreatedByInput = {
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -11879,11 +13442,13 @@ export namespace Prisma {
     expectedBags?: number
     actualBags?: number
     status?: $Enums.SequenceStatus
+    process: DeliveryProcessCreateNestedOneWithoutSequencesInput
     orders?: SequenceOrderCreateNestedManyWithoutSequenceInput
   }
 
   export type SequenceUncheckedCreateWithoutCreatedByInput = {
     id?: number
+    processId: number
     createdAt?: Date | string
     closedAt?: Date | string | null
     b1ClosedAt?: Date | string | null
@@ -12154,6 +13719,35 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type DeliveryProcessUpsertWithWhereUniqueWithoutCreatedByInput = {
+    where: DeliveryProcessWhereUniqueInput
+    update: XOR<DeliveryProcessUpdateWithoutCreatedByInput, DeliveryProcessUncheckedUpdateWithoutCreatedByInput>
+    create: XOR<DeliveryProcessCreateWithoutCreatedByInput, DeliveryProcessUncheckedCreateWithoutCreatedByInput>
+  }
+
+  export type DeliveryProcessUpdateWithWhereUniqueWithoutCreatedByInput = {
+    where: DeliveryProcessWhereUniqueInput
+    data: XOR<DeliveryProcessUpdateWithoutCreatedByInput, DeliveryProcessUncheckedUpdateWithoutCreatedByInput>
+  }
+
+  export type DeliveryProcessUpdateManyWithWhereWithoutCreatedByInput = {
+    where: DeliveryProcessScalarWhereInput
+    data: XOR<DeliveryProcessUpdateManyMutationInput, DeliveryProcessUncheckedUpdateManyWithoutCreatedByInput>
+  }
+
+  export type DeliveryProcessScalarWhereInput = {
+    AND?: DeliveryProcessScalarWhereInput | DeliveryProcessScalarWhereInput[]
+    OR?: DeliveryProcessScalarWhereInput[]
+    NOT?: DeliveryProcessScalarWhereInput | DeliveryProcessScalarWhereInput[]
+    id?: IntFilter<"DeliveryProcess"> | number
+    name?: StringFilter<"DeliveryProcess"> | string
+    scheduledAt?: DateTimeNullableFilter<"DeliveryProcess"> | Date | string | null
+    createdById?: IntFilter<"DeliveryProcess"> | number
+    createdAt?: DateTimeFilter<"DeliveryProcess"> | Date | string
+    closedAt?: DateTimeNullableFilter<"DeliveryProcess"> | Date | string | null
+    status?: EnumProcessStatusFilter<"DeliveryProcess"> | $Enums.ProcessStatus
+  }
+
   export type SequenceUpsertWithWhereUniqueWithoutCreatedByInput = {
     where: SequenceWhereUniqueInput
     update: XOR<SequenceUpdateWithoutCreatedByInput, SequenceUncheckedUpdateWithoutCreatedByInput>
@@ -12175,6 +13769,7 @@ export namespace Prisma {
     OR?: SequenceScalarWhereInput[]
     NOT?: SequenceScalarWhereInput | SequenceScalarWhereInput[]
     id?: IntFilter<"Sequence"> | number
+    processId?: IntFilter<"Sequence"> | number
     createdById?: IntFilter<"Sequence"> | number
     createdAt?: DateTimeFilter<"Sequence"> | Date | string
     closedAt?: DateTimeNullableFilter<"Sequence"> | Date | string | null
@@ -12361,6 +13956,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
     b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
@@ -12377,6 +13973,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessUncheckedCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
     b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
@@ -12398,6 +13995,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
     b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
@@ -12414,6 +14012,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessUncheckedCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
     b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
@@ -12435,6 +14034,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
@@ -12451,6 +14051,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessUncheckedCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
@@ -12553,6 +14154,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
     b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
@@ -12569,6 +14171,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUncheckedUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
     b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
@@ -12596,6 +14199,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
     b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
@@ -12612,6 +14216,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUncheckedUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
@@ -12639,6 +14244,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
@@ -12655,6 +14261,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUncheckedUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
@@ -12915,6 +14522,165 @@ export namespace Prisma {
     syncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type UserMetaCreateWithoutProcessesCreatedInput = {
+    wpUserId: number
+    username: string
+    displayName: string
+    email?: string | null
+    capabilities: JsonNullValueInput | InputJsonValue
+    active?: boolean
+    lastLoginAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
+    packedOrders?: OrderCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
+    events?: EventCreateNestedManyWithoutActorInput
+  }
+
+  export type UserMetaUncheckedCreateWithoutProcessesCreatedInput = {
+    wpUserId: number
+    username: string
+    displayName: string
+    email?: string | null
+    capabilities: JsonNullValueInput | InputJsonValue
+    active?: boolean
+    lastLoginAt?: Date | string | null
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
+    packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
+    pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
+    b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
+    events?: EventUncheckedCreateNestedManyWithoutActorInput
+  }
+
+  export type UserMetaCreateOrConnectWithoutProcessesCreatedInput = {
+    where: UserMetaWhereUniqueInput
+    create: XOR<UserMetaCreateWithoutProcessesCreatedInput, UserMetaUncheckedCreateWithoutProcessesCreatedInput>
+  }
+
+  export type SequenceCreateWithoutProcessInput = {
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    b1ClosedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
+    expectedBags?: number
+    actualBags?: number
+    status?: $Enums.SequenceStatus
+    createdBy: UserMetaCreateNestedOneWithoutSequencesCreatedInput
+    orders?: SequenceOrderCreateNestedManyWithoutSequenceInput
+  }
+
+  export type SequenceUncheckedCreateWithoutProcessInput = {
+    id?: number
+    createdById: number
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    b1ClosedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
+    expectedBags?: number
+    actualBags?: number
+    status?: $Enums.SequenceStatus
+    orders?: SequenceOrderUncheckedCreateNestedManyWithoutSequenceInput
+  }
+
+  export type SequenceCreateOrConnectWithoutProcessInput = {
+    where: SequenceWhereUniqueInput
+    create: XOR<SequenceCreateWithoutProcessInput, SequenceUncheckedCreateWithoutProcessInput>
+  }
+
+  export type SequenceCreateManyProcessInputEnvelope = {
+    data: SequenceCreateManyProcessInput | SequenceCreateManyProcessInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UserMetaUpsertWithoutProcessesCreatedInput = {
+    update: XOR<UserMetaUpdateWithoutProcessesCreatedInput, UserMetaUncheckedUpdateWithoutProcessesCreatedInput>
+    create: XOR<UserMetaCreateWithoutProcessesCreatedInput, UserMetaUncheckedCreateWithoutProcessesCreatedInput>
+    where?: UserMetaWhereInput
+  }
+
+  export type UserMetaUpdateToOneWithWhereWithoutProcessesCreatedInput = {
+    where?: UserMetaWhereInput
+    data: XOR<UserMetaUpdateWithoutProcessesCreatedInput, UserMetaUncheckedUpdateWithoutProcessesCreatedInput>
+  }
+
+  export type UserMetaUpdateWithoutProcessesCreatedInput = {
+    wpUserId?: IntFieldUpdateOperationsInput | number
+    username?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    capabilities?: JsonNullValueInput | InputJsonValue
+    active?: BoolFieldUpdateOperationsInput | boolean
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
+    packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
+    events?: EventUpdateManyWithoutActorNestedInput
+  }
+
+  export type UserMetaUncheckedUpdateWithoutProcessesCreatedInput = {
+    wpUserId?: IntFieldUpdateOperationsInput | number
+    username?: StringFieldUpdateOperationsInput | string
+    displayName?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    capabilities?: JsonNullValueInput | InputJsonValue
+    active?: BoolFieldUpdateOperationsInput | boolean
+    lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
+    packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
+    pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
+    b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
+    events?: EventUncheckedUpdateManyWithoutActorNestedInput
+  }
+
+  export type SequenceUpsertWithWhereUniqueWithoutProcessInput = {
+    where: SequenceWhereUniqueInput
+    update: XOR<SequenceUpdateWithoutProcessInput, SequenceUncheckedUpdateWithoutProcessInput>
+    create: XOR<SequenceCreateWithoutProcessInput, SequenceUncheckedCreateWithoutProcessInput>
+  }
+
+  export type SequenceUpdateWithWhereUniqueWithoutProcessInput = {
+    where: SequenceWhereUniqueInput
+    data: XOR<SequenceUpdateWithoutProcessInput, SequenceUncheckedUpdateWithoutProcessInput>
+  }
+
+  export type SequenceUpdateManyWithWhereWithoutProcessInput = {
+    where: SequenceScalarWhereInput
+    data: XOR<SequenceUpdateManyMutationInput, SequenceUncheckedUpdateManyWithoutProcessInput>
+  }
+
+  export type DeliveryProcessCreateWithoutSequencesInput = {
+    name: string
+    scheduledAt?: Date | string | null
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    status?: $Enums.ProcessStatus
+    createdBy: UserMetaCreateNestedOneWithoutProcessesCreatedInput
+  }
+
+  export type DeliveryProcessUncheckedCreateWithoutSequencesInput = {
+    id?: number
+    name: string
+    scheduledAt?: Date | string | null
+    createdById: number
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    status?: $Enums.ProcessStatus
+  }
+
+  export type DeliveryProcessCreateOrConnectWithoutSequencesInput = {
+    where: DeliveryProcessWhereUniqueInput
+    create: XOR<DeliveryProcessCreateWithoutSequencesInput, DeliveryProcessUncheckedCreateWithoutSequencesInput>
+  }
+
   export type UserMetaCreateWithoutSequencesCreatedInput = {
     wpUserId: number
     username: string
@@ -12925,6 +14691,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
     b2ClosedOrders?: OrderCreateNestedManyWithoutB2ClosedByInput
@@ -12941,6 +14708,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
     b2ClosedOrders?: OrderUncheckedCreateNestedManyWithoutB2ClosedByInput
@@ -12970,6 +14738,36 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type DeliveryProcessUpsertWithoutSequencesInput = {
+    update: XOR<DeliveryProcessUpdateWithoutSequencesInput, DeliveryProcessUncheckedUpdateWithoutSequencesInput>
+    create: XOR<DeliveryProcessCreateWithoutSequencesInput, DeliveryProcessUncheckedCreateWithoutSequencesInput>
+    where?: DeliveryProcessWhereInput
+  }
+
+  export type DeliveryProcessUpdateToOneWithWhereWithoutSequencesInput = {
+    where?: DeliveryProcessWhereInput
+    data: XOR<DeliveryProcessUpdateWithoutSequencesInput, DeliveryProcessUncheckedUpdateWithoutSequencesInput>
+  }
+
+  export type DeliveryProcessUpdateWithoutSequencesInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+    createdBy?: UserMetaUpdateOneRequiredWithoutProcessesCreatedNestedInput
+  }
+
+  export type DeliveryProcessUncheckedUpdateWithoutSequencesInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdById?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+  }
+
   export type UserMetaUpsertWithoutSequencesCreatedInput = {
     update: XOR<UserMetaUpdateWithoutSequencesCreatedInput, UserMetaUncheckedUpdateWithoutSequencesCreatedInput>
     create: XOR<UserMetaCreateWithoutSequencesCreatedInput, UserMetaUncheckedCreateWithoutSequencesCreatedInput>
@@ -12991,6 +14789,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
     b2ClosedOrders?: OrderUpdateManyWithoutB2ClosedByNestedInput
@@ -13007,6 +14806,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
     b2ClosedOrders?: OrderUncheckedUpdateManyWithoutB2ClosedByNestedInput
@@ -13037,11 +14837,13 @@ export namespace Prisma {
     expectedBags?: number
     actualBags?: number
     status?: $Enums.SequenceStatus
+    process: DeliveryProcessCreateNestedOneWithoutSequencesInput
     createdBy: UserMetaCreateNestedOneWithoutSequencesCreatedInput
   }
 
   export type SequenceUncheckedCreateWithoutOrdersInput = {
     id?: number
+    processId: number
     createdById: number
     createdAt?: Date | string
     closedAt?: Date | string | null
@@ -13146,11 +14948,13 @@ export namespace Prisma {
     expectedBags?: IntFieldUpdateOperationsInput | number
     actualBags?: IntFieldUpdateOperationsInput | number
     status?: EnumSequenceStatusFieldUpdateOperationsInput | $Enums.SequenceStatus
+    process?: DeliveryProcessUpdateOneRequiredWithoutSequencesNestedInput
     createdBy?: UserMetaUpdateOneRequiredWithoutSequencesCreatedNestedInput
   }
 
   export type SequenceUncheckedUpdateWithoutOrdersInput = {
     id?: IntFieldUpdateOperationsInput | number
+    processId?: IntFieldUpdateOperationsInput | number
     createdById?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13247,6 +15051,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderCreateNestedManyWithoutPickedByInput
@@ -13263,6 +15068,7 @@ export namespace Prisma {
     lastLoginAt?: Date | string | null
     createdAt?: Date | string
     updatedAt?: Date | string
+    processesCreated?: DeliveryProcessUncheckedCreateNestedManyWithoutCreatedByInput
     sequencesCreated?: SequenceUncheckedCreateNestedManyWithoutCreatedByInput
     packedOrders?: OrderUncheckedCreateNestedManyWithoutPackedByInput
     pickedOrders?: OrderUncheckedCreateNestedManyWithoutPickedByInput
@@ -13365,6 +15171,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUpdateManyWithoutPickedByNestedInput
@@ -13381,6 +15188,7 @@ export namespace Prisma {
     lastLoginAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    processesCreated?: DeliveryProcessUncheckedUpdateManyWithoutCreatedByNestedInput
     sequencesCreated?: SequenceUncheckedUpdateManyWithoutCreatedByNestedInput
     packedOrders?: OrderUncheckedUpdateManyWithoutPackedByNestedInput
     pickedOrders?: OrderUncheckedUpdateManyWithoutPickedByNestedInput
@@ -13463,8 +15271,18 @@ export namespace Prisma {
     sequenceLinks?: SequenceOrderUncheckedUpdateManyWithoutOrderNestedInput
   }
 
+  export type DeliveryProcessCreateManyCreatedByInput = {
+    id?: number
+    name: string
+    scheduledAt?: Date | string | null
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    status?: $Enums.ProcessStatus
+  }
+
   export type SequenceCreateManyCreatedByInput = {
     id?: number
+    processId: number
     createdAt?: Date | string
     closedAt?: Date | string | null
     b1ClosedAt?: Date | string | null
@@ -13572,6 +15390,34 @@ export namespace Prisma {
     createdAt?: Date | string
   }
 
+  export type DeliveryProcessUpdateWithoutCreatedByInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+    sequences?: SequenceUpdateManyWithoutProcessNestedInput
+  }
+
+  export type DeliveryProcessUncheckedUpdateWithoutCreatedByInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+    sequences?: SequenceUncheckedUpdateManyWithoutProcessNestedInput
+  }
+
+  export type DeliveryProcessUncheckedUpdateManyWithoutCreatedByInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    scheduledAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    status?: EnumProcessStatusFieldUpdateOperationsInput | $Enums.ProcessStatus
+  }
+
   export type SequenceUpdateWithoutCreatedByInput = {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13580,11 +15426,13 @@ export namespace Prisma {
     expectedBags?: IntFieldUpdateOperationsInput | number
     actualBags?: IntFieldUpdateOperationsInput | number
     status?: EnumSequenceStatusFieldUpdateOperationsInput | $Enums.SequenceStatus
+    process?: DeliveryProcessUpdateOneRequiredWithoutSequencesNestedInput
     orders?: SequenceOrderUpdateManyWithoutSequenceNestedInput
   }
 
   export type SequenceUncheckedUpdateWithoutCreatedByInput = {
     id?: IntFieldUpdateOperationsInput | number
+    processId?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -13597,6 +15445,7 @@ export namespace Prisma {
 
   export type SequenceUncheckedUpdateManyWithoutCreatedByInput = {
     id?: IntFieldUpdateOperationsInput | number
+    processId?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -14031,6 +15880,55 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
+  export type SequenceCreateManyProcessInput = {
+    id?: number
+    createdById: number
+    createdAt?: Date | string
+    closedAt?: Date | string | null
+    b1ClosedAt?: Date | string | null
+    b2ClosedAt?: Date | string | null
+    expectedBags?: number
+    actualBags?: number
+    status?: $Enums.SequenceStatus
+  }
+
+  export type SequenceUpdateWithoutProcessInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    expectedBags?: IntFieldUpdateOperationsInput | number
+    actualBags?: IntFieldUpdateOperationsInput | number
+    status?: EnumSequenceStatusFieldUpdateOperationsInput | $Enums.SequenceStatus
+    createdBy?: UserMetaUpdateOneRequiredWithoutSequencesCreatedNestedInput
+    orders?: SequenceOrderUpdateManyWithoutSequenceNestedInput
+  }
+
+  export type SequenceUncheckedUpdateWithoutProcessInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdById?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    expectedBags?: IntFieldUpdateOperationsInput | number
+    actualBags?: IntFieldUpdateOperationsInput | number
+    status?: EnumSequenceStatusFieldUpdateOperationsInput | $Enums.SequenceStatus
+    orders?: SequenceOrderUncheckedUpdateManyWithoutSequenceNestedInput
+  }
+
+  export type SequenceUncheckedUpdateManyWithoutProcessInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdById?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    closedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b1ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    b2ClosedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    expectedBags?: IntFieldUpdateOperationsInput | number
+    actualBags?: IntFieldUpdateOperationsInput | number
+    status?: EnumSequenceStatusFieldUpdateOperationsInput | $Enums.SequenceStatus
+  }
+
   export type SequenceOrderCreateManySequenceInput = {
     orderId: number
   }
@@ -14065,6 +15963,10 @@ export namespace Prisma {
      */
     export type OrderCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = OrderCountOutputTypeDefaultArgs<ExtArgs>
     /**
+     * @deprecated Use DeliveryProcessCountOutputTypeDefaultArgs instead
+     */
+    export type DeliveryProcessCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = DeliveryProcessCountOutputTypeDefaultArgs<ExtArgs>
+    /**
      * @deprecated Use SequenceCountOutputTypeDefaultArgs instead
      */
     export type SequenceCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = SequenceCountOutputTypeDefaultArgs<ExtArgs>
@@ -14084,6 +15986,10 @@ export namespace Prisma {
      * @deprecated Use OrderItemDefaultArgs instead
      */
     export type OrderItemArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = OrderItemDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use DeliveryProcessDefaultArgs instead
+     */
+    export type DeliveryProcessArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = DeliveryProcessDefaultArgs<ExtArgs>
     /**
      * @deprecated Use SequenceDefaultArgs instead
      */

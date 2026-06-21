@@ -28,6 +28,7 @@ export type FlowProgress = { total: number; pending: number };
 
 export type Sequence = {
   id: number;
+  processId?: number;
   status: SequenceStatus;
   expectedBags: number;
   actualBags: number;
