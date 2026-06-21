@@ -4,10 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Image as ImageIcon, AlertOctagon, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
 import { ordersApi } from '@/lib/sequences';
+import { pickingB2Api } from '@/lib/dispatch';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
+import { ProgressHero } from '@/components/RouteProgressPills';
 import { warehouseLabel } from '@/lib/labels';
 
 export function PickingB2Order() {
@@ -20,6 +22,14 @@ export function PickingB2Order() {
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', ordId],
     queryFn: () => ordersApi.get(ordId),
+  });
+
+  // Datos B2 de la secuencia para el widget de progreso. Se refresca para
+  // reflejar pedidos que otros pickers van cerrando en paralelo.
+  const { data: seqB2 } = useQuery({
+    queryKey: ['picking-b2-sequence', seqId],
+    queryFn: () => pickingB2Api.forSequence(seqId),
+    refetchInterval: 4000,
   });
 
   const [checked, setChecked] = useState<Set<number>>(new Set());
@@ -105,6 +115,20 @@ export function PickingB2Order() {
         <ChevronLeft size={16} />
         Lista de pedidos
       </Link>
+
+      {/* Widget grande de progreso de cierres B2 de la secuencia */}
+      {seqB2 && (() => {
+        const total = seqB2.orders.length;
+        const done = seqB2.orders.filter((o) => !!o.b2ClosedAt).length;
+        return (
+          <ProgressHero
+            title={`Secuencia #${seqId}`}
+            done={done}
+            total={total}
+            verb={`${warehouseLabel('B2')} cerrados`}
+          />
+        );
+      })()}
 
       <div className="card space-y-2 p-4">
         <div className="flex flex-wrap items-center gap-2">
