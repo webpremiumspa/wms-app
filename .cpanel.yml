@@ -21,4 +21,7 @@ deployment:
     - /bin/bash -lc 'case "$PWD" in *wms-chimuelo-dev*) T=wmsdev.chimuelo.cl ;; *) T=wms.chimuelo.cl ;; esac && source $HOME/nodevenv/$T/backend/20/bin/activate && cd $HOME/$T/backend && CURRENT_HASH=$(sha256sum package-lock.json | cut -d" " -f1) && STORED_HASH=$(cat node_modules/.lockfile-hash 2>/dev/null || echo "") && if [ "$CURRENT_HASH" != "$STORED_HASH" ]; then echo ">> lockfile cambió, instalando dependencias..." && npm ci --omit=dev --ignore-scripts && echo "$CURRENT_HASH" > node_modules/.lockfile-hash; else echo ">> lockfile sin cambios, skip npm ci"; fi'
 
     # ─── 3. Frontend dist (ya buildeado en local) → raíz del subdominio ─────
-    - /bin/bash -lc 'case "$PWD" in *wms-chimuelo-dev*) T=wmsdev.chimuelo.cl ;; *) T=wms.chimuelo.cl ;; esac && rsync -a --exclude=.htaccess frontend/dist/ $HOME/$T/ && echo ">> Deploy OK → $T. Restart la app Node si hubo cambios de backend."'
+    # Incluye .htaccess (SPA fallback) — la fuente de verdad está en el repo
+    # (frontend/public/.htaccess). Cualquier cambio en routing/cache se hace
+    # ahí y se propaga vía deploy.
+    - /bin/bash -lc 'case "$PWD" in *wms-chimuelo-dev*) T=wmsdev.chimuelo.cl ;; *) T=wms.chimuelo.cl ;; esac && rsync -a frontend/dist/ $HOME/$T/ && echo ">> Deploy OK → $T. Restart la app Node si hubo cambios de backend."'
