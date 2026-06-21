@@ -128,9 +128,9 @@ export function SequenceDetail() {
 
   return (
     <div className="space-y-4">
-      <Link to="/sequences" className="btn-ghost text-sm">
+      <Link to={seq.processId ? `/processes/${seq.processId}` : '/processes'} className="btn-ghost text-sm">
         <ChevronLeft size={16} />
-        Secuencias
+        Proceso
       </Link>
       <div className="card p-4">
         <div className="flex flex-wrap items-center gap-2">
