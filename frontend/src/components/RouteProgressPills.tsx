@@ -105,18 +105,11 @@ export function RouteProgressPills({ routes, mode, highlightRoute }: Props) {
 }
 
 // Widget grande de progreso para la ruta del pedido escaneado actual.
-// Delega al genérico ProgressHero.
+// Delega a ProgressHero. No renderiza si no encuentra la ruta en `routes`.
 export function RouteProgressHero({ routes, mode, highlightRoute }: Props) {
   const current = highlightRoute ? routes.find((r) => r.route === highlightRoute) : null;
   if (!current) return null;
   const done = mode === 'classified' ? current.classified : current.loaded;
   const verb = mode === 'classified' ? 'clasificados' : 'cargados';
-  return (
-    <ProgressHero
-      title={`Ruta ${current.route}`}
-      done={done}
-      total={current.total}
-      verb={verb}
-    />
-  );
+  return <ProgressHero title={`Ruta ${current.route}`} done={done} total={current.total} verb={verb} />;
 }

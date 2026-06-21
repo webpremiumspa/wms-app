@@ -21,7 +21,7 @@ export function Sidebar() {
   const visible = NAV.filter((n) => !n.caps || n.caps.some((c) => hasCap(user, c)));
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-slate-200 md:bg-white">
+    <aside className="hidden md:sticky md:top-0 md:flex md:h-screen md:w-64 md:shrink-0 md:flex-col md:overflow-y-auto md:border-r md:border-slate-200 md:bg-white">
       <div className="w-full bg-brand-600">
         <img src="/chimuelo-logo.png" alt="Chimuelo" className="block h-auto w-full" />
       </div>

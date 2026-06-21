@@ -28,9 +28,8 @@ export function PackingOrder() {
     queryFn: () => ordersApi.get(ordId),
   });
 
-  // Progreso de packing de la secuencia para el widget grande.
-  // Re-fetch frecuente porque otros pickers pueden estar cerrando pedidos
-  // en paralelo en la misma secuencia.
+  // Datos de la secuencia para el widget de progreso. Se refresca para
+  // reflejar pedidos que otros pickers van cerrando en paralelo.
   const { data: seqData } = useQuery({
     queryKey: ['sequence', seqId],
     queryFn: () => sequencesApi.get(seqId),
@@ -214,16 +213,15 @@ export function PackingOrder() {
         Lista de pedidos
       </Link>
 
-      {/* Widget grande de progreso de la secuencia */}
+      {/* Widget grande de progreso de la secuencia (excluye bloqueados) */}
       {seqData && (() => {
-        const activeOrders = seqData.orders.filter(({ order: o }) => o.status !== 'blocked');
-        const packed = activeOrders.filter(({ order: o }) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.status)).length;
-        const total = activeOrders.length;
+        const active = seqData.orders.filter(({ order: o }) => o.status !== 'blocked');
+        const packed = active.filter(({ order: o }) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.status)).length;
         return (
           <ProgressHero
             title={`Secuencia #${seqId}`}
             done={packed}
-            total={total}
+            total={active.length}
             verb="empacados"
           />
         );
