@@ -52,14 +52,14 @@ export function PickingB2() {
         Picking
       </Link>
       <div>
-        <h2 className="text-xl font-semibold">Picking Bodega 2 · Secuencia #{seqId}</h2>
+        <h2 className="text-xl font-semibold">Picking {warehouseLabel('B2')} · Secuencia #{seqId}</h2>
         {data.sequence?.createdAt && (
           <div className="text-xs text-slate-500">
             Creada el {new Date(data.sequence.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short', year: 'numeric' })}
           </div>
         )}
       </div>
-      <ProgressBar value={closed} total={total} label="Pedidos B2 cerrados" />
+      <ProgressBar value={closed} total={total} label={`Pedidos ${warehouseLabel('B2')} cerrados`} />
 
       <RouteFilter
         selected={routeFilter}
@@ -70,7 +70,7 @@ export function PickingB2() {
 
       {data.sequence?.b2ClosedAt && (
         <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 ring-1 ring-emerald-200">
-          ✓ Flujo B2 cerrado el {new Date(data.sequence.b2ClosedAt).toLocaleString('es-CL')}.
+          ✓ Flujo {warehouseLabel('B2')} cerrado el {new Date(data.sequence.b2ClosedAt).toLocaleString('es-CL')}.
         </div>
       )}
 
@@ -137,7 +137,7 @@ export function PickingB2() {
                   <ShippingBadge method={o.shippingMethod} />
                   {done && (
                     <Badge variant="green">
-                      <CheckCircle2 size={12} className="inline" /> B2 cerrado
+                      <CheckCircle2 size={12} className="inline" /> {warehouseLabel('B2')} cerrado
                     </Badge>
                   )}
                 </div>

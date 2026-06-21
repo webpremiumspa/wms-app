@@ -67,7 +67,7 @@ export function Picking() {
 
       {canPickB2 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-amber-800">Picking Bodega 2 · pendiente (por secuencia)</h3>
+          <h3 className="text-sm font-semibold text-amber-800">Picking {warehouseLabel('B2')} · pendiente (por secuencia)</h3>
           {isLoading ? (
             <Spinner />
           ) : b2Open.length === 0 && (!showClosed || b2Closed.length === 0) ? (
@@ -119,7 +119,7 @@ export function Picking() {
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 font-semibold text-slate-600">
                       Secuencia #{s.id}
-                      <Badge variant="green">B2 cerrado</Badge>
+                      <Badge variant="green">{warehouseLabel('B2')} cerrado</Badge>
                     </div>
                     <div className="text-xs text-slate-500">
                       {s._count?.orders ?? s.expectedBags} pedidos · cerrado el {s.b2ClosedAt ? new Date(s.b2ClosedAt).toLocaleString('es-CL') : '—'}
@@ -134,7 +134,7 @@ export function Picking() {
 
       {canPackB1 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-slate-700">Picking Bodega 1 · pendiente</h3>
+          <h3 className="text-sm font-semibold text-slate-700">Picking {warehouseLabel('B1')} · pendiente</h3>
           {isLoading ? (
             <Spinner />
           ) : b1OpenList.length === 0 ? (
@@ -178,7 +178,7 @@ export function Picking() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 font-semibold text-slate-600">
                   Secuencia #{s.id}
-                  <Badge variant="green">B1 cerrado</Badge>
+                  <Badge variant="green">{warehouseLabel('B1')} cerrado</Badge>
                 </div>
                 <div className="text-xs text-slate-500">
                   {s._count?.orders ?? s.expectedBags} pedidos · cerrado el {s.b1ClosedAt ? new Date(s.b1ClosedAt).toLocaleString('es-CL') : '—'}

@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Plus, List, CalendarDays } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi } from '@/lib/sequences';
-import { sequenceStatusLabel } from '@/lib/labels';
+import { sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { SequenceCalendar } from '@/components/SequenceCalendar';
@@ -221,11 +221,11 @@ function SequenceList({ items }: { items: Sequence[] }) {
               <span className="font-semibold">#{s.id}</span>
               <Badge variant={s.status === 'open' ? 'green' : 'gray'}>{sequenceStatusLabel(s.status)}</Badge>
               <Badge variant={s.b1ClosedAt ? 'green' : 'blue'}>
-                B1 {s.b1ClosedAt ? 'cerrado' : 'abierto'}
+                {warehouseLabel('B1')} {s.b1ClosedAt ? 'cerrado' : 'abierto'}
               </Badge>
               {(s.b2?.total ?? 0) > 0 && (
                 <Badge variant={s.b2ClosedAt ? 'green' : 'amber'}>
-                  B2 {s.b2ClosedAt ? 'cerrado' : `${(s.b2?.pending ?? 0)} pend.`}
+                  {warehouseLabel('B2')} {s.b2ClosedAt ? 'cerrado' : `${(s.b2?.pending ?? 0)} pend.`}
                 </Badge>
               )}
             </div>

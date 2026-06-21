@@ -40,13 +40,13 @@ const SECTIONS: Section[] = [
         </p>
         <h4>El ciclo en una mirada</h4>
         <ol>
-          <li><strong>Tarde (día anterior):</strong> Bodega 1 prepara los pedidos del día siguiente agrupándolos en secuencias.</li>
-          <li><strong>Mañana del despacho:</strong> llega el camión de Bodega 2 con productos consolidados. El operador de carga clasifica las bolsas por ruta escaneando QR.</li>
-          <li><strong>10:00 AM:</strong> salen las camionetas. Repartidores entregan, escanean en destino y reciben alerta si hay productos pendientes de Bodega 2 que retirar a granel.</li>
+          <li><strong>Tarde (día anterior):</strong> Bodega 1 - Local prepara los pedidos del día siguiente agrupándolos en secuencias.</li>
+          <li><strong>Mañana del despacho:</strong> llega el camión de Bodega 2 - El Sol con productos consolidados. El operador de carga clasifica las bolsas por ruta escaneando QR.</li>
+          <li><strong>10:00 AM:</strong> salen las camionetas. Repartidores entregan, escanean en destino y reciben alerta si hay productos pendientes de Bodega 2 - El Sol que retirar a granel.</li>
         </ol>
         <h4>Roles</h4>
         <ul>
-          <li><strong>Operador Bodega 1:</strong> genera secuencias y cierra el día.</li>
+          <li><strong>Operador Bodega 1 - Local:</strong> genera secuencias y cierra el día.</li>
           <li><strong>Picker:</strong> recorre la bodega con el reporte y marca lo recolectado.</li>
           <li><strong>Packer:</strong> arma las bolsas individuales y imprime el albarán.</li>
           <li><strong>Operador de carga:</strong> escanea bolsas en la mañana, las clasifica por ruta y confirma carga al vehículo.</li>
@@ -271,7 +271,7 @@ const SECTIONS: Section[] = [
         <ol>
           <li>Después de escanear el QR (o entrar desde la lista), el pedido queda <strong>asignado a ese picker</strong>.</li>
           <li>Cada tarjeta muestra <strong>ruta</strong> (badge azul), <em>parada de carga</em> y aviso si tiene B2 pendiente.</li>
-          <li>Se ven los items B1 (van en la bolsa) y, si aplica, los B2 (que NO van — se entregan a granel desde Bodega 2).</li>
+          <li>Se ven los items B1 (van en la bolsa) y, si aplica, los B2 (que NO van — se entregan a granel desde Bodega 2 - El Sol).</li>
           <li>Por cada item B1 que se mete en la bolsa, marca su checkbox. El sistema bloquea el cierre hasta que todos estén marcados.</li>
           <li>Toca <strong>Cerrar pedido</strong>. El albarán YA está impreso (se imprimió en batch al armar la secuencia) — se coloca en la bolsa visible.</li>
           <li>Queda registrado quién empacó el pedido (trazabilidad).</li>
@@ -280,7 +280,7 @@ const SECTIONS: Section[] = [
           <strong>Reimprimir albarán</strong>: si la hoja original se rompió o se manchó, puedes reimprimirla desde el pedido empacado. Cada reimpresión genera el albarán nuevo con la info actualizada.
         </p>
 
-        <h4>Pedidos solo de Bodega 2</h4>
+        <h4>Pedidos solo de Bodega 2 - El Sol</h4>
         <p>Si un pedido <strong>no tiene items B1</strong> (todo es de B2), igual lo cierras desde la lista de empacar:</p>
         <ul>
           <li>No hay items para marcar — el botón cambia a <em>"Imprimir albarán y cerrar"</em>.</li>
@@ -300,7 +300,7 @@ const SECTIONS: Section[] = [
         </ul>
 
         <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">
-          <strong>⚠ Marca de Bodega 2 en el albarán:</strong> si el pedido tiene productos pendientes de B2, el PDF muestra una banda amarilla GRANDE de "BODEGA 2 PENDIENTE" + lista de items a sacar del granel. Es visible al instante al manipular la bolsa.
+          <strong>⚠ Marca de Bodega 2 - El Sol en el albarán:</strong> si el pedido tiene productos pendientes de B2 - El Sol, el PDF muestra una banda amarilla GRANDE de "B2 - EL SOL PENDIENTE" + lista de items a sacar del granel. Es visible al instante al manipular la bolsa.
         </div>
 
         <h4>Reimprimir un albarán</h4>
@@ -330,7 +330,7 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'b2-picking',
-    title: 'Picking Bodega 2 (per-pedido, igual que B1)',
+    title: 'Picking Bodega 2 - El Sol (per-pedido, igual que B1)',
     icon: Package,
     body: (
       <>
@@ -460,7 +460,7 @@ const SECTIONS: Section[] = [
           <li>Aparece el contenido del pedido (lo que tienes que entregar dentro de la bolsa) y la ruta destacada.</li>
           <li>
             <strong className="text-amber-800">
-              ⚠ Si el pedido tiene productos de Bodega 2 pendientes, vas a ver un banner naranja gigante, el móvil va a sonar dos veces y vibrará.
+              ⚠ Si el pedido tiene productos de Bodega 2 - El Sol pendientes, vas a ver un banner naranja gigante, el móvil va a sonar dos veces y vibrará.
             </strong>{' '}
             Tienes que tomar esos productos del cargamento a granel del vehículo y agregarlos antes de entregar.
           </li>
@@ -537,7 +537,7 @@ const SECTIONS: Section[] = [
         <ul>
           <li><strong>Recibido</strong> (en el sistema: <code>received</code>) — el pedido llegó al WMS desde WooCommerce, pero todavía no entró a ninguna secuencia. Disponible para reservar.</li>
           <li><strong>En secuencia</strong> (<code>sequenced</code>) — fue agrupado con otros pedidos. Aún no se recolectó nada.</li>
-          <li><strong>Recolectado</strong> (<code>picked</code>) — todos sus items de Bodega 1 ya fueron recolectados de la estantería (solo aplica en modo <em>Por SKU</em>).</li>
+          <li><strong>Recolectado</strong> (<code>picked</code>) — todos sus items de Bodega 1 - Local ya fueron recolectados de la estantería (solo aplica en modo <em>Por SKU</em>).</li>
           <li><strong>Empacado</strong> (<code>packed</code>) — la bolsa fue armada y se imprimió el albarán con QR. Listo para clasificación matinal.</li>
           <li><strong>Clasificado</strong> (<code>classified</code>) — alguien escaneó el QR en la mañana, el sistema le dijo qué ruta y la bolsa se llevó al área de su camioneta.</li>
           <li><strong>Cargado</strong> (<code>loaded</code>) — la bolsa está físicamente arriba del vehículo, lista para salir a reparto.</li>
@@ -556,10 +556,10 @@ const SECTIONS: Section[] = [
           <li><strong>Imprimir todos los albaranes</strong> — un único PDF de N páginas que se genera al armar la secuencia. Cada hoja tiene su QR — los pickers escanean para "tomar" el pedido.</li>
           <li><strong>Claim / Tomar pedido</strong> — al escanear el QR (o entrar al pedido desde la lista), el sistema lo asigna a ese picker. Modelo "último escaneo gana": si otro lo había tomado, se reasigna. Pero solo el último claimer puede cerrar — si dos están trabajando el mismo, el anterior verá error al cerrar.</li>
           <li><strong>Picking conjunto</strong> — agrupar varias secuencias en una sola corrida de picking B2 (cuando el equipo B2 hace la recolección matinal de todo el día).</li>
-          <li><strong>Bodega 1 (B1)</strong> — bodega principal donde se arman las bolsas individuales.</li>
-          <li><strong>Bodega 2 (B2)</strong> — bodega satélite con stock distinto. Sus productos se recolectan a granel una vez al día y se reparten desde el cargamento de cada camioneta.</li>
+          <li><strong>Bodega 1 - Local (B1)</strong> — bodega principal donde se arman las bolsas individuales.</li>
+          <li><strong>Bodega 2 - El Sol (B2)</strong> — bodega satélite con stock distinto. Sus productos se recolectan a granel una vez al día y se reparten desde el cargamento de cada camioneta.</li>
           <li><strong>Flujo B1 cerrado / Flujo B2 cerrado</strong> — cada secuencia tiene dos cierres independientes. La secuencia entera pasa a <em>Cerrada</em> solo cuando ambos están cerrados.</li>
-          <li><strong>Albarán</strong> — la hoja impresa que va con cada bolsa, con QR, ruta destacada (pill azul), listado de items y (si aplica) marca de Bodega 2 pendiente.</li>
+          <li><strong>Albarán</strong> — la hoja impresa que va con cada bolsa, con QR, ruta destacada (pill azul), listado de items y (si aplica) marca de Bodega 2 - El Sol pendiente.</li>
           <li><strong>Ruta</strong> — el reparto al que pertenece el pedido (R1, R2, etc.). Viene de WC en la meta <code>_wdg_route</code>. Sin ruta el pedido no se puede cargar al vehículo.</li>
           <li><strong>Parada de carga</strong> — posición dentro de la ruta (1, 2, ...). Ayuda al orden de carga del vehículo.</li>
           <li><strong>Refrescar metadata de productos</strong> — checkbox en el sync que fuerza a re-leer todos los productos desde WC (más lento). Usar cuando cambiaste la bodega de un producto en WC.</li>
@@ -589,7 +589,7 @@ const SECTIONS: Section[] = [
     icon: Lightbulb,
     body: (
       <>
-        <h4>Antes de cerrar la jornada (operador Bodega 1)</h4>
+        <h4>Antes de cerrar la jornada (operador Bodega 1 - Local)</h4>
         <ul>
           <li>Verifica que TODAS las secuencias estén cerradas.</li>
           <li>Que el dashboard muestre 0 pedidos en estado "recibido" o "secuenciado".</li>

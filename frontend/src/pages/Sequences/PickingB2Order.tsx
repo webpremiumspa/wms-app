@@ -113,7 +113,7 @@ export function PickingB2Order() {
           {order.stopPosition != null && <Badge variant="gray">Parada {order.stopPosition}</Badge>}
           {order.allowPartialDelivery && <Badge variant="green">Entrega parcial aprobada</Badge>}
           <ShippingBadge method={order.shippingMethod} />
-          {isB2Closed && <Badge variant="green">B2 cerrado</Badge>}
+          {isB2Closed && <Badge variant="green">{warehouseLabel('B2')} cerrado</Badge>}
         </div>
         <div className="text-sm text-slate-600">{order.customerName || '—'}</div>
         {order.customerAddress && <div className="text-xs text-slate-500">{order.customerAddress}</div>}
@@ -140,15 +140,15 @@ export function PickingB2Order() {
       <div className="card flex items-start gap-3 bg-amber-50 p-4 ring-1 ring-amber-200">
         <AlertOctagon className="shrink-0 text-amber-700" />
         <div className="text-sm text-amber-900">
-          <div className="font-semibold">Items a sacar del granel B2</div>
+          <div className="font-semibold">Items a sacar del granel {warehouseLabel('B2')}</div>
           <div>
-            Arma una <strong>sub-bolsa</strong> con estos items y átala a la bolsa B1 del pedido (o etiquétala con el número).
+            Arma una <strong>sub-bolsa</strong> con estos items y átala a la bolsa {warehouseLabel('B1')} del pedido (o etiquétala con el número).
           </div>
         </div>
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-sm font-semibold text-slate-700">Items a recolectar (Bodega 2)</h3>
+        <h3 className="text-sm font-semibold text-slate-700">Items a recolectar ({warehouseLabel('B2')})</h3>
         <ProgressBar
           value={[...checked].filter((id) => b2Items.some((i) => i.id === id)).length}
           total={b2Items.length}
@@ -201,14 +201,14 @@ export function PickingB2Order() {
             className="btn-primary w-full"
           >
             <CheckCircle2 size={18} />
-            {pack.isPending ? 'Cerrando…' : 'Cerrar B2 del pedido'}
+            {pack.isPending ? 'Cerrando…' : `Cerrar ${warehouseLabel('B2')} del pedido`}
           </button>
         </div>
       )}
 
       {isB2Closed && order.b2ClosedAt && (
         <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 ring-1 ring-emerald-200">
-          B2 cerrado el {new Date(order.b2ClosedAt).toLocaleString('es-CL')}
+          {warehouseLabel('B2')} cerrado el {new Date(order.b2ClosedAt).toLocaleString('es-CL')}
           {order.b2ClosedBy && <> por {order.b2ClosedBy.displayName || order.b2ClosedBy.username}</>}.
         </div>
       )}

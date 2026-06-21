@@ -5,6 +5,7 @@ import { ChevronLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { warehouseLabel } from '@/lib/labels';
 
 export function SequenceClose() {
   const { id } = useParams();
@@ -55,13 +56,13 @@ export function SequenceClose() {
 
       <div className="card space-y-3 p-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">Cerrar flujo B1 · #{seqId}</h2>
+          <h2 className="text-lg font-semibold">Cerrar flujo {warehouseLabel('B1')} · #{seqId}</h2>
           <Badge variant={b1Closed ? 'gray' : 'green'}>
-            {b1Closed ? 'B1 cerrado' : 'B1 abierto'}
+            {b1Closed ? `${warehouseLabel('B1')} cerrado` : `${warehouseLabel('B1')} abierto`}
           </Badge>
         </div>
         <p className="text-xs text-slate-500">
-          Esto cierra el packing de Bodega 1. El picking B2 (a granel) se cierra desde su propia pantalla.
+          Esto cierra el packing de {warehouseLabel('B1')}. El picking {warehouseLabel('B2')} (a granel) se cierra desde su propia pantalla.
         </p>
         <div className="grid grid-cols-2 gap-3 text-center">
           <div className="rounded-lg bg-slate-50 p-3">
@@ -114,7 +115,7 @@ export function SequenceClose() {
 
         {b1Closed && seq.b1ClosedAt && (
           <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            Flujo B1 cerrado el {new Date(seq.b1ClosedAt).toLocaleString('es-CL')}.
+            Flujo {warehouseLabel('B1')} cerrado el {new Date(seq.b1ClosedAt).toLocaleString('es-CL')}.
           </div>
         )}
       </div>

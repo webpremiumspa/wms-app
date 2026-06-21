@@ -91,7 +91,7 @@ export function SequenceNew() {
       </button>
       <h2 className="text-xl font-semibold">Generar secuencia</h2>
       <p className="text-sm text-slate-500">
-        Selecciona los pedidos que entran en la próxima secuencia. La secuencia arrastra tanto el picking B1 (para empacar) como el picking B2 (a granel); cada flujo cierra por separado.
+        Selecciona los pedidos que entran en la próxima secuencia. La secuencia arrastra tanto el picking {warehouseLabel('B1')} (para empacar) como el picking {warehouseLabel('B2')} (a granel); cada flujo cierra por separado.
       </p>
 
       {/* Bloque de sincronización manual desde WC */}

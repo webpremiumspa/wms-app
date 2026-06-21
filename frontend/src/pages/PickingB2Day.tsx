@@ -84,7 +84,7 @@ export function PickingB2Day() {
         </div>
       </div>
 
-      <ProgressBar value={closed} total={total} label="Pedidos B2 cerrados" />
+      <ProgressBar value={closed} total={total} label={`Pedidos ${warehouseLabel('B2')} cerrados`} />
 
       {/* Filtro de ruta primero (con contadores por pill) */}
       <RouteFilter
@@ -201,7 +201,7 @@ export function PickingB2Day() {
                     )}
                     {done && (
                       <Badge variant="green">
-                        <CheckCircle2 size={12} className="inline" /> B2 cerrado
+                        <CheckCircle2 size={12} className="inline" /> {warehouseLabel('B2')} cerrado
                       </Badge>
                     )}
                   </div>

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { AlertOctagon } from 'lucide-react';
+import { warehouseLabel } from '@/lib/labels';
 
 type Item = { sku: string | null; name: string; qty: number; thumbnailUrl: string | null };
 
@@ -42,7 +43,7 @@ export function B2Alert({ items }: { items: Item[] }) {
         <AlertOctagon className="shrink-0 text-amber-900" size={36} />
         <div className="min-w-0 flex-1">
           <div className="text-lg font-bold uppercase text-amber-950">
-            ⚠ Bodega 2 pendiente
+            ⚠ {warehouseLabel('B2')} pendiente
           </div>
           <div className="text-sm text-amber-900">
             Sacar del cargamento a granel antes de entregar:

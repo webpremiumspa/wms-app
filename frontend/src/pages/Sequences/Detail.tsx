@@ -152,7 +152,7 @@ export function SequenceDetail() {
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <div className={clsx('rounded-lg px-3 py-2 ring-1', b1Closed ? 'bg-emerald-50 ring-emerald-200 text-emerald-800' : 'bg-blue-50 ring-blue-200 text-blue-800')}>
-            <div className="font-semibold">Flujo B1 (packing)</div>
+            <div className="font-semibold">Flujo {warehouseLabel('B1')} (packing)</div>
             <div>
               {b1Closed
                 ? `Cerrado el ${new Date(seq.b1ClosedAt!).toLocaleString('es-CL')}`
@@ -160,7 +160,7 @@ export function SequenceDetail() {
             </div>
           </div>
           <div className={clsx('rounded-lg px-3 py-2 ring-1', b2Closed ? 'bg-emerald-50 ring-emerald-200 text-emerald-800' : 'bg-amber-50 ring-amber-200 text-amber-800')}>
-            <div className="font-semibold">Flujo B2 (granel)</div>
+            <div className="font-semibold">Flujo {warehouseLabel('B2')} (granel)</div>
             <div>
               {!hasB2
                 ? `Sin items ${warehouseLabel('B2')}`
@@ -189,7 +189,7 @@ export function SequenceDetail() {
             <CheckCircle2 size={22} />
           </div>
           <div>
-            <div className="font-medium">Cerrar flujo B1</div>
+            <div className="font-medium">Cerrar flujo {warehouseLabel('B1')}</div>
             <div className="text-xs text-slate-500">Verificación final del packing</div>
           </div>
         </Link>
@@ -199,7 +199,7 @@ export function SequenceDetail() {
               <PackageOpen size={22} />
             </div>
             <div>
-              <div className="font-medium">Picking B2 · {b2Closed ? 'cerrado' : 'pendiente'}</div>
+              <div className="font-medium">Picking {warehouseLabel('B2')} · {b2Closed ? 'cerrado' : 'pendiente'}</div>
               <div className="text-xs text-slate-500">
                 {b2Closed ? 'Granel cerrado' : 'Recolectar items a granel y cerrar'}
               </div>

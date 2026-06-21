@@ -114,7 +114,7 @@ async function drawAlbaran(doc, order, opts = {}) {
     doc.save();
     doc.rect(40, cursorY, 515, 60).fill('#fef3c7');
     doc.fillColor('#92400e').font('Helvetica-Bold').fontSize(20)
-      .text('⚠ BODEGA 2 PENDIENTE', 40, cursorY + 14, { width: 515, align: 'center' });
+      .text('⚠ B2 - EL SOL PENDIENTE', 40, cursorY + 14, { width: 515, align: 'center' });
     doc.fillColor('#92400e').font('Helvetica').fontSize(10)
       .text('Revisar al cargar y al entregar — items a sacar del cargamento a granel', 40, cursorY + 40, { width: 515, align: 'center' });
     doc.restore();
@@ -144,7 +144,7 @@ async function drawAlbaran(doc, order, opts = {}) {
   if (b2Items.length > 0) {
     cursorY += 10;
     doc.fillColor('#b45309').font('Helvetica-Bold').fontSize(12)
-      .text('Sacar del cargamento a granel (Bodega 2):', 40, cursorY);
+      .text('Sacar del cargamento a granel (B2 - El Sol):', 40, cursorY);
     cursorY += 20;
     drawTable(doc, b2Items, cursorY, itemImages, '#fffbeb');
   }

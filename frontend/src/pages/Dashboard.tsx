@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Info, Package, ClipboardList, Truck, CheckCircle2, Activity, Clock } from 'lucide-react';
 import clsx from 'clsx';
 import { dashboardApi, type AlertSeverity } from '@/lib/dashboard';
-import { eventLabel, orderStatusLabelPlural } from '@/lib/labels';
+import { eventLabel, orderStatusLabelPlural, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 
 const SEVERITY_STYLES: Record<AlertSeverity, string> = {
@@ -47,7 +47,7 @@ export function Dashboard() {
         <KpiCard label="Con B2 pendiente" value={data.orders.withB2Pending} accent="amber" small />
         <KpiCard label="Secuencias abiertas" value={data.sequences.open} accent="blue" small />
         <KpiCard label="Secuencias cerradas" value={data.sequences.closed} accent="gray" small />
-        <KpiCard label="Picking B2" value={`${b2Pct}%`} accent={b2Pct === 100 ? 'green' : 'amber'} small />
+        <KpiCard label={`Picking ${warehouseLabel('B2')}`} value={`${b2Pct}%`} accent={b2Pct === 100 ? 'green' : 'amber'} small />
       </div>
 
       {/* Alertas */}

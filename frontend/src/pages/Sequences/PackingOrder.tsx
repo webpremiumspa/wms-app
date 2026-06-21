@@ -209,7 +209,7 @@ export function PackingOrder() {
           <span className="text-lg font-semibold">Pedido #{order.number}</span>
           {order.route && <Badge variant="blue">{order.route}</Badge>}
           {order.stopPosition != null && <Badge variant="gray">Parada {order.stopPosition}</Badge>}
-          {order.hasB2Pending && <Badge variant="amber">Bodega 2 pendiente</Badge>}
+          {order.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')} pendiente</Badge>}
           {order.allowPartialDelivery && <Badge variant="green">Entrega parcial aprobada</Badge>}
           <ShippingBadge method={order.shippingMethod} />
           {isPacked && <Badge variant="green">Empacado</Badge>}
@@ -281,20 +281,20 @@ export function PackingOrder() {
         <div className="card flex items-start gap-3 bg-amber-50 p-4 ring-1 ring-amber-200">
           <AlertOctagon className="shrink-0 text-amber-700" />
           <div className="text-sm text-amber-900">
-            <div className="font-semibold">Este pedido tiene productos de Bodega 2.</div>
-            <div>Solo empaca los items <strong>B1</strong> en la bolsa. Los B2 quedan listados en el albarán para retirar del cargamento a granel en cada entrega.</div>
+            <div className="font-semibold">Este pedido tiene productos de {warehouseLabel('B2')}.</div>
+            <div>Solo empaca los items <strong>{warehouseLabel('B1')}</strong> en la bolsa. Los {warehouseLabel('B2')} quedan listados en el albarán para retirar del cargamento a granel en cada entrega.</div>
           </div>
         </div>
       )}
 
       {onlyB2 ? (
         <div className="rounded-lg bg-slate-50 px-3 py-3 text-sm text-slate-700 ring-1 ring-slate-200">
-          Este pedido <strong>no tiene items de Bodega 1</strong>. No hay nada que empacar físicamente en la bolsa — el albarán se imprime para que el repartidor tome todo desde el cargamento a granel de Bodega 2.
+          Este pedido <strong>no tiene items de {warehouseLabel('B1')}</strong>. No hay nada que empacar físicamente en la bolsa — el albarán se imprime para que el repartidor tome todo desde el cargamento a granel de {warehouseLabel('B2')}.
         </div>
       ) : null}
 
       <div className={onlyB2 ? 'hidden' : 'space-y-2'}>
-        <h3 className="text-sm font-semibold text-slate-700">Items a empacar (Bodega 1)</h3>
+        <h3 className="text-sm font-semibold text-slate-700">Items a empacar ({warehouseLabel('B1')})</h3>
         <ProgressBar value={[...checked].filter((id) => b1Items.some((i) => i.id === id)).length} total={b1Items.length} label="Items confirmados" />
         {b1Items.map((it) => (
           <label
@@ -329,7 +329,7 @@ export function PackingOrder() {
 
       {b2Items.length > 0 && (
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold text-amber-800">A granel desde Bodega 2 (no empacar aquí)</h3>
+          <h3 className="text-sm font-semibold text-amber-800">A granel desde {warehouseLabel('B2')} (no empacar aquí)</h3>
           {b2Items.map((it) => (
             <div key={it.id} className="card flex items-center gap-3 bg-amber-50/50 p-3 ring-1 ring-amber-200">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-amber-100">
