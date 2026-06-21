@@ -271,12 +271,11 @@ export async function packOrderB2({ orderId, itemIds, actorId, confirmedOldSeque
       },
     });
     if (pendingPedidos === 0) {
+      // B2 ya no cierra la secuencia (Fase A: secuencia cierra solo con B1).
+      // Solo marca b2ClosedAt para indicar que el flujo B2 completó.
       await prisma.sequence.update({
         where: { id: sequenceId },
-        data: {
-          b2ClosedAt: now,
-          ...(seq.b1ClosedAt ? { status: 'closed', closedAt: now } : {}),
-        },
+        data: { b2ClosedAt: now },
       });
       await prisma.event.create({
         data: {
@@ -318,13 +317,15 @@ export async function closeSequenceB1({ sequenceId, actorId, actualBags }) {
   }
 
   const now = new Date();
+  // Fase A: el cierre B1 cierra la secuencia entera. El picking B2 ahora es
+  // un proceso global del día/proceso, decouplado del cierre de secuencia.
   const updated = await prisma.sequence.update({
     where: { id: sequenceId },
     data: {
       b1ClosedAt: now,
       actualBags: packed,
-      // Si B2 ya estaba cerrado, la secuencia entera pasa a closed.
-      ...(seq.b2ClosedAt ? { status: 'closed', closedAt: now } : {}),
+      status: 'closed',
+      closedAt: now,
     },
   });
 
@@ -366,10 +367,7 @@ export async function closeSequenceB2({ sequenceId, actorId }) {
   const now = new Date();
   const updated = await prisma.sequence.update({
     where: { id: sequenceId },
-    data: {
-      b2ClosedAt: now,
-      ...(seq.b1ClosedAt ? { status: 'closed', closedAt: now } : {}),
-    },
+    data: { b2ClosedAt: now },
   });
 
   await prisma.event.create({

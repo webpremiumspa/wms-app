@@ -81,8 +81,10 @@ export const pickingB2Api = {
   forSequence: async (sequenceId: number): Promise<B2PickingList> =>
     (await api.get(`/picking/b2/sequences/${sequenceId}`)).data,
 
-  today: async (): Promise<B2DayResponse> =>
-    (await api.get('/picking/b2/today')).data,
+  today: async (opts?: { processId?: number }): Promise<B2DayResponse> =>
+    (await api.get('/picking/b2/today', {
+      params: opts?.processId ? { processId: opts.processId } : undefined,
+    })).data,
 };
 
 export const dispatchApi = {

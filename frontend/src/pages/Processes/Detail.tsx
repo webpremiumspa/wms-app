@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ClipboardList, Plus, LayoutGrid, List as ListIcon, XCircle } from 'lucide-react';
+import { ChevronLeft, ClipboardList, Plus, LayoutGrid, List as ListIcon, XCircle, Package, RefreshCw } from 'lucide-react';
+import { syncApi } from '@/lib/sync';
+import { warehouseLabel } from '@/lib/labels';
 import clsx from 'clsx';
 import { processesApi, type ProcessOrderCard } from '@/lib/processes';
 import { Spinner } from '@/components/Spinner';
@@ -48,6 +50,13 @@ export function ProcessDetail() {
     },
   });
 
+  const refreshRoutes = useMutation({
+    mutationFn: () => syncApi.routes(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['process', procId] });
+    },
+  });
+
   if (isLoading || !data) return <Spinner />;
 
   const { process, orders, byStatus, totals } = data;
@@ -81,19 +90,56 @@ export function ProcessDetail() {
         verb="pedidos"
       />
 
-      {isActive && canCreate && (
-        <Link
-          to={`/sequences/new`}
-          className="card flex items-center gap-3 p-4 ring-1 ring-brand-200 hover:shadow-md"
+      {isActive && (
+        <div className="grid gap-2 md:grid-cols-2">
+          {canCreate && (
+            <Link
+              to={`/sequences/new`}
+              className="card flex items-center gap-3 p-4 ring-1 ring-brand-200 hover:shadow-md"
+            >
+              <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
+                <Plus size={20} />
+              </div>
+              <div>
+                <div className="font-medium">Generar nueva secuencia</div>
+                <div className="text-xs text-slate-500">Asociada a este proceso</div>
+              </div>
+            </Link>
+          )}
+          <Link
+            to={`/processes/${procId}/picking-b2`}
+            className="card flex items-center gap-3 p-4 ring-1 ring-amber-200 hover:shadow-md"
+          >
+            <div className="rounded-lg bg-amber-50 p-2 text-amber-700">
+              <Package size={20} />
+            </div>
+            <div>
+              <div className="font-medium">Picking {warehouseLabel('B2')} del proceso</div>
+              <div className="text-xs text-slate-500">Recolectar items a granel de todas las secuencias</div>
+            </div>
+          </Link>
+        </div>
+      )}
+
+      {/* Refrescar rutas para este proceso */}
+      <div className="card flex flex-wrap items-center justify-between gap-2 p-3">
+        <div className="text-xs text-slate-600">
+          ¿La app de rutas asignó después de empacar y no se ven actualizadas? Forzá un refresh.
+        </div>
+        <button
+          type="button"
+          onClick={() => refreshRoutes.mutate()}
+          disabled={refreshRoutes.isPending}
+          className="flex items-center gap-1 rounded-lg bg-white px-3 py-1 text-xs font-medium text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50 disabled:opacity-60"
         >
-          <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
-            <Plus size={20} />
-          </div>
-          <div>
-            <div className="font-medium">Generar nueva secuencia</div>
-            <div className="text-xs text-slate-500">Quedará asociada a este proceso automáticamente</div>
-          </div>
-        </Link>
+          <RefreshCw size={14} className={refreshRoutes.isPending ? 'animate-spin' : ''} />
+          {refreshRoutes.isPending ? 'Refrescando…' : 'Refrescar rutas'}
+        </button>
+      </div>
+      {refreshRoutes.data && (
+        <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-200">
+          Rutas actualizadas: {refreshRoutes.data.updated} de {refreshRoutes.data.total} pedidos.
+        </div>
       )}
 
       {/* Toggle Lista / Kanban */}

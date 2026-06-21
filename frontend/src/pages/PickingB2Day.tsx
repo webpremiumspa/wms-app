@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, CheckCircle2, Image as ImageIcon, List, Package } from 'lucide-react';
 import clsx from 'clsx';
@@ -14,13 +14,18 @@ import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 
 export function PickingB2Day() {
+  // Si la ruta tiene `:id` (proceso), filtramos por ese proceso. Si no,
+  // mantiene compat con el modo global.
+  const { id: processIdParam } = useParams();
+  const processId = processIdParam ? Number(processIdParam) : undefined;
+
   const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
   const [showSummary, setShowSummary] = useState(true);
   const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
-    queryKey: ['picking-b2-today'],
-    queryFn: () => pickingB2Api.today(),
+    queryKey: ['picking-b2-today', processId || 'global'],
+    queryFn: () => pickingB2Api.today({ processId }),
     refetchInterval: 5000,
   });
 
@@ -72,9 +77,9 @@ export function PickingB2Day() {
 
   return (
     <div className="space-y-4 pb-4">
-      <Link to="/picking" className="btn-ghost text-sm">
+      <Link to={processId ? `/processes/${processId}` : '/processes'} className="btn-ghost text-sm">
         <ChevronLeft size={16} />
-        Picking
+        {processId ? 'Proceso' : 'Procesos'}
       </Link>
 
       <div>

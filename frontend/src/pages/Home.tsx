@@ -1,29 +1,19 @@
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import { Link } from 'react-router-dom';
-import { Package, ClipboardList, BarChart3, Truck } from 'lucide-react';
+import { Truck, BarChart3, Plus, ChevronRight } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { dispatchApi } from '@/lib/dispatch';
-import { RouteProgressPills } from '@/components/RouteProgressPills';
-
-type Tile = { to: string; label: string; icon: typeof Package; caps: string[] };
-
-const TILES: Tile[] = [
-  { to: '/sequences/new', label: 'Generar secuencia', icon: ClipboardList, caps: [CAPS.PACK_B1] },
-  { to: '/picking', label: 'Picking', icon: Package, caps: [CAPS.PACK_B1, CAPS.PACK_B2] },
-  { to: '/dashboard', label: 'Supervisión', icon: BarChart3, caps: [CAPS.SUPERVISE] },
-];
+import { processesApi } from '@/lib/processes';
 
 export function Home() {
   const { user } = useAuth();
-  const tiles = TILES.filter((t) => t.caps.some((c) => hasCap(user, c)));
-  const canSeeDispatch = hasCap(user, CAPS.LOAD) || hasCap(user, CAPS.SUPERVISE);
+  const canCreate = hasCap(user, CAPS.PACK_B1);
+  const canSupervise = hasCap(user, CAPS.SUPERVISE);
 
-  const { data: routes } = useQuery({
-    queryKey: ['dispatch-today'],
-    queryFn: () => dispatchApi.today(),
-    enabled: canSeeDispatch,
-    refetchInterval: 10_000,
+  const { data: active } = useQuery({
+    queryKey: ['process-active'],
+    queryFn: () => processesApi.active(),
+    refetchInterval: 8000,
   });
 
   return (
@@ -35,48 +25,68 @@ export function Home() {
         <p className="text-sm text-slate-500">¿Qué vas a hacer hoy?</p>
       </div>
 
-      {tiles.length === 0 ? (
-        <div className="card p-6 text-center text-slate-500">
-          Aún no tienes funciones WMS asignadas. Avisa a tu supervisor.
-        </div>
+      {/* Atajo grande al proceso activo o a crear uno */}
+      {active ? (
+        <Link
+          to={`/processes/${active.id}`}
+          className="card flex items-center gap-4 bg-emerald-50 p-5 ring-1 ring-emerald-300 transition hover:shadow-md"
+        >
+          <div className="rounded-xl bg-emerald-200 p-3 text-emerald-800">
+            <Truck size={28} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs uppercase tracking-wide text-emerald-700">Proceso activo</div>
+            <div className="text-lg font-bold text-emerald-900">{active.name}</div>
+            <div className="text-xs text-emerald-700">
+              {active._count?.sequences || 0} secuencia{active._count?.sequences === 1 ? '' : 's'} · iniciado {new Date(active.createdAt).toLocaleString('es-CL')}
+            </div>
+          </div>
+          <ChevronRight className="text-emerald-700" size={22} />
+        </Link>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-          {tiles.map(({ to, label, icon: Icon }) => (
-            <Link
-              key={to}
-              to={to}
-              className="card flex flex-col items-start gap-3 p-4 transition hover:shadow-md active:scale-[0.98]"
-            >
-              <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
-                <Icon size={22} />
-              </div>
-              <div className="text-sm font-medium text-slate-800">{label}</div>
+        <div className="card flex items-center gap-4 bg-amber-50 p-5 ring-1 ring-amber-300">
+          <div className="rounded-xl bg-amber-200 p-3 text-amber-800">
+            <Truck size={28} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs uppercase tracking-wide text-amber-700">Sin proceso activo</div>
+            <div className="text-sm text-amber-900">
+              No hay un proceso de preparación y carga abierto. {canCreate ? 'Creá uno para empezar a generar secuencias.' : 'Avisá al encargado.'}
+            </div>
+          </div>
+          {canCreate && (
+            <Link to="/processes/new" className="btn-primary shrink-0 text-sm">
+              <Plus size={16} />
+              Crear proceso
             </Link>
-          ))}
+          )}
         </div>
       )}
 
-      {canSeeDispatch && (
-        <div className="space-y-3">
-          <div className="card space-y-2 p-4">
-            <div className="flex items-center gap-2">
-              <Truck size={16} className="text-brand-700" />
-              <h3 className="text-sm font-semibold text-slate-800">Progreso del día — clasificación</h3>
+      {/* Accesos rápidos secundarios */}
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
+        <Link
+          to="/processes"
+          className="card flex flex-col items-start gap-3 p-4 transition hover:shadow-md active:scale-[0.98]"
+        >
+          <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
+            <Truck size={22} />
+          </div>
+          <div className="text-sm font-medium text-slate-800">Procesos</div>
+        </Link>
+
+        {canSupervise && (
+          <Link
+            to="/dashboard"
+            className="card flex flex-col items-start gap-3 p-4 transition hover:shadow-md active:scale-[0.98]"
+          >
+            <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
+              <BarChart3 size={22} />
             </div>
-            <RouteProgressPills routes={routes || []} mode="classified" />
-          </div>
-          <div className="card space-y-2 p-4">
-            <div className="flex items-center gap-2">
-              <Truck size={16} className="text-emerald-700" />
-              <h3 className="text-sm font-semibold text-slate-800">Progreso del día — carga al vehículo</h3>
-            </div>
-            <RouteProgressPills routes={routes || []} mode="loaded" />
-          </div>
-          <div className="text-center text-xs text-slate-500">
-            Para clasificar o cargar: escaneá el QR del pedido con la cámara o con el botón "Escanear otro pedido" después de cualquier scan.
-          </div>
-        </div>
-      )}
+            <div className="text-sm font-medium text-slate-800">Supervisión</div>
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

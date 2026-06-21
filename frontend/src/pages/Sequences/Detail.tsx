@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, PackageOpen, UserX } from 'lucide-react';
+import { ChevronLeft, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
 import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
@@ -67,7 +67,6 @@ export function SequenceDetail() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const canPickB2 = hasCap(user, CAPS.PACK_B2);
   const canManage = hasCap(user, CAPS.PACK_B1) || hasCap(user, CAPS.SUPERVISE);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
   const [removeTarget, setRemoveTarget] = useState<{ id: number; number: string } | null>(null);
@@ -125,7 +124,6 @@ export function SequenceDetail() {
   const deliveredOrders = seq.orders.filter((o) => o.order.status === 'delivered').length;
 
   const b1Closed = !!seq.b1ClosedAt;
-  const b2Closed = !!seq.b2ClosedAt;
   const hasB2 = (seq.b2?.total || 0) > 0;
 
   return (
@@ -150,25 +148,18 @@ export function SequenceDetail() {
           </div>
         )}
 
-        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-          <div className={clsx('rounded-lg px-3 py-2 ring-1', b1Closed ? 'bg-emerald-50 ring-emerald-200 text-emerald-800' : 'bg-blue-50 ring-blue-200 text-blue-800')}>
-            <div className="font-semibold">Flujo {warehouseLabel('B1')} (packing)</div>
-            <div>
-              {b1Closed
-                ? `Cerrado el ${new Date(seq.b1ClosedAt!).toLocaleString('es-CL')}`
-                : `${packed}/${orderCount} pedidos empacados`}
-            </div>
+        <div className={clsx('mt-3 rounded-lg px-3 py-2 text-xs ring-1', b1Closed ? 'bg-emerald-50 ring-emerald-200 text-emerald-800' : 'bg-blue-50 ring-blue-200 text-blue-800')}>
+          <div className="font-semibold">Packing ({warehouseLabel('B1')})</div>
+          <div>
+            {b1Closed
+              ? `Cerrado el ${new Date(seq.b1ClosedAt!).toLocaleString('es-CL')}`
+              : `${packed}/${orderCount} pedidos empacados`}
           </div>
-          <div className={clsx('rounded-lg px-3 py-2 ring-1', b2Closed ? 'bg-emerald-50 ring-emerald-200 text-emerald-800' : 'bg-amber-50 ring-amber-200 text-amber-800')}>
-            <div className="font-semibold">Flujo {warehouseLabel('B2')} (granel)</div>
-            <div>
-              {!hasB2
-                ? `Sin items ${warehouseLabel('B2')}`
-                : b2Closed
-                ? `Cerrado el ${new Date(seq.b2ClosedAt!).toLocaleString('es-CL')}`
-                : `${(seq.b2?.total || 0) - (seq.b2?.pending || 0)}/${seq.b2?.total} items pickeados`}
+          {hasB2 && (
+            <div className="mt-1 text-[11px] italic text-slate-600">
+              Esta secuencia tiene items {warehouseLabel('B2')} — se pickean a granel desde el proceso (no aquí).
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -189,23 +180,10 @@ export function SequenceDetail() {
             <CheckCircle2 size={22} />
           </div>
           <div>
-            <div className="font-medium">Cerrar flujo {warehouseLabel('B1')}</div>
-            <div className="text-xs text-slate-500">Verificación final del packing</div>
+            <div className="font-medium">Cerrar secuencia</div>
+            <div className="text-xs text-slate-500">Verificación final del packing — la secuencia pasa a Cerrada</div>
           </div>
         </Link>
-        {hasB2 && canPickB2 && (
-          <Link to={`/sequences/${seq.id}/picking-b2`} className="card flex items-center gap-3 p-4 ring-1 ring-amber-200 hover:shadow-md">
-            <div className="rounded-lg bg-amber-50 p-2 text-amber-700">
-              <PackageOpen size={22} />
-            </div>
-            <div>
-              <div className="font-medium">Picking {warehouseLabel('B2')} · {b2Closed ? 'cerrado' : 'pendiente'}</div>
-              <div className="text-xs text-slate-500">
-                {b2Closed ? 'Granel cerrado' : 'Recolectar items a granel y cerrar'}
-              </div>
-            </div>
-          </Link>
-        )}
       </div>
 
       {canDelete && (

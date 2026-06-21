@@ -47,6 +47,7 @@ export default function App() {
               <Route path="processes" element={<ProcessesIndex />} />
               <Route path="processes/new" element={<ProcessNew />} />
               <Route path="processes/:id" element={<ProcessDetail />} />
+              <Route path="processes/:id/picking-b2" element={<PickingB2Day />} />
               <Route path="sequences" element={<SequencesIndex />} />
               <Route path="sequences/new" element={<SequenceNew />} />
               <Route path="sequences/:id" element={<SequenceDetail />} />

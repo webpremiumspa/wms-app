@@ -61,15 +61,24 @@ router.get('/summary', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), async (
 //
 // Cada pedido sigue cerrándose por separado (link a su vista per-pedido).
 // La tabla agrupada es SOLO informativa, no es un picking consolidado.
-router.get('/today', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
+router.get('/today', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
-    // Pedidos B2 pendientes de TODAS las secuencias abiertas.
+    // Si pasan processId, filtramos por proceso. Si no, mantiene compat con
+    // el modo global (todas las secuencias abiertas).
+    const processId = req.query.processId ? Number(req.query.processId) : null;
     const orders = await prisma.order.findMany({
       where: {
         hasB2Pending: true,
         b2ClosedAt: null,
         status: { in: ['sequenced', 'picked', 'packed', 'classified', 'loaded'] },
-        sequenceLinks: { some: { sequence: { b2ClosedAt: null } } },
+        sequenceLinks: {
+          some: {
+            sequence: {
+              b2ClosedAt: null,
+              ...(processId ? { processId } : {}),
+            },
+          },
+        },
       },
       include: {
         items: {
@@ -77,7 +86,7 @@ router.get('/today', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUP
           include: { product: true },
         },
         sequenceLinks: {
-          include: { sequence: { select: { id: true, createdAt: true } } },
+          include: { sequence: { select: { id: true, createdAt: true, processId: true } } },
         },
       },
       orderBy: [{ route: 'asc' }, { stopPosition: 'asc' }, { id: 'asc' }],

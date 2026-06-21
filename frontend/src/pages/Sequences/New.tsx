@@ -59,11 +59,6 @@ export function SequenceNew() {
     },
   });
 
-  const validate = useMutation({
-    mutationFn: () => sequencesApi.validateStock(orderIds),
-    onSuccess: (problems) => setProblems(problems),
-  });
-
   const create = useMutation({
     mutationFn: () => sequencesApi.create(orderIds),
     onSuccess: (seq) => {
@@ -368,18 +363,11 @@ export function SequenceNew() {
         </div>
       )}
 
-      <div className="sticky bottom-20 z-10 flex flex-col gap-2 bg-slate-100 pt-2 md:bottom-0 md:flex-row">
-        <button
-          onClick={() => validate.mutate()}
-          disabled={orderIds.length === 0 || validate.isPending}
-          className="btn-ghost flex-1 border border-slate-300"
-        >
-          {validate.isPending ? 'Validando…' : `Validar stock (${orderIds.length})`}
-        </button>
+      <div className="sticky bottom-20 z-10 bg-slate-100 pt-2 md:bottom-0">
         <button
           onClick={() => create.mutate()}
           disabled={!canCreate || create.isPending}
-          className="btn-primary flex-1"
+          className="btn-primary w-full"
         >
           {create.isPending ? 'Creando…' : `Generar secuencia (${orderIds.length})`}
         </button>
