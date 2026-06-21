@@ -8,6 +8,7 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressBar } from '@/components/ProgressBar';
+import { ProgressHero } from '@/components/RouteProgressPills';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { useAuth } from '@/hooks/useAuth';
 import { warehouseLabel } from '@/lib/labels';
@@ -25,6 +26,15 @@ export function PackingOrder() {
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', ordId],
     queryFn: () => ordersApi.get(ordId),
+  });
+
+  // Progreso de packing de la secuencia para el widget grande.
+  // Re-fetch frecuente porque otros pickers pueden estar cerrando pedidos
+  // en paralelo en la misma secuencia.
+  const { data: seqData } = useQuery({
+    queryKey: ['sequence', seqId],
+    queryFn: () => sequencesApi.get(seqId),
+    refetchInterval: 4000,
   });
 
   const [checked, setChecked] = useState<Set<number>>(new Set());
@@ -203,6 +213,21 @@ export function PackingOrder() {
         <ChevronLeft size={16} />
         Lista de pedidos
       </Link>
+
+      {/* Widget grande de progreso de la secuencia */}
+      {seqData && (() => {
+        const activeOrders = seqData.orders.filter(({ order: o }) => o.status !== 'blocked');
+        const packed = activeOrders.filter(({ order: o }) => ['packed', 'classified', 'loaded', 'delivered'].includes(o.status)).length;
+        const total = activeOrders.length;
+        return (
+          <ProgressHero
+            title={`Secuencia #${seqId}`}
+            done={packed}
+            total={total}
+            verb="empacados"
+          />
+        );
+      })()}
 
       <div className="card space-y-2 p-4">
         <div className="flex flex-wrap items-center gap-2">

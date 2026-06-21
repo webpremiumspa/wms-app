@@ -42,6 +42,33 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
     // pública porque cualquiera con el albarán físico ya conoce los items.
     const loadability = await getOrderLoadability(order.id);
 
+    // Progreso de la secuencia abierta del pedido: para que la vista de scan
+    // (clasificación / carga) muestre un warning suave si aún hay pedidos
+    // pendientes en la misma fase anterior. Excluimos pedidos bloqueados.
+    let sequenceProgress = null;
+    if (openSequenceId) {
+      const peers = await prisma.order.findMany({
+        where: {
+          sequenceLinks: { some: { sequenceId: openSequenceId } },
+          status: { notIn: ['blocked'] },
+        },
+        select: { id: true, status: true },
+      });
+      const isPacked = (s) => ['packed', 'classified', 'loaded', 'delivered'].includes(s);
+      const isClassified = (s) => ['classified', 'loaded', 'delivered'].includes(s);
+      const total = peers.length;
+      const packedCount = peers.filter((o) => isPacked(o.status)).length;
+      const classifiedCount = peers.filter((o) => isClassified(o.status)).length;
+      sequenceProgress = {
+        sequenceId: openSequenceId,
+        totalActive: total,
+        packedCount,
+        classifiedCount,
+        pendingPack: total - packedCount,
+        pendingClassify: packedCount - classifiedCount,
+      };
+    }
+
     res.json({
       order: {
         id: order.id,
@@ -65,6 +92,7 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
         partialApproved: loadability.partialApproved,
         missingB2Items: loadability.missingB2Items || [],
         blockReason: loadability.reason || null,
+        sequenceProgress,
         items: order.items.map((it) => ({
           id: it.id,
           qty: it.qty,
