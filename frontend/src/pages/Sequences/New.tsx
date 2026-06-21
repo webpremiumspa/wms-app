@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
 import { syncApi, type SyncResult } from '@/lib/sync';
+import { processesApi } from '@/lib/processes';
 import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
@@ -21,9 +22,15 @@ export function SequenceNew() {
 
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
+  const { data: activeProcess, isLoading: loadingProcess } = useQuery({
+    queryKey: ['process-active'],
+    queryFn: () => processesApi.active(),
+  });
+
   const { data: pending, isLoading } = useQuery({
     queryKey: ['orders', 'pending'],
     queryFn: sequencesApi.pendingOrders,
+    enabled: !!activeProcess,
   });
 
   const pendingList = pending?.orders ?? [];
@@ -83,6 +90,36 @@ export function SequenceNew() {
   const blocking = (problems || []).filter((p) => !p.warning);
   const canCreate = orderIds.length > 0 && (!problems || blocking.length === 0);
 
+  if (loadingProcess) return <Spinner />;
+
+  // Sin proceso activo no se puede crear secuencia. Mostramos call-to-action
+  // directo al alta de proceso para que el operador no quede trabado.
+  if (!activeProcess) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => navigate(-1)} className="btn-ghost text-sm">
+          <ChevronLeft size={16} />
+          Volver
+        </button>
+        <h2 className="text-xl font-semibold">Generar secuencia</h2>
+        <div className="card flex flex-col gap-3 p-6 ring-1 ring-amber-200">
+          <div className="flex items-start gap-2 text-amber-800">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0" />
+            <div>
+              <div className="font-semibold">No hay proceso de preparación y carga abierto</div>
+              <div className="mt-1 text-sm text-amber-900">
+                Cada secuencia debe pertenecer a un proceso (turno matutino o vespertino). Creá uno antes de generar secuencias.
+              </div>
+            </div>
+          </div>
+          <Link to="/processes/new" className="btn-primary w-full sm:w-auto">
+            Crear proceso ahora
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <button onClick={() => navigate(-1)} className="btn-ghost text-sm">
@@ -90,6 +127,9 @@ export function SequenceNew() {
         Volver
       </button>
       <h2 className="text-xl font-semibold">Generar secuencia</h2>
+      <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-200">
+        Esta secuencia se asociará al proceso <strong>{activeProcess.name}</strong>.
+      </div>
       <p className="text-sm text-slate-500">
         Selecciona los pedidos que entran en la próxima secuencia. La secuencia arrastra tanto el picking {warehouseLabel('B1')} (para empacar) como el picking {warehouseLabel('B2')} (a granel); cada flujo cierra por separado.
       </p>
