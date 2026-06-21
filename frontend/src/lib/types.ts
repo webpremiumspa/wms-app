@@ -124,6 +124,14 @@ export type OrderDetail = {
   partialApproved?: boolean;
   missingB2Items?: Array<{ productId: number; sku: string | null; name: string | null; qty: number }>;
   blockReason?: string | null;
+  sequenceProgress?: {
+    sequenceId: number;
+    totalActive: number;
+    packedCount: number;
+    classifiedCount: number;
+    pendingPack: number;
+    pendingClassify: number;
+  } | null;
   items: OrderItem[];
 };
 

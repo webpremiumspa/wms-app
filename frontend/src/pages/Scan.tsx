@@ -23,7 +23,7 @@ import { B2Alert } from '@/components/B2Alert';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { QRScanner } from '@/components/QRScanner';
-import { RouteProgressPills } from '@/components/RouteProgressPills';
+import { RouteProgressPills, RouteProgressHero } from '@/components/RouteProgressPills';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 
@@ -265,7 +265,15 @@ export function Scan() {
               <div className="text-xs uppercase text-brand-700">Acción · Clasificación</div>
               <div className="text-base font-semibold text-slate-800">Confirmá que este pedido fue separado a su ruma de ruta.</div>
             </div>
+            <RouteProgressHero routes={routesProgress || []} mode="classified" highlightRoute={order.route} />
             <RouteProgressPills routes={routesProgress || []} mode="classified" highlightRoute={order.route} />
+            {/* Warning suave: secuencia aún no 100% empacada */}
+            {order.sequenceProgress && order.sequenceProgress.pendingPack > 0 && (
+              <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-300">
+                <strong>⚠ Hay {order.sequenceProgress.pendingPack} pedido{order.sequenceProgress.pendingPack === 1 ? '' : 's'} de la secuencia #{order.sequenceProgress.sequenceId} sin empacar aún.</strong>
+                <div className="mt-0.5 text-xs">Podés clasificar este, pero idealmente esperá a que termine el packing.</div>
+              </div>
+            )}
             {actionError && (
               <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div>
             )}
@@ -297,7 +305,15 @@ export function Scan() {
               <div className="text-xs uppercase text-emerald-700">Acción · Carga al vehículo</div>
               <div className="text-base font-semibold text-slate-800">Confirmá que esta bolsa subió a la camioneta.</div>
             </div>
+            <RouteProgressHero routes={routesProgress || []} mode="loaded" highlightRoute={order.route} />
             <RouteProgressPills routes={routesProgress || []} mode="loaded" highlightRoute={order.route} />
+            {/* Warning suave: secuencia aún no 100% clasificada */}
+            {order.sequenceProgress && order.sequenceProgress.pendingClassify > 0 && (
+              <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-300">
+                <strong>⚠ Hay {order.sequenceProgress.pendingClassify} pedido{order.sequenceProgress.pendingClassify === 1 ? '' : 's'} de la secuencia #{order.sequenceProgress.sequenceId} sin clasificar aún.</strong>
+                <div className="mt-0.5 text-xs">Podés cargar este, pero idealmente esperá a que termine la clasificación.</div>
+              </div>
+            )}
             {actionError && (
               <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div>
             )}

@@ -1,4 +1,5 @@
 import clsx from 'clsx';
+import { CheckCircle2 } from 'lucide-react';
 import type { RouteSummary } from '@/lib/dispatch';
 
 type Mode = 'classified' | 'loaded';
@@ -6,13 +7,11 @@ type Mode = 'classified' | 'loaded';
 type Props = {
   routes: RouteSummary[];
   mode: Mode;
-  // Resaltada: la pill que coincida con el `route` del pedido actual.
   highlightRoute?: string | null;
 };
 
-// Pills de progreso por ruta (Rx - Conductor (n/total)). Se usa tanto en
-// Inicio (visión global del día) como en la vista de scan post-empacado,
-// donde la del pedido actual aparece resaltada.
+// Pills de progreso por ruta (Rx - Conductor (n/total)). Se usa en Inicio
+// (visión global del día) y debajo del widget grande en scan post-empacado.
 export function RouteProgressPills({ routes, mode, highlightRoute }: Props) {
   if (routes.length === 0) {
     return (
@@ -45,6 +44,82 @@ export function RouteProgressPills({ routes, mode, highlightRoute }: Props) {
           </span>
         );
       })}
+    </div>
+  );
+}
+
+// Widget grande de progreso para la ruta del pedido escaneado actual.
+// Muestra barra + número grande, y cambia a verde cuando llega a 100%.
+// Si highlightRoute no se encuentra en `routes`, no renderiza.
+export function RouteProgressHero({
+  routes,
+  mode,
+  highlightRoute,
+}: Props) {
+  const current = highlightRoute ? routes.find((r) => r.route === highlightRoute) : null;
+  if (!current) return null;
+  const done = mode === 'classified' ? current.classified : current.loaded;
+  const total = current.total;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const isComplete = total > 0 && done === total;
+  const verb = mode === 'classified' ? 'clasificados' : 'cargados';
+
+  return (
+    <div
+      className={clsx(
+        'rounded-xl p-4 ring-2 transition-colors',
+        isComplete
+          ? 'bg-emerald-50 ring-emerald-400'
+          : 'bg-brand-50 ring-brand-300',
+      )}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div
+            className={clsx(
+              'text-[10px] font-semibold uppercase tracking-wide',
+              isComplete ? 'text-emerald-700' : 'text-brand-700',
+            )}
+          >
+            Ruta {current.route}
+          </div>
+          <div
+            className={clsx(
+              'mt-0.5 text-2xl font-bold',
+              isComplete ? 'text-emerald-800' : 'text-brand-800',
+            )}
+          >
+            {done}/{total} {verb}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {isComplete && <CheckCircle2 className="text-emerald-700" size={28} />}
+          <div
+            className={clsx(
+              'rounded-full px-3 py-1 text-base font-bold',
+              isComplete
+                ? 'bg-emerald-200 text-emerald-900'
+                : 'bg-brand-200 text-brand-900',
+            )}
+          >
+            {pct}%
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-white/60 ring-1 ring-white/80">
+        <div
+          className={clsx(
+            'h-full transition-all',
+            isComplete ? 'bg-emerald-500' : 'bg-brand-600',
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {isComplete && (
+        <div className="mt-2 text-xs font-medium text-emerald-800">
+          ✓ Ruta completa
+        </div>
+      )}
     </div>
   );
 }
