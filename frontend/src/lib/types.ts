@@ -117,7 +117,7 @@ export type OrderDetail = {
   b2Pickable?: boolean;
   sequenceLinks?: Array<{
     sequenceId: number;
-    sequence?: { id: number; createdAt: string; status: string };
+    sequence?: { id: number; createdAt: string; status: string; processId?: number };
   }>;
   packable?: boolean;
   openSequenceId?: number | null;

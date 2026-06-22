@@ -85,8 +85,15 @@ export function PickingB2Order() {
       queryClient.invalidateQueries({ queryKey: ['order', ordId] });
       queryClient.invalidateQueries({ queryKey: ['picking-b2-sequence', seqId] });
       queryClient.invalidateQueries({ queryKey: ['picking-b2-summary'] });
+      // El listado per-proceso usa key ['picking-b2-today', processId | 'global'].
+      // Invalidamos todas las keys que empiecen con 'picking-b2-today' para
+      // refrescar sin importar el processId.
+      queryClient.invalidateQueries({ queryKey: ['picking-b2-today'] });
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
-      navigate(`/sequences/${seqId}/picking-b2`);
+      queryClient.invalidateQueries({ queryKey: ['process'] });
+      // Volver al picking del proceso parent (si lo sabemos).
+      const processId = order?.sequenceLinks?.find((l) => l.sequenceId === seqId)?.sequence?.processId;
+      navigate(processId ? `/processes/${processId}/picking-b2` : '/processes');
     },
     onError: (err: any) => {
       setPackError(err.response?.data?.message || 'No se pudo cerrar B2 del pedido');
@@ -111,10 +118,16 @@ export function PickingB2Order() {
 
   return (
     <div className="space-y-4 pb-4">
-      <Link to={`/sequences/${seqId}/picking-b2`} className="btn-ghost text-sm">
-        <ChevronLeft size={16} />
-        Lista de pedidos
-      </Link>
+      {(() => {
+        const processId = order.sequenceLinks?.find((l) => l.sequenceId === seqId)?.sequence?.processId;
+        const backTo = processId ? `/processes/${processId}/picking-b2` : '/processes';
+        return (
+          <Link to={backTo} className="btn-ghost text-sm">
+            <ChevronLeft size={16} />
+            Lista de pedidos
+          </Link>
+        );
+      })()}
 
       {/* Widget grande de progreso de cierres B2 de la secuencia */}
       {seqB2 && (() => {

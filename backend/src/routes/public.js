@@ -17,7 +17,7 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
       where: { wpOrderId },
       include: {
         items: { include: { product: true } },
-        sequenceLinks: { include: { sequence: { select: { id: true, status: true } } } },
+        sequenceLinks: { include: { sequence: { select: { id: true, status: true, processId: true } } } },
       },
     });
     if (!order) throw new HttpError(404, `Pedido ${wpOrderId} no encontrado`);

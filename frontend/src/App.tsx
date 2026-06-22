@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/hooks/useAuth';
 import { Layout } from '@/components/Layout';
@@ -8,16 +8,14 @@ import { Home } from '@/pages/Home';
 import { ProcessesIndex } from '@/pages/Processes/Index';
 import { ProcessNew } from '@/pages/Processes/New';
 import { ProcessDetail } from '@/pages/Processes/Detail';
-import { SequencesIndex } from '@/pages/Sequences/Index';
 import { SequenceNew } from '@/pages/Sequences/New';
 import { SequenceDetail } from '@/pages/Sequences/Detail';
 import { PackingList } from '@/pages/Sequences/PackingList';
 import { PackingOrder } from '@/pages/Sequences/PackingOrder';
 import { SequenceClose } from '@/pages/Sequences/Close';
-import { PickingB2 } from '@/pages/PickingB2';
 import { PickingB2Day } from '@/pages/PickingB2Day';
 import { PickingB2Order } from '@/pages/Sequences/PickingB2Order';
-import { Picking } from '@/pages/Picking';
+import { PickingB2GlobalRedirect, SequenceB2Redirect } from '@/pages/Redirects';
 import { Dashboard } from '@/pages/Dashboard';
 import { Tracking } from '@/pages/Tracking';
 import { Help } from '@/pages/Help';
@@ -48,16 +46,19 @@ export default function App() {
               <Route path="processes/new" element={<ProcessNew />} />
               <Route path="processes/:id" element={<ProcessDetail />} />
               <Route path="processes/:id/picking-b2" element={<PickingB2Day />} />
-              <Route path="sequences" element={<SequencesIndex />} />
               <Route path="sequences/new" element={<SequenceNew />} />
               <Route path="sequences/:id" element={<SequenceDetail />} />
               <Route path="sequences/:id/packing" element={<PackingList />} />
               <Route path="sequences/:id/packing/:orderId" element={<PackingOrder />} />
               <Route path="sequences/:id/close" element={<SequenceClose />} />
-              <Route path="picking" element={<Picking />} />
-              <Route path="picking/b2-day" element={<PickingB2Day />} />
-              <Route path="sequences/:id/picking-b2" element={<PickingB2 />} />
               <Route path="sequences/:id/picking-b2/:orderId" element={<PickingB2Order />} />
+
+              {/* Redirects de rutas viejas tras Fase B (Procesos como top-level).
+                  Mantienen funcionando bookmarks y links de albaranes viejos. */}
+              <Route path="sequences" element={<Navigate to="/processes" replace />} />
+              <Route path="picking" element={<Navigate to="/processes" replace />} />
+              <Route path="picking/b2-day" element={<PickingB2GlobalRedirect />} />
+              <Route path="sequences/:id/picking-b2" element={<SequenceB2Redirect />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="tracking" element={<Tracking />} />
               <Route path="debug" element={<Debug />} />

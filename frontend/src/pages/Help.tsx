@@ -361,63 +361,59 @@ const SECTIONS: Section[] = [
   },
   {
     id: 'close-sequence',
-    title: 'Cerrar la secuencia (dos flujos)',
+    title: 'Cerrar la secuencia',
     icon: CheckCircle2,
     body: (
       <>
-        <p>Una secuencia tiene <strong>dos cierres independientes</strong>: el flujo B1 (packing terminado) y el flujo B2 (granel recolectado). Cierran por separado y en cualquier orden.</p>
+        <p>Una secuencia se cierra cuando todos sus pedidos están <strong>empacados</strong>. El picking B2 (a granel) NO afecta el cierre de la secuencia — vive a nivel del proceso y se hace una vez para todas las secuencias.</p>
         <ol>
-          <li><strong>Cerrar flujo B1</strong>: cuando todos los pedidos están empacados, el equipo de B1 entra a la secuencia → <em>Cerrar flujo B1</em>, valida pedidos esperados vs bolsas empacadas (opcional: ingreso físico de bolsas), confirma.</li>
-          <li><strong>Cerrar flujo B2</strong>: cuando el equipo B2 termina de recolectar todos los SKUs a granel, entra al picking B2 de esa secuencia → <em>Cerrar picking B2</em>.</li>
-          <li>La secuencia entera pasa a <em>Cerrada</em> cuando ambos flujos están cerrados.</li>
+          <li>Cuando todos los pedidos están empacados, el equipo de B1 entra a la secuencia → <strong>Cerrar secuencia</strong>.</li>
+          <li>Validá pedidos esperados vs bolsas empacadas (opcional: ingreso físico de bolsas), confirmá.</li>
+          <li>La secuencia pasa a <em>Cerrada</em>.</li>
         </ol>
+        <p className="text-slate-600">
+          Si la secuencia tiene items B2, no necesitás esperar a que el picker B2 termine para cerrarla. Los items B2 quedan pendientes en el proceso y se procesan a granel cuando llegue el momento.
+        </p>
       </>
     ),
   },
   {
     id: 'b2-picking',
-    title: 'Picking Bodega 2 - El Sol (per-pedido, igual que B1)',
+    title: 'Picking Bodega 2 - El Sol (a nivel proceso)',
     icon: Package,
     body: (
       <>
-        <p>El picking B2 funciona <strong>igual que el B1</strong>: el picker escanea el QR del albarán de cada pedido, arma una <em>sub-bolsa</em> con los items B2 específicos de ese pedido, la asocia (atándola o etiquetándola con el número de pedido) y cierra el pedido.</p>
+        <p>El picking B2 se hace <strong>una sola vez por proceso</strong>, no por secuencia. Cuando el camión de B2 - El Sol llega con los productos consolidados del día, una persona se encarga de recolectar TODOS los items B2 de TODAS las secuencias del proceso en una corrida.</p>
 
-        <h4>Flujo del picker B2</h4>
-        <ol>
-          <li>El operador de B1 ya armó la secuencia e imprimió los albaranes.</li>
-          <li>El picker B2 abre la app y va a <strong>Picking</strong>. Ve una tarjeta por cada secuencia con pedidos B2 pendientes.</li>
-          <li>Entra a la secuencia o, alternativamente, escanea el QR del primer albarán directamente desde la cámara del móvil.</li>
-          <li>Aparece el pedido con los items B2 que tiene que recolectar de la bodega 2 (foto + SKU + cantidad).</li>
-          <li>Por cada item B2 que mete en la sub-bolsa del pedido, marca su checkbox.</li>
-          <li>Toca <strong>Cerrar B2 del pedido</strong>. El pedido queda registrado como B2 cerrado, a su nombre.</li>
-          <li>Toca <strong>Escanear pedido</strong> o vuelve a la lista para el siguiente.</li>
-        </ol>
+        <h4>Cómo se accede</h4>
+        <p>
+          Desde <strong>Procesos → proceso activo → tarjeta "Picking Bodega 2 - El Sol del proceso"</strong>. No hay item en el menú lateral — el acceso es siempre dentro del proceso.
+        </p>
 
-        <h4>Vista del día (cross-secuencia)</h4>
-        <p>Si hay varias secuencias abiertas con B2 pendiente, en lugar de entrar a cada una, abrí <strong>Picking → Picking B2 · Vista del día</strong>. Vas a ver:</p>
+        <h4>Qué vas a ver</h4>
         <ul>
-          <li><strong>Tabla agrupada por SKU</strong>: cuánto necesitás sacar total de cada producto + a qué pedidos va distribuido. Sirve como guía para recorrer la bodega una sola vez.</li>
-          <li><strong>Filtro por ruta</strong> en pills con contador <code>R1 - Juan (3/8)</code>. Cuando lo activás, la tabla agrupada también se filtra.</li>
-          <li><strong>Lista de pedidos B2 pendientes</strong> de todas las secuencias, ordenados por ruta + parada. Cada uno linkea a su vista per-pedido para cerrar.</li>
+          <li><strong>Tabla agrupada por SKU</strong>: cuánto sacar total de cada producto + a qué pedidos va distribuido. Sirve como guía para recorrer la bodega una vez.</li>
+          <li><strong>Filtro por ruta</strong> con contadores <code>R1 - Juan (3/8)</code>. Al filtrar, la tabla agrupada también se filtra.</li>
+          <li><strong>Lista de pedidos B2 pendientes</strong> de TODAS las secuencias del proceso, ordenados por ruta + parada.</li>
           <li><strong>Buscador</strong> por número de pedido (resalta la coincidencia).</li>
         </ul>
-        <p className="text-slate-600">
-          El cierre sigue siendo per-pedido (sub-bolsa atada). La vista del día es solo organización + visibilidad.
-        </p>
 
-        <h4>Cierre automático del flujo B2 de la secuencia</h4>
-        <p>
-          Cuando todos los pedidos con items B2 de una secuencia tienen su B2 cerrado, el flujo B2 de esa secuencia se cierra automáticamente. No hay un botón "cerrar B2 de la secuencia" — es transparente.
-        </p>
+        <h4>Flujo del picker</h4>
+        <ol>
+          <li>Recorré la bodega B2 con la lista agrupada y el carro. Sacás todo lo de cada SKU.</li>
+          <li>Volvés a la mesa. Para cada pedido en la lista, escaneás (o tocás) y abrís su vista per-pedido.</li>
+          <li>Marcás los items B2 de ese pedido y tocás <strong>Cerrar B2 del pedido</strong>. Atás (o etiquetás con el número de pedido) la sub-bolsa B2 a la bolsa B1 ya armada.</li>
+          <li>Pasás al siguiente.</li>
+        </ol>
 
         <p className="text-slate-600">
-          El cierre B2 es independiente del cierre B1 (packing). Pueden cerrarse en cualquier orden y no se condicionan entre sí.
+          El cierre B2 del pedido NO afecta el cierre de la secuencia. La secuencia se cierra solo con el packing B1; los items B2 quedan pendientes hasta que el picker B2 los procese.
         </p>
 
         <h4>Si falta un item B2</h4>
         <ul>
-          <li>Si el cliente <strong>acepta entrega parcial</strong>: alguien con cap <code>wms_pack_b1</code> aprueba la entrega parcial del pedido y entonces el picker B2 puede cerrar el pedido aunque falte el item.</li>
-          <li>Si <strong>no</strong>: deja el pedido sin cerrar y avisa al supervisor. El pedido va a quedar bloqueado en clasificación (no se podrá cargar al vehículo).</li>
+          <li>Si el cliente <strong>acepta entrega parcial</strong>: alguien con cap <code>wms_pack_b1</code> aprueba la entrega parcial del pedido. El picker B2 puede cerrar el pedido aunque falte el item.</li>
+          <li>Si <strong>no</strong>: dejá el pedido sin cerrar y avisá al supervisor. Va a quedar bloqueado en clasificación (no se podrá cargar al vehículo).</li>
         </ul>
       </>
     ),

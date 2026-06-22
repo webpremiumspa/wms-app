@@ -82,7 +82,7 @@ router.get('/by-wp/:wpOrderId/tracking', requireCap(WMS_CAPS.SUPERVISE), async (
         pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
         b2ClosedBy: { select: { wpUserId: true, displayName: true, username: true } },
         sequenceLinks: {
-          include: { sequence: { select: { id: true, createdAt: true, status: true } } },
+          include: { sequence: { select: { id: true, createdAt: true, status: true, processId: true } } },
         },
       },
     });
@@ -181,7 +181,7 @@ router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE, WM
         packedBy: { select: { wpUserId: true, displayName: true, username: true } },
         pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
         sequenceLinks: {
-          include: { sequence: { select: { id: true, createdAt: true, status: true } } },
+          include: { sequence: { select: { id: true, createdAt: true, status: true, processId: true } } },
         },
       },
     });
@@ -203,7 +203,7 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.LOA
         pickedBy: { select: { wpUserId: true, displayName: true, username: true } },
         b2ClosedBy: { select: { wpUserId: true, displayName: true, username: true } },
         sequenceLinks: {
-          include: { sequence: { select: { id: true, createdAt: true, status: true } } },
+          include: { sequence: { select: { id: true, createdAt: true, status: true, processId: true } } },
         },
       },
     });

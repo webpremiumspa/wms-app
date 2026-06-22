@@ -56,13 +56,13 @@ export function SequenceClose() {
 
       <div className="card space-y-3 p-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">Cerrar flujo {warehouseLabel('B1')} · #{seqId}</h2>
+          <h2 className="text-lg font-semibold">Cerrar secuencia · #{seqId}</h2>
           <Badge variant={b1Closed ? 'gray' : 'green'}>
-            {b1Closed ? `${warehouseLabel('B1')} cerrado` : `${warehouseLabel('B1')} abierto`}
+            {b1Closed ? 'Cerrada' : 'Abierta'}
           </Badge>
         </div>
         <p className="text-xs text-slate-500">
-          Esto cierra el packing de {warehouseLabel('B1')}. El picking {warehouseLabel('B2')} (a granel) se cierra desde su propia pantalla.
+          Cierra el packing de la secuencia. Los items {warehouseLabel('B2')} (si los hay) se procesan a granel desde el picking del proceso.
         </p>
         <div className="grid grid-cols-2 gap-3 text-center">
           <div className="rounded-lg bg-slate-50 p-3">
@@ -108,14 +108,14 @@ export function SequenceClose() {
               className="btn-primary w-full"
             >
               <CheckCircle2 size={18} />
-              {close.isPending ? 'Cerrando…' : 'Confirmar cierre B1'}
+              {close.isPending ? 'Cerrando…' : 'Confirmar cierre de secuencia'}
             </button>
           </>
         )}
 
         {b1Closed && seq.b1ClosedAt && (
           <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-            Flujo {warehouseLabel('B1')} cerrado el {new Date(seq.b1ClosedAt).toLocaleString('es-CL')}.
+            Secuencia cerrada el {new Date(seq.b1ClosedAt).toLocaleString('es-CL')}.
           </div>
         )}
       </div>
