@@ -145,7 +145,7 @@ export function PickingB2Day() {
                               <ImageIcon size={14} className="text-slate-400" />
                             </div>
                           )}
-                          <span className="truncate font-medium text-slate-800">{row.name}</span>
+                          <span className="font-medium text-slate-800 break-words">{row.name}</span>
                         </div>
                       </td>
                       <td className="px-2 py-2 font-mono text-slate-600">{row.sku || '—'}</td>

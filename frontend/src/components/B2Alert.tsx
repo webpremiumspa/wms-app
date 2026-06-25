@@ -62,7 +62,7 @@ export function B2Alert({ items }: { items: Item[] }) {
               <div className="h-12 w-12 rounded-md bg-amber-200" />
             )}
             <div className="min-w-0 flex-1">
-              <div className="truncate font-medium text-amber-950">{it.name}</div>
+              <div className="font-medium text-amber-950 break-words">{it.name}</div>
               <div className="text-xs text-amber-800">{it.sku || '—'}</div>
             </div>
             <div className="text-2xl font-bold text-amber-900">×{it.qty}</div>
