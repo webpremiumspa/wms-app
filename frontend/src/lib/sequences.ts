@@ -33,8 +33,8 @@ export const sequencesApi = {
   validateStock: async (orderIds: number[]): Promise<StockProblem[]> =>
     (await api.post('/sequences/validate-stock', { orderIds })).data.problems,
 
-  create: async (orderIds: number[]): Promise<Sequence> =>
-    (await api.post('/sequences', { orderIds })).data.sequence,
+  create: async (orderIds: number[], processId?: number): Promise<Sequence> =>
+    (await api.post('/sequences', { orderIds, processId })).data.sequence,
 
   closeB1: async (id: number, actualBags?: number): Promise<Sequence> =>
     (await api.post(`/sequences/${id}/close-b1`, actualBags !== undefined ? { actualBags } : {})).data.sequence,

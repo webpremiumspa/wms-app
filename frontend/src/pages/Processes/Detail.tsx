@@ -94,7 +94,7 @@ export function ProcessDetail() {
         <div className="grid gap-2 md:grid-cols-2">
           {canCreate && (
             <Link
-              to={`/sequences/new`}
+              to={`/sequences/new?processId=${procId}`}
               className="card flex items-center gap-3 p-4 ring-1 ring-brand-200 hover:shadow-md"
             >
               <div className="rounded-lg bg-brand-50 p-2 text-brand-700">

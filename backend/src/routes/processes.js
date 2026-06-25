@@ -8,6 +8,7 @@ import {
   createProcess,
   closeProcess,
   getActiveProcess,
+  listOpenProcesses,
   listProcesses,
 } from '../services/processes.js';
 
@@ -31,12 +32,24 @@ router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD, WM
   }
 });
 
-// Proceso activo (open) actual. Lo usa el frontend para saber si puede
-// generar secuencias y para mostrar el contexto en el inicio.
+// Proceso activo más antiguo (legacy: cuando había max 1 abierto). Se usa
+// para mostrar el contexto principal. Para listar TODOS los abiertos en
+// paralelo (matutino + vespertino), usar /processes/open.
 router.get('/active', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
   try {
     const process = await getActiveProcess();
     res.json({ process });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Lista de procesos abiertos (hasta MAX_OPEN_PROCESSES). El frontend lo usa
+// en Inicio para mostrar una card por cada uno (matutino + vespertino).
+router.get('/open', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
+  try {
+    const processes = await listOpenProcesses();
+    res.json({ processes });
   } catch (err) {
     next(err);
   }

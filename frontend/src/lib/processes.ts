@@ -50,8 +50,13 @@ export const processesApi = {
   list: async (opts?: { limit?: number }): Promise<DeliveryProcess[]> =>
     (await api.get('/processes', { params: opts })).data.processes,
 
+  // Legacy: 1 proceso. Para casos donde sí se quiere lista, usar openList.
   active: async (): Promise<DeliveryProcess | null> =>
     (await api.get('/processes/active')).data.process,
+
+  // Hasta 2 abiertos en paralelo (matutino + vespertino).
+  openList: async (): Promise<DeliveryProcess[]> =>
+    (await api.get('/processes/open')).data.processes,
 
   get: async (id: number): Promise<ProcessDetail> =>
     (await api.get(`/processes/${id}`)).data,

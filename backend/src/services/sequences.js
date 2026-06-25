@@ -47,19 +47,36 @@ export async function validateStock(orderIds) {
 // separado. Marca los pedidos como 'sequenced' para que no entren en una
 // segunda secuencia. El flujo de picking es siempre "por pedido": cada
 // picker escanea el QR del albarán para tomar el pedido y empacarlo.
-export async function createSequence({ orderIds, createdById }) {
+export async function createSequence({ orderIds, createdById, processId }) {
   if (!Array.isArray(orderIds) || orderIds.length === 0) {
     throw new HttpError(400, 'orderIds required');
   }
 
-  // Toda secuencia debe pertenecer a un proceso abierto. Si no hay ninguno,
-  // bloqueamos con un mensaje claro para que el operador lo cree primero.
-  const activeProcess = await prisma.deliveryProcess.findFirst({
-    where: { status: 'open' },
-    select: { id: true },
-  });
-  if (!activeProcess) {
-    throw new HttpError(409, 'No hay un proceso de preparación y carga abierto. Creá uno antes de generar secuencias.');
+  // Resolver el proceso al que se asocia la secuencia:
+  //   - Si el caller pasó processId explícito → validamos que esté open.
+  //   - Si no, y hay UN solo proceso abierto → lo usamos automáticamente.
+  //   - Si no, y hay 0 o 2+ abiertos → exigimos que se especifique processId.
+  let targetProcessId = processId;
+  if (targetProcessId) {
+    const p = await prisma.deliveryProcess.findUnique({
+      where: { id: targetProcessId },
+      select: { id: true, status: true },
+    });
+    if (!p) throw new HttpError(404, `Proceso #${targetProcessId} no encontrado`);
+    if (p.status !== 'open') throw new HttpError(409, `Proceso #${targetProcessId} está cerrado`);
+  } else {
+    const openProcesses = await prisma.deliveryProcess.findMany({
+      where: { status: 'open' },
+      select: { id: true, name: true },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (openProcesses.length === 0) {
+      throw new HttpError(409, 'No hay un proceso de preparación y carga abierto. Creá uno antes de generar secuencias.');
+    }
+    if (openProcesses.length > 1) {
+      throw new HttpError(409, 'Hay varios procesos abiertos. Indicá a cuál asociar la secuencia.', { openProcesses });
+    }
+    targetProcessId = openProcesses[0].id;
   }
 
   return prisma.$transaction(async (tx) => {
@@ -72,7 +89,7 @@ export async function createSequence({ orderIds, createdById }) {
 
     const seq = await tx.sequence.create({
       data: {
-        processId: activeProcess.id,
+        processId: targetProcessId,
         createdById,
         expectedBags: orders.length,
         orders: {

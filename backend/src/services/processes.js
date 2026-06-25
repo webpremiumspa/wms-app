@@ -1,17 +1,24 @@
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
 
-// Crea un proceso nuevo. Restricción de negocio: solo puede haber 1 proceso
-// abierto a la vez. Si ya hay uno open, falla con 409.
+// Máximo de procesos abiertos en paralelo (matutino + vespertino).
+const MAX_OPEN_PROCESSES = 2;
+
+// Crea un proceso nuevo. Tope de negocio: máximo MAX_OPEN_PROCESSES abiertos
+// en simultáneo (típicamente matutino y vespertino). Si se alcanza el tope,
+// falla con 409 indicando los abiertos actuales.
 export async function createProcess({ name, scheduledAt, actorId }) {
-  const existingOpen = await prisma.deliveryProcess.findFirst({
+  const openProcesses = await prisma.deliveryProcess.findMany({
     where: { status: 'open' },
     select: { id: true, name: true },
+    orderBy: { createdAt: 'asc' },
   });
-  if (existingOpen) {
-    throw new HttpError(409, `Ya hay un proceso abierto (#${existingOpen.id} ${existingOpen.name}). Cerralo antes de crear uno nuevo.`, {
-      activeProcessId: existingOpen.id,
-    });
+  if (openProcesses.length >= MAX_OPEN_PROCESSES) {
+    throw new HttpError(
+      409,
+      `Ya hay ${openProcesses.length} proceso(s) abierto(s) (máximo ${MAX_OPEN_PROCESSES}): ${openProcesses.map((p) => `#${p.id} ${p.name}`).join(', ')}. Cerrá alguno antes de crear uno nuevo.`,
+      { openProcesses },
+    );
   }
   return prisma.deliveryProcess.create({
     data: {
@@ -48,10 +55,25 @@ export async function closeProcess({ processId, actorId }) {
   return { ok: true };
 }
 
-// Devuelve el proceso abierto actual (o null si no hay ninguno).
+// Devuelve el proceso abierto más antiguo (o null). Compat con código viejo
+// que asumía un solo proceso abierto a la vez. Para listar todos los abiertos
+// usar listOpenProcesses.
 export async function getActiveProcess() {
   return prisma.deliveryProcess.findFirst({
     where: { status: 'open' },
+    orderBy: { createdAt: 'asc' },
+    include: {
+      createdBy: { select: { wpUserId: true, displayName: true, username: true } },
+      _count: { select: { sequences: true } },
+    },
+  });
+}
+
+// Devuelve todos los procesos abiertos (hasta MAX_OPEN_PROCESSES).
+export async function listOpenProcesses() {
+  return prisma.deliveryProcess.findMany({
+    where: { status: 'open' },
+    orderBy: { createdAt: 'asc' },
     include: {
       createdBy: { select: { wpUserId: true, displayName: true, username: true } },
       _count: { select: { sequences: true } },

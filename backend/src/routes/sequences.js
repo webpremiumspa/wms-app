@@ -176,6 +176,9 @@ router.post('/validate-stock', requireCap(WMS_CAPS.PACK_B1), async (req, res, ne
 
 const createSchema = z.object({
   orderIds: z.array(z.number().int().positive()).min(1),
+  // Opcional. Si se omite y hay un solo proceso abierto, lo deduce.
+  // Si hay 2+ abiertos, el backend exige que se especifique.
+  processId: z.number().int().positive().optional(),
 });
 
 router.post('/', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
@@ -185,6 +188,7 @@ router.post('/', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
     const seq = await createSequence({
       orderIds: parsed.data.orderIds,
       createdById: req.user.wpUserId,
+      processId: parsed.data.processId,
     });
     res.status(201).json({ sequence: seq });
   } catch (err) {

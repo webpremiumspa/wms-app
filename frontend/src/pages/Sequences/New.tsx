@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
@@ -22,15 +22,33 @@ export function SequenceNew() {
 
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
 
-  const { data: activeProcess, isLoading: loadingProcess } = useQuery({
-    queryKey: ['process-active'],
-    queryFn: () => processesApi.active(),
+  // processId puede venir por URL (cuando se llega desde "Generar secuencia"
+  // dentro de un proceso). Si no viene y solo hay 1 abierto, lo deducimos.
+  // Si hay 2 abiertos y no viene processId, exigimos que el operador elija.
+  const [searchParams] = useSearchParams();
+  const processIdFromUrl = (() => {
+    const raw = searchParams.get('processId');
+    const n = raw ? Number(raw) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
+
+  const { data: openProcesses, isLoading: loadingProcesses } = useQuery({
+    queryKey: ['processes-open'],
+    queryFn: () => processesApi.openList(),
   });
+
+  // Proceso al que se asociará la secuencia.
+  const targetProcess = useMemo(() => {
+    if (!openProcesses) return null;
+    if (processIdFromUrl) return openProcesses.find((p) => p.id === processIdFromUrl) || null;
+    if (openProcesses.length === 1) return openProcesses[0];
+    return null;
+  }, [openProcesses, processIdFromUrl]);
 
   const { data: pending, isLoading } = useQuery({
     queryKey: ['orders', 'pending'],
     queryFn: sequencesApi.pendingOrders,
-    enabled: !!activeProcess,
+    enabled: !!targetProcess,
   });
 
   const pendingList = pending?.orders ?? [];
@@ -60,10 +78,11 @@ export function SequenceNew() {
   });
 
   const create = useMutation({
-    mutationFn: () => sequencesApi.create(orderIds),
+    mutationFn: () => sequencesApi.create(orderIds, targetProcess?.id),
     onSuccess: (seq) => {
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['processes-open'] });
       navigate(`/sequences/${seq.id}`);
     },
     onError: (err: any) => {
@@ -85,11 +104,12 @@ export function SequenceNew() {
   const blocking = (problems || []).filter((p) => !p.warning);
   const canCreate = orderIds.length > 0 && (!problems || blocking.length === 0);
 
-  if (loadingProcess) return <Spinner />;
+  if (loadingProcesses) return <Spinner />;
 
-  // Sin proceso activo no se puede crear secuencia. Mostramos call-to-action
-  // directo al alta de proceso para que el operador no quede trabado.
-  if (!activeProcess) {
+  const openCount = openProcesses?.length ?? 0;
+
+  // Sin procesos abiertos → CTA crear.
+  if (openCount === 0) {
     return (
       <div className="space-y-4">
         <button onClick={() => navigate(-1)} className="btn-ghost text-sm">
@@ -115,6 +135,43 @@ export function SequenceNew() {
     );
   }
 
+  // Varios abiertos y no se especificó cuál → selector.
+  if (!targetProcess) {
+    return (
+      <div className="space-y-4">
+        <button onClick={() => navigate(-1)} className="btn-ghost text-sm">
+          <ChevronLeft size={16} />
+          Volver
+        </button>
+        <h2 className="text-xl font-semibold">Generar secuencia</h2>
+        <div className="card space-y-3 p-4 ring-1 ring-brand-100">
+          <div className="text-sm text-slate-700">
+            Hay <strong>{openCount} procesos abiertos</strong> en paralelo. Elegí a cuál asociar la secuencia:
+          </div>
+          <div className="grid gap-2 md:grid-cols-2">
+            {openProcesses!.map((p) => (
+              <Link
+                key={p.id}
+                to={`/sequences/new?processId=${p.id}`}
+                className="card flex items-center gap-3 p-3 ring-1 ring-emerald-200 hover:shadow-md"
+              >
+                <div className="rounded-lg bg-emerald-50 p-2 text-emerald-700">
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <div className="font-semibold text-slate-800">{p.name}</div>
+                  <div className="text-xs text-slate-500">
+                    {p._count?.sequences || 0} secuencia{p._count?.sequences === 1 ? '' : 's'}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       <button onClick={() => navigate(-1)} className="btn-ghost text-sm">
@@ -123,7 +180,7 @@ export function SequenceNew() {
       </button>
       <h2 className="text-xl font-semibold">Generar secuencia</h2>
       <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-200">
-        Esta secuencia se asociará al proceso <strong>{activeProcess.name}</strong>.
+        Esta secuencia se asociará al proceso <strong>{targetProcess.name}</strong>.
       </div>
       <p className="text-sm text-slate-500">
         Selecciona los pedidos que entran en la próxima secuencia. La secuencia arrastra tanto el picking {warehouseLabel('B1')} (para empacar) como el picking {warehouseLabel('B2')} (a granel); cada flujo cierra por separado.

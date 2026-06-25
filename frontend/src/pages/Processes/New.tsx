@@ -4,6 +4,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { processesApi } from '@/lib/processes';
 
+const MAX_OPEN = 2;
+
 function suggestedName(): string {
   const d = new Date();
   const hh = d.getHours();
@@ -18,15 +20,16 @@ export function ProcessNew() {
   const [name, setName] = useState(suggestedName());
   const [error, setError] = useState<string | null>(null);
 
-  const { data: active } = useQuery({
-    queryKey: ['process-active'],
-    queryFn: () => processesApi.active(),
+  const { data: openProcesses } = useQuery({
+    queryKey: ['processes-open'],
+    queryFn: () => processesApi.openList(),
   });
 
   const create = useMutation({
     mutationFn: () => processesApi.create({ name }),
     onSuccess: (p) => {
       queryClient.invalidateQueries({ queryKey: ['processes'] });
+      queryClient.invalidateQueries({ queryKey: ['processes-open'] });
       queryClient.invalidateQueries({ queryKey: ['process-active'] });
       navigate(`/processes/${p.id}`);
     },
@@ -34,6 +37,9 @@ export function ProcessNew() {
       setError(err.response?.data?.message || 'No se pudo crear el proceso');
     },
   });
+
+  const openCount = openProcesses?.length ?? 0;
+  const atLimit = openCount >= MAX_OPEN;
 
   return (
     <div className="space-y-4">
@@ -43,11 +49,22 @@ export function ProcessNew() {
       </Link>
       <h2 className="text-xl font-semibold">Nuevo proceso de preparación y carga</h2>
 
-      {active && (
-        <div className="card flex items-start gap-2 p-4 ring-1 ring-amber-200">
-          <AlertTriangle size={18} className="shrink-0 text-amber-700" />
-          <div className="text-sm text-amber-900">
-            Ya hay un proceso abierto: <strong>{active.name}</strong>. Tenés que cerrarlo desde Supervisión antes de crear uno nuevo.
+      {openCount > 0 && (
+        <div className={`card flex items-start gap-2 p-4 ring-1 ${atLimit ? 'ring-amber-200' : 'ring-slate-200'}`}>
+          <AlertTriangle size={18} className={`shrink-0 ${atLimit ? 'text-amber-700' : 'text-slate-500'}`} />
+          <div className={`text-sm ${atLimit ? 'text-amber-900' : 'text-slate-700'}`}>
+            {atLimit ? (
+              <>
+                Ya hay {openCount} procesos abiertos (límite: {MAX_OPEN}):{' '}
+                <strong>{openProcesses!.map((p) => p.name).join(', ')}</strong>.
+                Cerrá alguno antes de crear uno nuevo.
+              </>
+            ) : (
+              <>
+                Hay {openCount} proceso abierto: <strong>{openProcesses![0].name}</strong>.
+                Podés abrir uno más en paralelo (matutino + vespertino).
+              </>
+            )}
           </div>
         </div>
       )}
@@ -76,7 +93,7 @@ export function ProcessNew() {
         <button
           type="button"
           onClick={() => create.mutate()}
-          disabled={create.isPending || !name.trim() || !!active}
+          disabled={create.isPending || !name.trim() || atLimit}
           className="btn-primary w-full"
         >
           <CheckCircle2 size={18} />

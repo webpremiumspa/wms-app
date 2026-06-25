@@ -33,9 +33,9 @@ export function ProcessesIndex() {
     refetchInterval: 8000,
   });
 
-  const { data: active } = useQuery({
-    queryKey: ['process-active'],
-    queryFn: () => processesApi.active(),
+  const { data: openProcesses } = useQuery({
+    queryKey: ['processes-open'],
+    queryFn: () => processesApi.openList(),
   });
 
   const processes = list || [];
@@ -86,22 +86,27 @@ export function ProcessesIndex() {
         </div>
       </div>
 
-      {active ? (
-        <Link
-          to={`/processes/${active.id}`}
-          className="card flex flex-wrap items-center gap-3 bg-emerald-50 p-4 ring-1 ring-emerald-200 hover:shadow-md"
-        >
-          <div className="rounded-lg bg-emerald-100 p-2 text-emerald-700">
-            <Truck size={22} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-xs uppercase text-emerald-700">Proceso activo</div>
-            <span className="font-semibold text-emerald-900">{active.name}</span>
-            <div className="text-xs text-emerald-700">
-              {active._count?.sequences || 0} secuencia{active._count?.sequences === 1 ? '' : 's'} · iniciado {new Date(active.createdAt).toLocaleString('es-CL')}
-            </div>
-          </div>
-        </Link>
+      {(openProcesses?.length ?? 0) > 0 ? (
+        <div className="grid gap-2 md:grid-cols-2">
+          {openProcesses!.map((p) => (
+            <Link
+              key={p.id}
+              to={`/processes/${p.id}`}
+              className="card flex flex-wrap items-center gap-3 bg-emerald-50 p-4 ring-1 ring-emerald-200 hover:shadow-md"
+            >
+              <div className="rounded-lg bg-emerald-100 p-2 text-emerald-700">
+                <Truck size={22} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs uppercase text-emerald-700">Proceso activo</div>
+                <span className="font-semibold text-emerald-900">{p.name}</span>
+                <div className="text-xs text-emerald-700">
+                  {p._count?.sequences || 0} secuencia{p._count?.sequences === 1 ? '' : 's'} · iniciado {new Date(p.createdAt).toLocaleString('es-CL')}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       ) : (
         <div className="card flex items-center gap-3 p-4 ring-1 ring-amber-200">
           <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
