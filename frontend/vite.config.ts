@@ -28,7 +28,11 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt' nos da control: NO recargamos a media operación; mostramos
+      // un banner "Nueva versión disponible · Actualizar" y el operador
+      // decide cuándo recargar. Si fuera 'autoUpdate' la recarga ocurriría
+      // sola y podría perderse trabajo en curso.
+      registerType: 'prompt',
       manifest: {
         name: 'WMS Chimuelo',
         short_name: 'WMS',
@@ -43,6 +47,13 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // El SW nuevo se activa apenas se instala y toma el control de las
+        // pestañas ya abiertas. En mobile-PWA esto importa: el usuario rara
+        // vez cierra todas las pestañas, así que sin esto las actualizaciones
+        // se quedan "pendientes" indefinidamente.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {

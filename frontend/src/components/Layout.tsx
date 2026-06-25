@@ -1,18 +1,37 @@
 import { Link, Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
+import { UpdatePrompt } from './UpdatePrompt';
 import { useAuth } from '@/hooks/useAuth';
-import { HelpCircle, LogOut } from 'lucide-react';
+import { HelpCircle, LogOut, RefreshCw } from 'lucide-react';
+import { forceHardRefresh } from '@/lib/hardRefresh';
 
 export function Layout() {
   const { user, logout } = useAuth();
   return (
     <div className="flex min-h-screen">
+      <UpdatePrompt />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 md:hidden">
-          <div className="text-base font-bold text-brand-800">WMS Chimuelo</div>
+          <div className="flex flex-col">
+            <div className="text-base font-bold text-brand-800">WMS Chimuelo</div>
+            <div className="text-[9px] leading-tight text-slate-400">v{__APP_VERSION__} · {__GIT_HASH__}</div>
+          </div>
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm('¿Forzar actualización? Esto borra el caché de la app y la recarga desde cero. Usá esto si ves datos desactualizados.')) {
+                  forceHardRefresh();
+                }
+              }}
+              className="text-slate-500"
+              aria-label="Forzar actualización"
+              title="Forzar actualización (limpia caché)"
+            >
+              <RefreshCw size={20} />
+            </button>
             <Link to="/help" className="text-slate-500" aria-label="Ayuda">
               <HelpCircle size={20} />
             </Link>

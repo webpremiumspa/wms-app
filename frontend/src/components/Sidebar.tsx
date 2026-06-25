@@ -1,7 +1,8 @@
 import { NavLink } from 'react-router-dom';
-import { Home, LogOut, BarChart3, HelpCircle, Stethoscope, Activity, Truck } from 'lucide-react';
+import { Home, LogOut, BarChart3, HelpCircle, Stethoscope, Activity, Truck, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
+import { forceHardRefresh } from '@/lib/hardRefresh';
 import clsx from 'clsx';
 
 type NavItem = { to: string; label: string; icon: typeof Home; caps?: string[] };
@@ -49,8 +50,21 @@ export function Sidebar() {
           <LogOut size={16} />
           Salir
         </button>
-        <div className="px-3 pt-2 text-[10px] text-slate-400">
-          v{__APP_VERSION__} · {__GIT_HASH__}
+        <div className="flex items-center justify-between px-3 pt-2 text-[10px] text-slate-400">
+          <span>v{__APP_VERSION__} · {__GIT_HASH__}</span>
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm('¿Forzar actualización? Esto borra el caché de la app y la recarga desde cero. Usá esto si ves datos desactualizados.')) {
+                forceHardRefresh();
+              }
+            }}
+            className="flex items-center gap-1 rounded px-1 py-0.5 hover:bg-slate-100 hover:text-slate-700"
+            title="Forzar actualización (limpia caché)"
+          >
+            <RefreshCw size={11} />
+            Refrescar
+          </button>
         </div>
       </div>
     </aside>
