@@ -110,6 +110,21 @@ async function drawAlbaran(doc, order, opts = {}) {
     cursorY += 22;
   }
 
+  // Nota del cliente (si tiene). Caja ámbar para que el picker / repartidor
+  // la vea sí o sí al mirar el papel.
+  if (order.customerNote && order.customerNote.trim()) {
+    const noteText = order.customerNote.trim();
+    const noteHeight = Math.max(40, Math.ceil(noteText.length / 90) * 14 + 30);
+    doc.save();
+    doc.rect(40, cursorY, 515, noteHeight).fill('#fffbeb').stroke('#fbbf24');
+    doc.fillColor('#92400e').font('Helvetica-Bold').fontSize(9)
+      .text('NOTA DEL CLIENTE', 50, cursorY + 8);
+    doc.fillColor('#451a03').font('Helvetica').fontSize(10)
+      .text(noteText, 50, cursorY + 22, { width: 495 });
+    doc.restore();
+    cursorY += noteHeight + 8;
+  }
+
   if (order.hasB2Pending) {
     doc.save();
     doc.rect(40, cursorY, 515, 60).fill('#fef3c7');

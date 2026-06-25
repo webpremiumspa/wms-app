@@ -105,6 +105,7 @@ export type OrderDetail = {
   stopPosition: number | null;
   customerName: string | null;
   customerAddress: string | null;
+  customerNote?: string | null;
   shippingMethod: string | null;
   hasB2Pending: boolean;
   allowPartialDelivery: boolean;

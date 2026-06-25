@@ -15,6 +15,7 @@ import { eventLabel, orderStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { CustomerNote } from '@/components/CustomerNote';
 
 export function Tracking() {
   const [input, setInput] = useState('');
@@ -97,6 +98,9 @@ function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: T
         <Field k="Nombre" v={order.customerName || '—'} />
         <Field k="Dirección" v={order.customerAddress || '—'} />
         <Field k="Método de envío" v={order.shippingMethod || '—'} />
+        {order.customerNote && (
+          <div className="mt-2"><CustomerNote note={order.customerNote} /></div>
+        )}
       </Section>
 
       {/* Ruta + driver */}

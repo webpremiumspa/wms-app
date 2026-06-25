@@ -8,6 +8,7 @@ import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/lab
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { CustomerNote } from '@/components/CustomerNote';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
@@ -30,6 +31,7 @@ function OrderItems({ orderId }: { orderId: number }) {
       {data.customerAddress && (
         <div className="text-xs text-slate-500">{data.customerAddress}</div>
       )}
+      <CustomerNote note={data.customerNote} />
       {data.items.map((it) => (
         <div key={it.id} className="flex items-center gap-3 rounded-lg bg-white p-2 ring-1 ring-slate-200">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100">

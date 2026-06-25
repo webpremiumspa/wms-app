@@ -22,6 +22,7 @@ import { Spinner } from '@/components/Spinner';
 import { B2Alert } from '@/components/B2Alert';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { CustomerNote } from '@/components/CustomerNote';
 import { QRScanner } from '@/components/QRScanner';
 import { RouteProgressPills, RouteProgressHero } from '@/components/RouteProgressPills';
 import { useAuth } from '@/hooks/useAuth';
@@ -187,6 +188,7 @@ export function Scan() {
           {order.customerAddress && (
             <div className="text-xs text-slate-500">{order.customerAddress}</div>
           )}
+          <CustomerNote note={order.customerNote} />
         </div>
 
         {/* Ruta + parada (siempre visible si existe) */}

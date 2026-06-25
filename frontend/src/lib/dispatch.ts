@@ -36,6 +36,7 @@ export type DispatchOrder = {
   stopPosition: number | null;
   customerName: string | null;
   customerAddress: string | null;
+  customerNote?: string | null;
   shippingMethod: string | null;
   hasB2Pending: boolean;
   loadedAt: string | null;

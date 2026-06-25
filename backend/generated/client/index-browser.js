@@ -152,6 +152,7 @@ exports.Prisma.OrderScalarFieldEnum = {
   stopPosition: 'stopPosition',
   customerName: 'customerName',
   customerAddress: 'customerAddress',
+  customerNote: 'customerNote',
   shippingMethod: 'shippingMethod',
   driverId: 'driverId',
   driverName: 'driverName',

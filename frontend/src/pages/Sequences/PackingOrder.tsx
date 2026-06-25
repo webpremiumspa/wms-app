@@ -7,6 +7,7 @@ import { ordersApi, sequencesApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { CustomerNote } from '@/components/CustomerNote';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
@@ -239,6 +240,7 @@ export function PackingOrder() {
         </div>
         <div className="text-sm text-slate-600">{order.customerName || '—'}</div>
         {order.customerAddress && <div className="text-xs text-slate-500">{order.customerAddress}</div>}
+        <CustomerNote note={order.customerNote} />
         {/* Doble verificación visual: fecha del pedido WC + secuencia. Ayuda
             a detectar albaranes viejos reciclados antes de empacar. */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-200 pt-2 text-xs text-slate-500">
