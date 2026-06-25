@@ -96,7 +96,7 @@ const SECTIONS: Section[] = [
 
         <h4>Vista calendario</h4>
         <p>
-          En <strong>Procesos → Calendario</strong>, ves el mes con cada día coloreado según haya procesos abiertos (ámbar) o cerrados (verde). Tocá un día para expandir sus procesos. Útil para ver la cadencia (idealmente 1-2 procesos por día).
+          En <strong>Procesos → Calendario</strong>, ves el mes con cada día coloreado según haya procesos abiertos (ámbar) o cerrados (verde). Toca un día para expandir sus procesos. Útil para ver la cadencia (idealmente 1-2 procesos por día).
         </p>
 
         <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700 ring-1 ring-slate-200">
@@ -368,11 +368,11 @@ const SECTIONS: Section[] = [
         <p>Una secuencia se cierra cuando todos sus pedidos están <strong>empacados</strong>. El picking B2 (a granel) NO afecta el cierre de la secuencia — vive a nivel del proceso y se hace una vez para todas las secuencias.</p>
         <ol>
           <li>Cuando todos los pedidos están empacados, el equipo de B1 entra a la secuencia → <strong>Cerrar secuencia</strong>.</li>
-          <li>Validá pedidos esperados vs bolsas empacadas (opcional: ingreso físico de bolsas), confirmá.</li>
+          <li>Valida pedidos esperados vs bolsas empacadas (opcional: ingreso físico de bolsas), confirma.</li>
           <li>La secuencia pasa a <em>Cerrada</em>.</li>
         </ol>
         <p className="text-slate-600">
-          Si la secuencia tiene items B2, no necesitás esperar a que el picker B2 termine para cerrarla. Los items B2 quedan pendientes en el proceso y se procesan a granel cuando llegue el momento.
+          Si la secuencia tiene items B2, no necesitas esperar a que el picker B2 termine para cerrarla. Los items B2 quedan pendientes en el proceso y se procesan a granel cuando llegue el momento.
         </p>
       </>
     ),
@@ -400,10 +400,10 @@ const SECTIONS: Section[] = [
 
         <h4>Flujo del picker</h4>
         <ol>
-          <li>Recorré la bodega B2 con la lista agrupada y el carro. Sacás todo lo de cada SKU.</li>
-          <li>Volvés a la mesa. Para cada pedido en la lista, escaneás (o tocás) y abrís su vista per-pedido.</li>
-          <li>Marcás los items B2 de ese pedido y tocás <strong>Cerrar B2 del pedido</strong>. Atás (o etiquetás con el número de pedido) la sub-bolsa B2 a la bolsa B1 ya armada.</li>
-          <li>Pasás al siguiente.</li>
+          <li>Recorre la bodega B2 con la lista agrupada y el carro. Sacas todo lo de cada SKU.</li>
+          <li>Vuelves a la mesa. Para cada pedido en la lista, escaneas (o tocas) y abres su vista per-pedido.</li>
+          <li>Marcas los items B2 de ese pedido y tocas <strong>Cerrar B2 del pedido</strong>. Atas (o etiquetas con el número de pedido) la sub-bolsa B2 a la bolsa B1 ya armada.</li>
+          <li>Pasas al siguiente.</li>
         </ol>
 
         <p className="text-slate-600">
@@ -413,7 +413,7 @@ const SECTIONS: Section[] = [
         <h4>Si falta un item B2</h4>
         <ul>
           <li>Si el cliente <strong>acepta entrega parcial</strong>: alguien con cap <code>wms_pack_b1</code> aprueba la entrega parcial del pedido. El picker B2 puede cerrar el pedido aunque falte el item.</li>
-          <li>Si <strong>no</strong>: dejá el pedido sin cerrar y avisá al supervisor. Va a quedar bloqueado en clasificación (no se podrá cargar al vehículo).</li>
+          <li>Si <strong>no</strong>: deja el pedido sin cerrar y avisa al supervisor. Va a quedar bloqueado en clasificación (no se podrá cargar al vehículo).</li>
         </ul>
       </>
     ),
@@ -428,20 +428,20 @@ const SECTIONS: Section[] = [
 
         <h4>1 · Clasificar (agrupar por ruta)</h4>
         <ol>
-          <li>Abrí la cámara nativa del celular y apuntá al QR del albarán de un pedido empacado.</li>
+          <li>Abre la cámara nativa del celular y apunta al QR del albarán de un pedido empacado.</li>
           <li>El QR abre la app del WMS. La vista cambia según el estado del pedido — para uno empacado vas a ver la <strong>Vista de Clasificación</strong>: ruta destacada (R1 - Juan), parada, alerta B2 si aplica.</li>
           <li>Arriba ves las <strong>pills de progreso por ruta</strong>: <code>R1 - Juan (3/8)</code>, <code>R2 - Pedro (5/5)</code>, etc. La de tu pedido queda destacada en azul.</li>
-          <li>Llevá la bolsa a la ruma física de esa ruta.</li>
-          <li>Tocá <strong>Confirmar clasificación</strong>.</li>
-          <li>Aparece una tarjeta verde "✓ Pedido clasificado" + botón <strong>Escanear otro pedido</strong> (abre cámara in-app, más rápido que volver a abrir la cámara del SO). Repetí.</li>
+          <li>Lleva la bolsa a la ruma física de esa ruta.</li>
+          <li>Toca <strong>Confirmar clasificación</strong>.</li>
+          <li>Aparece una tarjeta verde "✓ Pedido clasificado" + botón <strong>Escanear otro pedido</strong> (abre cámara in-app, más rápido que volver a abrir la cámara del SO). Repite.</li>
         </ol>
 
         <h4>2 · Cargar al vehículo</h4>
         <p>Cuando las rumas están listas y llegan las camionetas:</p>
         <ol>
-          <li>Escaneá nuevamente el QR del pedido (cámara externa o botón "Escanear otro pedido" si seguís adentro).</li>
+          <li>Escanea nuevamente el QR del pedido (cámara externa o botón "Escanear otro pedido" si sigues adentro).</li>
           <li>Como el pedido ya está clasificado, esta vez ves la <strong>Vista de Carga</strong>: pills de progreso <em>cargados</em> por ruta, ruta destacada, botón <strong>Confirmar carga al vehículo</strong>.</li>
-          <li>Subí la bolsa al vehículo y tocá el botón.</li>
+          <li>Sube la bolsa al vehículo y toca el botón.</li>
           <li>Tarjeta verde "✓ Cargado al vehículo" + Escanear otro.</li>
         </ol>
 
@@ -450,15 +450,15 @@ const SECTIONS: Section[] = [
           Si al escanear ves un <strong className="text-red-700">banner rojo grande "⚠ B2 INCOMPLETO — NO {`{clasificar/cargar}`}"</strong> con la lista de items faltantes, significa que el picker B2 no encontró stock para ese pedido y nadie autorizó la entrega parcial. El botón de confirmar queda deshabilitado.
         </p>
         <ul>
-          <li>Dejá la bolsa en un rincón "no cargar".</li>
-          <li>Si tenés rol <code>wms_pack_b1</code> o <code>wms_supervise</code>, podés autorizar entrega parcial desde el mismo banner (botón verde).</li>
+          <li>Deja la bolsa en un rincón "no cargar".</li>
+          <li>Si tienes rol <code>wms_pack_b1</code> o <code>wms_supervise</code>, puedes autorizar entrega parcial desde el mismo banner (botón verde).</li>
         </ul>
 
         <h4>Progreso por ruta — en Inicio</h4>
         <p>En la pantalla <strong>Inicio</strong> vas a ver dos widgets con todas las pills de progreso: "Clasificación del día" y "Carga al vehículo del día". Sirve para chequear el estado global antes de arrancar o entre escaneos.</p>
 
         <h4>Botón "Refrescar rutas" en Inicio</h4>
-        <p>Si la app externa asigna rutas DESPUÉS de empacar (caso normal), el webhook de WC ya las trae automáticamente al WMS. Si por algún motivo no llegan, presioná <strong>Refrescar rutas</strong> en Inicio y se sincronizan a mano todas las rutas/paradas/conductor/patente de los pedidos activos.</p>
+        <p>Si la app externa asigna rutas DESPUÉS de empacar (caso normal), el webhook de WC ya las trae automáticamente al WMS. Si por algún motivo no llegan, presiona <strong>Refrescar rutas</strong> en Inicio y se sincronizan a mano todas las rutas/paradas/conductor/patente de los pedidos activos.</p>
       </>
     ),
   },
@@ -468,9 +468,9 @@ const SECTIONS: Section[] = [
     icon: Activity,
     body: (
       <>
-        <p>Cuando un cliente pregunta "¿qué pasó con mi pedido?" o necesitás auditar qué hizo cada operador, abrí <strong>Seguimiento</strong> en el menú (solo visible con cap <code>wms_supervise</code>).</p>
+        <p>Cuando un cliente pregunta "¿qué pasó con mi pedido?" o necesitas auditar qué hizo cada operador, abre <strong>Seguimiento</strong> en el menú (solo visible con cap <code>wms_supervise</code>).</p>
         <ol>
-          <li>Ingresá el <code>wpOrderId</code> (el número que ves en WC, ej. <code>1133335</code>) y tocá Buscar.</li>
+          <li>Ingresa el <code>wpOrderId</code> (el número que ves en WC, ej. <code>1133335</code>) y toca Buscar.</li>
           <li>Aparece toda la trazabilidad del pedido en bloques:
             <ul>
               <li><strong>Estado actual</strong> + badges (status, B2, entrega parcial, método de envío).</li>

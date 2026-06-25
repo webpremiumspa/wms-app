@@ -57,12 +57,12 @@ export function ProcessNew() {
               <>
                 Ya hay {openCount} procesos abiertos (límite: {MAX_OPEN}):{' '}
                 <strong>{openProcesses!.map((p) => p.name).join(', ')}</strong>.
-                Cerrá alguno antes de crear uno nuevo.
+                Cierra alguno antes de crear uno nuevo.
               </>
             ) : (
               <>
                 Hay {openCount} proceso abierto: <strong>{openProcesses![0].name}</strong>.
-                Podés abrir uno más en paralelo (matutino + vespertino).
+                Puedes abrir uno más en paralelo (matutino + vespertino).
               </>
             )}
           </div>
@@ -82,7 +82,7 @@ export function ProcessNew() {
             autoFocus
           />
           <span className="mt-1 block text-xs text-slate-500">
-            Sugerido según hora actual. Cambialo si querés algo más específico.
+            Sugerido según hora actual. Cámbialo si quieres algo más específico.
           </span>
         </label>
 

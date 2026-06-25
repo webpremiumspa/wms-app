@@ -123,7 +123,7 @@ export function SequenceNew() {
             <div>
               <div className="font-semibold">No hay proceso de preparación y carga abierto</div>
               <div className="mt-1 text-sm text-amber-900">
-                Cada secuencia debe pertenecer a un proceso (turno matutino o vespertino). Creá uno antes de generar secuencias.
+                Cada secuencia debe pertenecer a un proceso (turno matutino o vespertino). Crea uno antes de generar secuencias.
               </div>
             </div>
           </div>

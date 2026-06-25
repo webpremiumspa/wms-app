@@ -15,7 +15,7 @@ export function Debug() {
     e.preventDefault();
     const id = Number(input.trim());
     if (!Number.isFinite(id) || id <= 0) {
-      setError('Ingresá un wpOrderId numérico válido');
+      setError('Ingresa un wpOrderId numérico válido');
       return;
     }
     setError(null);

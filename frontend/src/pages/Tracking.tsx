@@ -44,7 +44,7 @@ export function Tracking() {
       <div>
         <h2 className="text-xl font-semibold">Seguimiento de pedido</h2>
         <p className="text-sm text-slate-500">
-          Buscá un pedido por su ID de WooCommerce para ver toda su trazabilidad: quién, cuándo, dónde y qué pasó.
+          Busca un pedido por su ID de WooCommerce para ver toda su trazabilidad: quién, cuándo, dónde y qué pasó.
         </p>
       </div>
 

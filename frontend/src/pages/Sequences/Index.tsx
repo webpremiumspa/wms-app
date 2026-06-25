@@ -173,7 +173,7 @@ export function SequencesIndex() {
             )
           ) : (
             <div className="card p-4 text-center text-xs text-slate-500">
-              Tocá un día para ver sus secuencias.
+              Toca un día para ver sus secuencias.
             </div>
           )}
         </>

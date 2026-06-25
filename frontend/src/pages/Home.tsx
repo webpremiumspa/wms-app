@@ -60,7 +60,7 @@ export function Home() {
               <div className="min-w-0 flex-1">
                 <div className="text-xs uppercase tracking-wide text-brand-700">Abrir otro proceso</div>
                 <div className="text-sm text-brand-900">
-                  Podés tener hasta 2 procesos en paralelo (matutino + vespertino).
+                  Puedes tener hasta 2 procesos en paralelo (matutino + vespertino).
                 </div>
               </div>
             </Link>
@@ -74,7 +74,7 @@ export function Home() {
           <div className="min-w-0 flex-1">
             <div className="text-xs uppercase tracking-wide text-amber-700">Sin proceso activo</div>
             <div className="text-sm text-amber-900">
-              No hay un proceso de preparación y carga abierto. {canCreate ? 'Creá uno para empezar a generar secuencias.' : 'Avisá al encargado.'}
+              No hay un proceso de preparación y carga abierto. {canCreate ? 'Crea uno para empezar a generar secuencias.' : 'Avisa al encargado.'}
             </div>
           </div>
           {canCreate && (

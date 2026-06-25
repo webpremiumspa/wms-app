@@ -252,7 +252,7 @@ export function Scan() {
                   ))}
                 </ul>
                 <div className="mt-2 text-xs text-red-800">
-                  Dejá la bolsa hasta que se complete {warehouseLabel('B2')}, o autorizá entrega parcial si el cliente acepta.
+                  Deja la bolsa hasta que se complete {warehouseLabel('B2')}, o autoriza entrega parcial si el cliente acepta.
                 </div>
               </div>
             </div>
@@ -305,7 +305,7 @@ export function Scan() {
           <div className="card space-y-3 p-4 ring-1 ring-brand-100">
             <div>
               <div className="text-xs uppercase text-brand-700">Acción · Clasificación</div>
-              <div className="text-base font-semibold text-slate-800">Confirmá que este pedido fue separado a su ruma de ruta.</div>
+              <div className="text-base font-semibold text-slate-800">Confirma que este pedido fue separado a su ruma de ruta.</div>
             </div>
             <RouteProgressHero routes={routesProgress || []} mode="classified" highlightRoute={order.route} />
             <RouteProgressPills routes={routesProgress || []} mode="classified" highlightRoute={order.route} />
@@ -313,7 +313,7 @@ export function Scan() {
             {order.sequenceProgress && order.sequenceProgress.pendingPack > 0 && (
               <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-300">
                 <strong>⚠ Hay {order.sequenceProgress.pendingPack} pedido{order.sequenceProgress.pendingPack === 1 ? '' : 's'} de la secuencia #{order.sequenceProgress.sequenceId} sin empacar aún.</strong>
-                <div className="mt-0.5 text-xs">Podés clasificar este, pero idealmente esperá a que termine el packing.</div>
+                <div className="mt-0.5 text-xs">Puedes clasificar este, pero idealmente espera a que termine el packing.</div>
               </div>
             )}
             {actionError && (
@@ -345,7 +345,7 @@ export function Scan() {
           <div className="card space-y-3 p-4 ring-1 ring-emerald-100">
             <div>
               <div className="text-xs uppercase text-emerald-700">Acción · Carga al vehículo</div>
-              <div className="text-base font-semibold text-slate-800">Confirmá que esta bolsa subió a la camioneta.</div>
+              <div className="text-base font-semibold text-slate-800">Confirma que esta bolsa subió a la camioneta.</div>
             </div>
             <RouteProgressHero routes={routesProgress || []} mode="loaded" highlightRoute={order.route} />
             <RouteProgressPills routes={routesProgress || []} mode="loaded" highlightRoute={order.route} />
@@ -353,7 +353,7 @@ export function Scan() {
             {order.sequenceProgress && order.sequenceProgress.pendingClassify > 0 && (
               <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-300">
                 <strong>⚠ Hay {order.sequenceProgress.pendingClassify} pedido{order.sequenceProgress.pendingClassify === 1 ? '' : 's'} de la secuencia #{order.sequenceProgress.sequenceId} sin clasificar aún.</strong>
-                <div className="mt-0.5 text-xs">Podés cargar este, pero idealmente esperá a que termine la clasificación.</div>
+                <div className="mt-0.5 text-xs">Puedes cargar este, pero idealmente espera a que termine la clasificación.</div>
               </div>
             )}
             {actionError && (

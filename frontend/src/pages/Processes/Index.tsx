@@ -113,7 +113,7 @@ export function ProcessesIndex() {
             <ClipboardList size={20} />
           </div>
           <div className="text-sm text-amber-900">
-            No hay proceso abierto. {canCreate ? 'Creá uno con el botón de arriba para empezar a generar secuencias.' : 'Avisá al encargado para que abra un proceso.'}
+            No hay proceso abierto. {canCreate ? 'Crea uno con el botón de arriba para empezar a generar secuencias.' : 'Avisa al encargado para que abra un proceso.'}
           </div>
         </div>
       )}
@@ -148,7 +148,7 @@ export function ProcessesIndex() {
               )
             ) : (
               <div className="card p-4 text-center text-xs text-slate-500">
-                Tocá un día para ver sus procesos.
+                Toca un día para ver sus procesos.
               </div>
             )}
           </>

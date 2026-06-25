@@ -71,10 +71,10 @@ export async function createSequence({ orderIds, createdById, processId }) {
       orderBy: { createdAt: 'asc' },
     });
     if (openProcesses.length === 0) {
-      throw new HttpError(409, 'No hay un proceso de preparación y carga abierto. Creá uno antes de generar secuencias.');
+      throw new HttpError(409, 'No hay un proceso de preparación y carga abierto. Crea uno antes de generar secuencias.');
     }
     if (openProcesses.length > 1) {
-      throw new HttpError(409, 'Hay varios procesos abiertos. Indicá a cuál asociar la secuencia.', { openProcesses });
+      throw new HttpError(409, 'Hay varios procesos abiertos. Indica a cuál asociar la secuencia.', { openProcesses });
     }
     targetProcessId = openProcesses[0].id;
   }

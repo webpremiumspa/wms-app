@@ -16,7 +16,7 @@ export async function createProcess({ name, scheduledAt, actorId }) {
   if (openProcesses.length >= MAX_OPEN_PROCESSES) {
     throw new HttpError(
       409,
-      `Ya hay ${openProcesses.length} proceso(s) abierto(s) (máximo ${MAX_OPEN_PROCESSES}): ${openProcesses.map((p) => `#${p.id} ${p.name}`).join(', ')}. Cerrá alguno antes de crear uno nuevo.`,
+      `Ya hay ${openProcesses.length} proceso(s) abierto(s) (máximo ${MAX_OPEN_PROCESSES}): ${openProcesses.map((p) => `#${p.id} ${p.name}`).join(', ')}. Cierra alguno antes de crear uno nuevo.`,
       { openProcesses },
     );
   }
