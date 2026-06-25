@@ -12,6 +12,7 @@ import {
   revokePartialDelivery,
   unblockOrder,
   unpackOrder,
+  reopenB2,
   getOrderLoadability,
   claimOrder,
 } from '../services/order-actions.js';
@@ -344,6 +345,19 @@ router.post('/:id/unpack', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), asy
   try {
     const id = Number(req.params.id);
     const result = await unpackOrder({ orderId: id, actorId: req.user.wpUserId });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Reabre el cierre B2 de un pedido (limpia b2ClosedAt y resetea items B2).
+// Independiente del flujo B1. Se usa cuando el picker B2 cerró por error
+// o en pruebas.
+router.post('/:id/reopen-b2', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await reopenB2({ orderId: id, actorId: req.user.wpUserId });
     res.json(result);
   } catch (err) {
     next(err);

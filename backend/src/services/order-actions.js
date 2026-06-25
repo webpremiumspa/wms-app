@@ -156,6 +156,56 @@ export async function unpackOrder({ orderId, actorId }) {
   return { ok: true };
 }
 
+// Reabrir el cierre B2 de un pedido: limpia b2ClosedAt/By y resetea los
+// items B2 a sin pickear. Útil cuando se cerró B2 por error/prueba.
+// No toca el flujo B1 (status, packedAt, etc.). Bloqueado para pedidos
+// loaded/delivered (la bolsa ya salió a entrega).
+export async function reopenB2({ orderId, actorId }) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: { select: { id: true, warehouse: true } } },
+  });
+  if (!order) throw new HttpError(404, 'Order not found');
+
+  if (TOO_LATE_TO_UNPACK.includes(order.status)) {
+    throw new HttpError(409, 'Pedido ya cargado o entregado — no se puede reabrir B2.', {
+      currentStatus: order.status,
+    });
+  }
+  if (!order.b2ClosedAt) {
+    throw new HttpError(409, 'B2 de este pedido no está cerrado — no hay nada que reabrir.');
+  }
+
+  const b2ItemIds = order.items.filter((i) => i.warehouse === 'B2').map((i) => i.id);
+
+  await prisma.$transaction([
+    prisma.orderItem.updateMany({
+      where: { id: { in: b2ItemIds } },
+      data: { pickedAt: null, packedAt: null },
+    }),
+    prisma.order.update({
+      where: { id: orderId },
+      data: {
+        b2ClosedAt: null,
+        b2ClosedById: null,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        type: 'order.b2_reopened',
+        actorId,
+        orderId,
+        payload: {
+          previousB2ClosedAt: order.b2ClosedAt,
+          previousB2ClosedById: order.b2ClosedById,
+        },
+      },
+    }),
+  ]);
+
+  return { ok: true };
+}
+
 // Reactiva un pedido bloqueado: vuelve a `received` para que entre en la
 // próxima sincronización / secuencia.
 export async function unblockOrder({ orderId, actorId }) {

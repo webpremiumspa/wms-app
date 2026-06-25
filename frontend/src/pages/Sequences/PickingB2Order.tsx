@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, Image as ImageIcon, AlertOctagon, CheckCircle2 } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, AlertOctagon, CheckCircle2, RotateCcw } from 'lucide-react';
 import clsx from 'clsx';
 import { ordersApi } from '@/lib/sequences';
 import { pickingB2Api } from '@/lib/dispatch';
@@ -12,6 +12,8 @@ import { CustomerNote } from '@/components/CustomerNote';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { warehouseLabel } from '@/lib/labels';
+import { useAuth } from '@/hooks/useAuth';
+import { CAPS, hasCap } from '@/lib/auth';
 
 export function PickingB2Order() {
   const { id, orderId } = useParams();
@@ -33,11 +35,16 @@ export function PickingB2Order() {
     refetchInterval: 4000,
   });
 
+  const { user } = useAuth();
+  const canReopen = hasCap(user, CAPS.PACK_B2) || hasCap(user, CAPS.SUPERVISE);
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [packError, setPackError] = useState<string | null>(null);
   // Modal bloqueante: la secuencia es de hace más de 1 día.
   const [oldSeqModal, setOldSeqModal] = useState<{ createdAt: string } | null>(null);
   const [confirmedOldSeq, setConfirmedOldSeq] = useState(false);
+  // Reabrir B2: revierte el cierre cuando se hizo por error/prueba.
+  const [confirmReopen, setConfirmReopen] = useState(false);
+  const [reopenError, setReopenError] = useState<string | null>(null);
 
   const currentSequence = order?.sequenceLinks?.find((l) => l.sequenceId === seqId)?.sequence;
 
@@ -105,6 +112,25 @@ export function PickingB2Order() {
     },
     onError: (err: any) => {
       setPackError(err.response?.data?.message || 'No se pudo cerrar B2 del pedido');
+    },
+  });
+
+  // Reabrir B2: revierte el cierre cuando se hizo por error/prueba.
+  const reopen = useMutation({
+    mutationFn: () => ordersApi.reopenB2(ordId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['order', ordId] });
+      queryClient.invalidateQueries({ queryKey: ['picking-b2-sequence', seqId] });
+      queryClient.invalidateQueries({ queryKey: ['picking-b2-today'] });
+      queryClient.invalidateQueries({ queryKey: ['picking-b2-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['sequences'] });
+      queryClient.invalidateQueries({ queryKey: ['process'] });
+      setConfirmReopen(false);
+      // Nos quedamos en la misma vista: la query del pedido se refrescó y
+      // el pedido vuelve a mostrarse como abierto (sin el banner verde).
+    },
+    onError: (err: any) => {
+      setReopenError(err.response?.data?.message || 'No se pudo reabrir B2');
     },
   });
 
@@ -259,6 +285,72 @@ export function PickingB2Order() {
         <div className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 ring-1 ring-emerald-200">
           {warehouseLabel('B2')} cerrado el {new Date(order.b2ClosedAt).toLocaleString('es-CL')}
           {order.b2ClosedBy && <> por {order.b2ClosedBy.displayName || order.b2ClosedBy.username}</>}.
+        </div>
+      )}
+
+      {isB2Closed && canReopen && order.status !== 'loaded' && order.status !== 'delivered' && (
+        <div className="card space-y-2 border-dashed bg-amber-50 p-3 ring-1 ring-amber-200">
+          <div className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+            Acciones del operador
+          </div>
+          {reopenError && (
+            <div className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700 ring-1 ring-red-200">
+              {reopenError}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => { setReopenError(null); setConfirmReopen(true); }}
+            disabled={reopen.isPending}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-60"
+          >
+            <RotateCcw size={14} />
+            Reabrir {warehouseLabel('B2')} (deshacer cierre)
+          </button>
+          <div className="text-[10px] text-amber-700">
+            Borra la marca de {warehouseLabel('B2')} cerrado y los items {warehouseLabel('B2')} vuelven a "no recolectados". Útil si se cerró por error o durante pruebas. El flujo {warehouseLabel('B1')} (empaque) no se toca.
+          </div>
+        </div>
+      )}
+
+      {confirmReopen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="card w-full max-w-md space-y-3 p-4">
+            <div className="flex items-start gap-2">
+              <AlertOctagon className="text-red-600" size={22} />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-800">
+                  ¿Reabrir {warehouseLabel('B2')} de #{order.number}?
+                </h3>
+                <p className="mt-1 text-sm text-slate-700">
+                  Esto revierte el cierre {warehouseLabel('B2')} y se borrará:
+                </p>
+                <ul className="mt-1 list-disc pl-5 text-xs text-slate-600">
+                  <li>Quién y cuándo cerró {warehouseLabel('B2')}</li>
+                  <li>La marca de items {warehouseLabel('B2')} recolectados</li>
+                </ul>
+                <p className="mt-2 text-xs text-slate-500">
+                  NO se tocan: el {warehouseLabel('B1')} empacado (si lo está), la nota del cliente ni la aprobación de entrega parcial. El pedido vuelve a aparecer como pendiente de {warehouseLabel('B2')}.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setConfirmReopen(false)}
+                disabled={reopen.isPending}
+                className="btn-ghost border border-slate-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => reopen.mutate()}
+                disabled={reopen.isPending}
+                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {reopen.isPending ? 'Reabriendo…' : `Sí, reabrir ${warehouseLabel('B2')}`}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

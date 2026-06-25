@@ -120,6 +120,10 @@ export const ordersApi = {
   // Falla si el pedido ya fue cargado o entregado.
   unpack: async (id: number): Promise<{ ok: boolean }> =>
     (await api.post(`/orders/${id}/unpack`)).data,
+  // Reabre el cierre B2: limpia b2ClosedAt y los items B2 vuelven a no
+  // pickeados. Independiente del flujo B1.
+  reopenB2: async (id: number): Promise<{ ok: boolean }> =>
+    (await api.post(`/orders/${id}/reopen-b2`)).data,
   // Claim: el picker toma el pedido para empacarlo. Modelo "último escaneo
   // gana" — siempre reasigna al actor que llama.
   claim: async (
