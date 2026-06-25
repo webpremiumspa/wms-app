@@ -24,6 +24,7 @@ import { B2Alert } from '@/components/B2Alert';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { CustomerNote } from '@/components/CustomerNote';
+import { CustomerBlock } from '@/components/CustomerBlock';
 import { QRScanner } from '@/components/QRScanner';
 import { RouteProgressPills, RouteProgressHero } from '@/components/RouteProgressPills';
 import { useAuth } from '@/hooks/useAuth';
@@ -191,10 +192,13 @@ export function Scan() {
             <Badge variant={isAlreadyLoaded ? 'green' : 'gray'}>{orderStatusLabel(order.status)}</Badge>
             <ShippingBadge method={order.shippingMethod} />
           </div>
-          <div className="text-sm text-slate-700">{order.customerName || '—'}</div>
-          {order.customerAddress && (
-            <div className="text-xs text-slate-500">{order.customerAddress}</div>
-          )}
+          <CustomerBlock
+            name={order.customerName}
+            address={order.customerAddress}
+            address2={order.customerAddress2}
+            city={order.customerCity}
+            phone={order.customerPhone}
+          />
           <CustomerNote note={order.customerNote} />
         </div>
 

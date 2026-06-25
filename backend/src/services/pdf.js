@@ -69,13 +69,15 @@ async function drawAlbaran(doc, order, opts = {}) {
 
   // Franja "BULTO X DE N" arriba (solo si N > 1). Identifica físicamente
   // cada bolsa de un pedido multi-bulto sin necesidad de escritura manual.
+  // No usamos emojis: la fuente Helvetica de pdfkit no soporta glifos fuera
+  // del BMP y se ven como basura ("Ø=Üæ").
   const totalBags = opts.totalBags ?? 1;
   const bagNumber = opts.bagNumber ?? 1;
   if (totalBags > 1) {
     doc.save();
     doc.rect(40, 30, 515, 30).fill('#1d4ed8');
     doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(18)
-      .text(`📦  BULTO ${bagNumber} DE ${totalBags}`, 40, 36, { width: 515, align: 'center' });
+      .text(`BULTO ${bagNumber} DE ${totalBags}`, 40, 36, { width: 515, align: 'center' });
     doc.restore();
   }
   const headerYOffset = totalBags > 1 ? 40 : 0;
@@ -110,12 +112,38 @@ async function drawAlbaran(doc, order, opts = {}) {
   doc.font('Helvetica').fontSize(8).fillColor('#94a3b8')
     .text('Escanea para empacar / ver pedido', 410, 180 + headerYOffset, { width: 140, align: 'center' });
 
+  // Sección Cliente: nombre + dirección + depto (si tiene) + comuna + teléfono.
+  // Cada campo va en su propia línea con label en negrita para que el repartidor
+  // los ubique a un golpe de vista. Si un campo está vacío se omite (no
+  // imprimimos "—" en cada línea, ensucia el papel).
   doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Cliente', 40, 158 + headerYOffset);
-  doc.font('Helvetica').fontSize(11).fillColor('#0f172a')
-    .text(order.customerName || '—', 40, 176 + headerYOffset)
-    .fillColor('#475569').text(order.customerAddress || '', 40, 192 + headerYOffset);
+  let custY = 176 + headerYOffset;
+  const labelColor = '#475569';
+  const valueColor = '#0f172a';
+  const colW = 360; // dejamos espacio para el QR a la derecha
 
-  let cursorY = 230 + headerYOffset;
+  // Nombre del cliente (siempre se imprime)
+  doc.font('Helvetica-Bold').fontSize(11).fillColor(valueColor)
+    .text(order.customerName || '—', 40, custY, { width: colW });
+  custY += 16;
+
+  function drawCustomerLine(label, value) {
+    if (!value) return;
+    doc.font('Helvetica-Bold').fontSize(9).fillColor(labelColor)
+      .text(`${label}: `, 40, custY, { continued: true, width: colW })
+      .font('Helvetica').fontSize(10).fillColor(valueColor)
+      .text(String(value), { width: colW });
+    custY += 14;
+  }
+
+  // Dirección + depto en la misma línea ("Av. Siempre Viva 742 · Depto 12A")
+  const addrParts = [order.customerAddress, order.customerAddress2].filter((s) => s && String(s).trim());
+  drawCustomerLine('Dirección', addrParts.join(' · ') || null);
+  drawCustomerLine('Comuna', order.customerCity);
+  drawCustomerLine('Teléfono', order.customerPhone);
+
+  // Si bajamos mucho con los campos de cliente, arrancamos el cursor abajo.
+  let cursorY = Math.max(230 + headerYOffset, custY + 6);
 
   if (order.shippingMethod) {
     doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a')
@@ -143,7 +171,7 @@ async function drawAlbaran(doc, order, opts = {}) {
     doc.save();
     doc.rect(40, cursorY, 515, 60).fill('#fef3c7');
     doc.fillColor('#92400e').font('Helvetica-Bold').fontSize(20)
-      .text('⚠ B2 - EL SOL PENDIENTE', 40, cursorY + 14, { width: 515, align: 'center' });
+      .text('B2 - EL SOL PENDIENTE', 40, cursorY + 14, { width: 515, align: 'center' });
     doc.fillColor('#92400e').font('Helvetica').fontSize(10)
       .text('Revisar al cargar y al entregar — items a sacar del cargamento a granel', 40, cursorY + 40, { width: 515, align: 'center' });
     doc.restore();
@@ -154,7 +182,7 @@ async function drawAlbaran(doc, order, opts = {}) {
     doc.save();
     doc.rect(40, cursorY, 515, 50).fill('#d1fae5');
     doc.fillColor('#065f46').font('Helvetica-Bold').fontSize(14)
-      .text('✓ ENTREGA PARCIAL APROBADA', 40, cursorY + 10, { width: 515, align: 'center' });
+      .text('ENTREGA PARCIAL APROBADA', 40, cursorY + 10, { width: 515, align: 'center' });
     const note = order.partialDeliveryNote || 'Cliente acepta recibir aunque falten items B2 al momento de la entrega.';
     doc.fillColor('#065f46').font('Helvetica').fontSize(9)
       .text(note, 50, cursorY + 30, { width: 495, align: 'center' });
@@ -281,7 +309,9 @@ function drawTable(doc, items, startY, itemImages, rowBg = null) {
 
     const textY = y + 10;
     doc.text(it.product?.sku || '—', colSkuX, textY, { width: 90 });
-    doc.text(it.product?.name || '—', colNameX, textY, { width: 260 });
+    // lineName = nombre tal cual vino del line_item de WC (incluye variante,
+    // ej "Heno Oxbow - 425Gr Banana"). Si no existe caemos al name del producto.
+    doc.text(it.lineName || it.product?.name || '—', colNameX, textY, { width: 260 });
     doc.font('Helvetica-Bold').text(String(it.qty), colQtyX, textY, { width: 50, align: 'right' });
     doc.font('Helvetica');
     y += rowH;

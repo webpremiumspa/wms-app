@@ -178,6 +178,24 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
   // paralelas concurrentes en order_items por FK locks).
   return retryOnDeadlock(() => prisma.$transaction(
     async (tx) => {
+      // Campos del cliente normalizados: en vez de concatenarlos en
+      // customerAddress, los guardamos por separado para imprimirlos
+      // etiquetados en el albarán. customerAddress queda solo con calle +
+      // número. La comuna (city en WC) y depto (address_2) van en columnas
+      // dedicadas. El teléfono viene del bloque billing, no shipping.
+      const customerName = [data.billing?.first_name, data.billing?.last_name]
+        .filter(Boolean)
+        .join(' ') || null;
+      const cleanStr = (v, max) => {
+        if (typeof v !== 'string') return null;
+        const t = v.trim();
+        return t ? t.slice(0, max) : null;
+      };
+      const customerAddress = cleanStr(data.shipping?.address_1, 500);
+      const customerAddress2 = cleanStr(data.shipping?.address_2, 255);
+      const customerCity = cleanStr(data.shipping?.city, 120);
+      const customerPhone = cleanStr(data.billing?.phone || data.shipping?.phone, 40);
+
       const order = await tx.order.upsert({
         where: { wpOrderId: data.id },
         create: {
@@ -186,8 +204,11 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           status: 'received',
           route,
           stopPosition: Number.isFinite(stopPosition) ? stopPosition : null,
-          customerName: [data.billing?.first_name, data.billing?.last_name].filter(Boolean).join(' ') || null,
-          customerAddress: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', ') || null,
+          customerName,
+          customerAddress,
+          customerAddress2,
+          customerCity,
+          customerPhone,
           customerNote: typeof data.customer_note === 'string' && data.customer_note.trim() ? data.customer_note.trim() : null,
           shippingMethod,
           driverId,
@@ -202,8 +223,11 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           number: String(data.number ?? data.id),
           route,
           stopPosition: Number.isFinite(stopPosition) ? stopPosition : null,
-          customerName: [data.billing?.first_name, data.billing?.last_name].filter(Boolean).join(' ') || null,
-          customerAddress: [data.shipping?.address_1, data.shipping?.city].filter(Boolean).join(', ') || null,
+          customerName,
+          customerAddress,
+          customerAddress2,
+          customerCity,
+          customerPhone,
           customerNote: typeof data.customer_note === 'string' && data.customer_note.trim() ? data.customer_note.trim() : null,
           shippingMethod,
           driverId,

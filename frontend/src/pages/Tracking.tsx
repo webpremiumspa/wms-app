@@ -18,6 +18,7 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { CustomerNote } from '@/components/CustomerNote';
+import { CustomerBlock } from '@/components/CustomerBlock';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 
@@ -118,8 +119,13 @@ function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: T
 
       {/* Cliente */}
       <Section icon={<User size={16} />} title="Cliente">
-        <Field k="Nombre" v={order.customerName || '—'} />
-        <Field k="Dirección" v={order.customerAddress || '—'} />
+        <CustomerBlock
+          name={order.customerName}
+          address={order.customerAddress}
+          address2={order.customerAddress2}
+          city={order.customerCity}
+          phone={order.customerPhone}
+        />
         <Field k="Método de envío" v={order.shippingMethod || '—'} />
         {order.customerNote && (
           <div className="mt-2"><CustomerNote note={order.customerNote} /></div>

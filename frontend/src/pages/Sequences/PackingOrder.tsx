@@ -8,6 +8,7 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { CustomerNote } from '@/components/CustomerNote';
+import { CustomerBlock } from '@/components/CustomerBlock';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
@@ -273,8 +274,13 @@ export function PackingOrder() {
           <ShippingBadge method={order.shippingMethod} />
           {isPacked && <Badge variant="green">Empacado</Badge>}
         </div>
-        <div className="text-sm text-slate-600">{order.customerName || '—'}</div>
-        {order.customerAddress && <div className="text-xs text-slate-500">{order.customerAddress}</div>}
+        <CustomerBlock
+          name={order.customerName}
+          address={order.customerAddress}
+          address2={order.customerAddress2}
+          city={order.customerCity}
+          phone={order.customerPhone}
+        />
         <CustomerNote note={order.customerNote} />
         {/* Doble verificación visual: fecha del pedido WC + secuencia. Ayuda
             a detectar albaranes viejos reciclados antes de empacar. */}

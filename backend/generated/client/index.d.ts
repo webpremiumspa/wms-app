@@ -3773,6 +3773,9 @@ export namespace Prisma {
     stopPosition: number | null
     customerName: string | null
     customerAddress: string | null
+    customerAddress2: string | null
+    customerCity: string | null
+    customerPhone: string | null
     customerNote: string | null
     shippingMethod: string | null
     driverId: number | null
@@ -3805,6 +3808,9 @@ export namespace Prisma {
     stopPosition: number | null
     customerName: string | null
     customerAddress: string | null
+    customerAddress2: string | null
+    customerCity: string | null
+    customerPhone: string | null
     customerNote: string | null
     shippingMethod: string | null
     driverId: number | null
@@ -3837,6 +3843,9 @@ export namespace Prisma {
     stopPosition: number
     customerName: number
     customerAddress: number
+    customerAddress2: number
+    customerCity: number
+    customerPhone: number
     customerNote: number
     shippingMethod: number
     driverId: number
@@ -3893,6 +3902,9 @@ export namespace Prisma {
     stopPosition?: true
     customerName?: true
     customerAddress?: true
+    customerAddress2?: true
+    customerCity?: true
+    customerPhone?: true
     customerNote?: true
     shippingMethod?: true
     driverId?: true
@@ -3925,6 +3937,9 @@ export namespace Prisma {
     stopPosition?: true
     customerName?: true
     customerAddress?: true
+    customerAddress2?: true
+    customerCity?: true
+    customerPhone?: true
     customerNote?: true
     shippingMethod?: true
     driverId?: true
@@ -3957,6 +3972,9 @@ export namespace Prisma {
     stopPosition?: true
     customerName?: true
     customerAddress?: true
+    customerAddress2?: true
+    customerCity?: true
+    customerPhone?: true
     customerNote?: true
     shippingMethod?: true
     driverId?: true
@@ -4076,6 +4094,9 @@ export namespace Prisma {
     stopPosition: number | null
     customerName: string | null
     customerAddress: string | null
+    customerAddress2: string | null
+    customerCity: string | null
+    customerPhone: string | null
     customerNote: string | null
     shippingMethod: string | null
     driverId: number | null
@@ -4127,6 +4148,9 @@ export namespace Prisma {
     stopPosition?: boolean
     customerName?: boolean
     customerAddress?: boolean
+    customerAddress2?: boolean
+    customerCity?: boolean
+    customerPhone?: boolean
     customerNote?: boolean
     shippingMethod?: boolean
     driverId?: boolean
@@ -4167,6 +4191,9 @@ export namespace Prisma {
     stopPosition?: boolean
     customerName?: boolean
     customerAddress?: boolean
+    customerAddress2?: boolean
+    customerCity?: boolean
+    customerPhone?: boolean
     customerNote?: boolean
     shippingMethod?: boolean
     driverId?: boolean
@@ -4219,6 +4246,9 @@ export namespace Prisma {
       stopPosition: number | null
       customerName: string | null
       customerAddress: string | null
+      customerAddress2: string | null
+      customerCity: string | null
+      customerPhone: string | null
       customerNote: string | null
       shippingMethod: string | null
       driverId: number | null
@@ -4623,6 +4653,9 @@ export namespace Prisma {
     readonly stopPosition: FieldRef<"Order", 'Int'>
     readonly customerName: FieldRef<"Order", 'String'>
     readonly customerAddress: FieldRef<"Order", 'String'>
+    readonly customerAddress2: FieldRef<"Order", 'String'>
+    readonly customerCity: FieldRef<"Order", 'String'>
+    readonly customerPhone: FieldRef<"Order", 'String'>
     readonly customerNote: FieldRef<"Order", 'String'>
     readonly shippingMethod: FieldRef<"Order", 'String'>
     readonly driverId: FieldRef<"Order", 'Int'>
@@ -9903,6 +9936,9 @@ export namespace Prisma {
     stopPosition: 'stopPosition',
     customerName: 'customerName',
     customerAddress: 'customerAddress',
+    customerAddress2: 'customerAddress2',
+    customerCity: 'customerCity',
+    customerPhone: 'customerPhone',
     customerNote: 'customerNote',
     shippingMethod: 'shippingMethod',
     driverId: 'driverId',
@@ -10276,6 +10312,9 @@ export namespace Prisma {
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
     customerAddress?: StringNullableFilter<"Order"> | string | null
+    customerAddress2?: StringNullableFilter<"Order"> | string | null
+    customerCity?: StringNullableFilter<"Order"> | string | null
+    customerPhone?: StringNullableFilter<"Order"> | string | null
     customerNote?: StringNullableFilter<"Order"> | string | null
     shippingMethod?: StringNullableFilter<"Order"> | string | null
     driverId?: IntNullableFilter<"Order"> | number | null
@@ -10314,6 +10353,9 @@ export namespace Prisma {
     stopPosition?: SortOrderInput | SortOrder
     customerName?: SortOrderInput | SortOrder
     customerAddress?: SortOrderInput | SortOrder
+    customerAddress2?: SortOrderInput | SortOrder
+    customerCity?: SortOrderInput | SortOrder
+    customerPhone?: SortOrderInput | SortOrder
     customerNote?: SortOrderInput | SortOrder
     shippingMethod?: SortOrderInput | SortOrder
     driverId?: SortOrderInput | SortOrder
@@ -10355,6 +10397,9 @@ export namespace Prisma {
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
     customerAddress?: StringNullableFilter<"Order"> | string | null
+    customerAddress2?: StringNullableFilter<"Order"> | string | null
+    customerCity?: StringNullableFilter<"Order"> | string | null
+    customerPhone?: StringNullableFilter<"Order"> | string | null
     customerNote?: StringNullableFilter<"Order"> | string | null
     shippingMethod?: StringNullableFilter<"Order"> | string | null
     driverId?: IntNullableFilter<"Order"> | number | null
@@ -10393,6 +10438,9 @@ export namespace Prisma {
     stopPosition?: SortOrderInput | SortOrder
     customerName?: SortOrderInput | SortOrder
     customerAddress?: SortOrderInput | SortOrder
+    customerAddress2?: SortOrderInput | SortOrder
+    customerCity?: SortOrderInput | SortOrder
+    customerPhone?: SortOrderInput | SortOrder
     customerNote?: SortOrderInput | SortOrder
     shippingMethod?: SortOrderInput | SortOrder
     driverId?: SortOrderInput | SortOrder
@@ -10433,6 +10481,9 @@ export namespace Prisma {
     stopPosition?: IntNullableWithAggregatesFilter<"Order"> | number | null
     customerName?: StringNullableWithAggregatesFilter<"Order"> | string | null
     customerAddress?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    customerAddress2?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    customerCity?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    customerPhone?: StringNullableWithAggregatesFilter<"Order"> | string | null
     customerNote?: StringNullableWithAggregatesFilter<"Order"> | string | null
     shippingMethod?: StringNullableWithAggregatesFilter<"Order"> | string | null
     driverId?: IntNullableWithAggregatesFilter<"Order"> | number | null
@@ -10983,6 +11034,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -11018,6 +11072,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -11052,6 +11109,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -11087,6 +11147,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -11122,6 +11185,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -11153,6 +11219,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -11182,6 +11251,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -11919,6 +11991,9 @@ export namespace Prisma {
     stopPosition?: SortOrder
     customerName?: SortOrder
     customerAddress?: SortOrder
+    customerAddress2?: SortOrder
+    customerCity?: SortOrder
+    customerPhone?: SortOrder
     customerNote?: SortOrder
     shippingMethod?: SortOrder
     driverId?: SortOrder
@@ -11962,6 +12037,9 @@ export namespace Prisma {
     stopPosition?: SortOrder
     customerName?: SortOrder
     customerAddress?: SortOrder
+    customerAddress2?: SortOrder
+    customerCity?: SortOrder
+    customerPhone?: SortOrder
     customerNote?: SortOrder
     shippingMethod?: SortOrder
     driverId?: SortOrder
@@ -11994,6 +12072,9 @@ export namespace Prisma {
     stopPosition?: SortOrder
     customerName?: SortOrder
     customerAddress?: SortOrder
+    customerAddress2?: SortOrder
+    customerCity?: SortOrder
+    customerPhone?: SortOrder
     customerNote?: SortOrder
     shippingMethod?: SortOrder
     driverId?: SortOrder
@@ -13531,6 +13612,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -13565,6 +13649,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -13608,6 +13695,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -13642,6 +13732,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -13685,6 +13778,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -13719,6 +13815,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -13868,6 +13967,9 @@ export namespace Prisma {
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
     customerAddress?: StringNullableFilter<"Order"> | string | null
+    customerAddress2?: StringNullableFilter<"Order"> | string | null
+    customerCity?: StringNullableFilter<"Order"> | string | null
+    customerPhone?: StringNullableFilter<"Order"> | string | null
     customerNote?: StringNullableFilter<"Order"> | string | null
     shippingMethod?: StringNullableFilter<"Order"> | string | null
     driverId?: IntNullableFilter<"Order"> | number | null
@@ -14398,6 +14500,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -14432,6 +14537,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -14504,6 +14612,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -14538,6 +14649,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -14937,6 +15051,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -14971,6 +15088,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -15056,6 +15176,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15090,6 +15213,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15162,6 +15288,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -15196,6 +15325,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -15290,6 +15422,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15324,6 +15459,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15379,6 +15517,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -15410,6 +15551,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -15441,6 +15585,9 @@ export namespace Prisma {
     stopPosition?: number | null
     customerName?: string | null
     customerAddress?: string | null
+    customerAddress2?: string | null
+    customerCity?: string | null
+    customerPhone?: string | null
     customerNote?: string | null
     shippingMethod?: string | null
     driverId?: number | null
@@ -15544,6 +15691,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15578,6 +15728,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15612,6 +15765,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15642,6 +15798,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15676,6 +15835,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15710,6 +15872,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15740,6 +15905,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15774,6 +15942,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -15808,6 +15979,9 @@ export namespace Prisma {
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
     customerAddress?: NullableStringFieldUpdateOperationsInput | string | null
+    customerAddress2?: NullableStringFieldUpdateOperationsInput | string | null
+    customerCity?: NullableStringFieldUpdateOperationsInput | string | null
+    customerPhone?: NullableStringFieldUpdateOperationsInput | string | null
     customerNote?: NullableStringFieldUpdateOperationsInput | string | null
     shippingMethod?: NullableStringFieldUpdateOperationsInput | string | null
     driverId?: NullableIntFieldUpdateOperationsInput | number | null

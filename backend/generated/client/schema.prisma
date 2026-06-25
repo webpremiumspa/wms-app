@@ -59,6 +59,9 @@ model Order {
   stopPosition         Int?        @map("stop_position")
   customerName         String?     @map("customer_name") @db.VarChar(200)
   customerAddress      String?     @map("customer_address") @db.VarChar(500)
+  customerAddress2     String?     @map("customer_address2") @db.VarChar(255)
+  customerCity         String?     @map("customer_city") @db.VarChar(120)
+  customerPhone        String?     @map("customer_phone") @db.VarChar(40)
   customerNote         String?     @map("customer_note") @db.Text
   shippingMethod       String?     @map("shipping_method") @db.VarChar(200)
   driverId             Int?        @map("driver_id")

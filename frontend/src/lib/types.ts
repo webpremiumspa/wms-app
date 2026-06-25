@@ -104,7 +104,13 @@ export type OrderDetail = {
   route: string | null;
   stopPosition: number | null;
   customerName: string | null;
+  // Dirección dividida: address_1 (calle + número), address_2 (depto),
+  // city (comuna), phone (teléfono). Cliente reciente; pedidos viejos
+  // pueden tener todo concatenado en customerAddress hasta re-sync.
   customerAddress: string | null;
+  customerAddress2?: string | null;
+  customerCity?: string | null;
+  customerPhone?: string | null;
   customerNote?: string | null;
   shippingMethod: string | null;
   hasB2Pending: boolean;

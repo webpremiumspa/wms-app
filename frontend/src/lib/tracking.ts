@@ -35,6 +35,9 @@ export type TrackingOrder = {
   stopPosition: number | null;
   customerName: string | null;
   customerAddress: string | null;
+  customerAddress2?: string | null;
+  customerCity?: string | null;
+  customerPhone?: string | null;
   customerNote?: string | null;
   shippingMethod: string | null;
   driverId: number | null;
