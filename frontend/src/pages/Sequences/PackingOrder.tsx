@@ -438,12 +438,11 @@ export function PackingOrder() {
           <button
             onClick={() => {
               setPackError(null);
-              // Si declaró >1 bultos, confirmar antes (riesgo de tap accidental).
-              if (bagsCount > 1) {
-                setConfirmPackBags(true);
-              } else {
-                pack.mutate();
-              }
+              // Confirmar SIEMPRE — incluso con N=1. El default "1" es el caso
+              // peligroso: si el picker olvida ajustar el stepper, un pedido
+              // multi-bulto sale con un solo albarán y bolsas huérfanas. El
+              // tap extra vale la pena vs un bulto perdido.
+              setConfirmPackBags(true);
             }}
             disabled={!allChecked || pack.isPending}
             className="btn-primary w-full"
