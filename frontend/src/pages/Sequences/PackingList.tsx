@@ -178,11 +178,10 @@ export function PackingList() {
           return (
             <Link
               key={o.id}
-              to={done ? '#' : `/sequences/${seqId}/packing/${o.id}`}
-              onClick={(e) => done && e.preventDefault()}
+              to={`/sequences/${seqId}/packing/${o.id}`}
               className={clsx(
-                'card flex items-center justify-between p-3',
-                done ? 'opacity-60' : 'hover:shadow-md',
+                'card flex items-center justify-between p-3 hover:shadow-md',
+                done && 'opacity-70',
                 claimed && 'ring-1 ring-amber-200',
               )}
             >
@@ -195,7 +194,7 @@ export function PackingList() {
                   {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
                   {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                   <ShippingBadge method={o.shippingMethod} />
-                  {done && <Badge variant="green">Empacado</Badge>}
+                  {done && <Badge variant="green">Empacado · entrar para reimprimir</Badge>}
                 </div>
                 <div className="truncate text-xs text-slate-500">
                   {o.customerName || '—'} · {o.itemCount} items {warehouseLabel('B1')}
