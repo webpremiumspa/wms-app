@@ -11,6 +11,7 @@ import {
   approvePartialDelivery,
   revokePartialDelivery,
   unblockOrder,
+  unpackOrder,
   getOrderLoadability,
   claimOrder,
 } from '../services/order-actions.js';
@@ -330,6 +331,19 @@ router.post('/:id/unblock', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), as
   try {
     const id = Number(req.params.id);
     const result = await unblockOrder({ orderId: id, actorId: req.user.wpUserId });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Desempaca un pedido (packed/classified) → vuelve a `sequenced`. Útil cuando
+// se cerró por error o durante pruebas. No se permite si ya fue cargado al
+// vehículo o entregado.
+router.post('/:id/unpack', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await unpackOrder({ orderId: id, actorId: req.user.wpUserId });
     res.json(result);
   } catch (err) {
     next(err);

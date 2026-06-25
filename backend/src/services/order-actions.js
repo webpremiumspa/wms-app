@@ -85,6 +85,77 @@ export async function removeOrderFromSequence({
   return { ok: true };
 }
 
+// Desempacar: revierte un pedido empacado (o ya clasificado) al estado
+// `sequenced` para que el picker lo vuelva a tomar. Útil cuando se cerró
+// por error o durante pruebas. NO se permite si el pedido ya fue cargado
+// al vehículo (la bolsa salió físicamente del depósito) ni entregado.
+//
+// Lo que limpia:
+//  - Items: pickedAt, packedAt → null (se vuelve a marcar todo)
+//  - Order: status='sequenced', packedAt/By, classifiedAt, pickedById,
+//    claimedAt → null; bagsExpected → 1 (se redeclara al recerrar)
+//
+// Lo que NO toca:
+//  - b2ClosedAt/By — el flujo B2 es independiente; si quedó cerrado, se
+//    mantiene cerrado (revertirlo es un proceso aparte).
+//  - allowPartialDelivery, partialDeliveryNote — son decisiones del
+//    supervisor que sobreviven al desempaque.
+const TOO_LATE_TO_UNPACK = ['loaded', 'delivered'];
+const UNPACKABLE_STATUSES = ['packed', 'classified'];
+
+export async function unpackOrder({ orderId, actorId }) {
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (!order) throw new HttpError(404, 'Order not found');
+
+  if (TOO_LATE_TO_UNPACK.includes(order.status)) {
+    throw new HttpError(409, 'Pedido ya cargado o entregado — no se puede desempacar.', {
+      currentStatus: order.status,
+    });
+  }
+  if (!UNPACKABLE_STATUSES.includes(order.status)) {
+    throw new HttpError(409, `Pedido en estado "${order.status}" — solo se puede desempacar packed o classified.`, {
+      currentStatus: order.status,
+    });
+  }
+
+  const prevSnapshot = {
+    status: order.status,
+    bagsExpected: order.bagsExpected,
+    packedAt: order.packedAt,
+    packedById: order.packedById,
+    classifiedAt: order.classifiedAt,
+  };
+
+  await prisma.$transaction([
+    prisma.orderItem.updateMany({
+      where: { orderId },
+      data: { pickedAt: null, packedAt: null },
+    }),
+    prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'sequenced',
+        packedAt: null,
+        packedById: null,
+        classifiedAt: null,
+        pickedById: null,
+        claimedAt: null,
+        bagsExpected: 1,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        type: 'order.unpacked',
+        actorId,
+        orderId,
+        payload: prevSnapshot,
+      },
+    }),
+  ]);
+
+  return { ok: true };
+}
+
 // Reactiva un pedido bloqueado: vuelve a `received` para que entre en la
 // próxima sincronización / secuencia.
 export async function unblockOrder({ orderId, actorId }) {

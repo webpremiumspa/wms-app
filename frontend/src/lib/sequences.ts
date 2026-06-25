@@ -115,6 +115,11 @@ export const ordersApi = {
     (await api.delete(`/orders/${id}/partial-delivery`)).data,
   unblock: async (id: number): Promise<{ ok: boolean }> =>
     (await api.post(`/orders/${id}/unblock`)).data,
+  // Desempaca un pedido cerrado por error: vuelve a 'sequenced' y limpia
+  // los timestamps de pack/picker (otro picker puede tomarlo de nuevo).
+  // Falla si el pedido ya fue cargado o entregado.
+  unpack: async (id: number): Promise<{ ok: boolean }> =>
+    (await api.post(`/orders/${id}/unpack`)).data,
   // Claim: el picker toma el pedido para empacarlo. Modelo "último escaneo
   // gana" — siempre reasigna al actor que llama.
   claim: async (

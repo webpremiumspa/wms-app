@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, Image as ImageIcon, Printer, AlertOctagon, UserX, CheckCircle2, User } from 'lucide-react';
+import { ChevronLeft, Image as ImageIcon, Printer, AlertOctagon, UserX, CheckCircle2, RotateCcw, User } from 'lucide-react';
 import clsx from 'clsx';
 import { ordersApi, sequencesApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
@@ -51,6 +51,10 @@ export function PackingOrder() {
   // - confirmReprintBags: antes de actualizar y reimprimir con N distinto al guardado.
   const [confirmPackBags, setConfirmPackBags] = useState(false);
   const [confirmReprintBags, setConfirmReprintBags] = useState(false);
+  // Desempacar: revierte un pedido cerrado por error/prueba al estado
+  // 'sequenced' para que pueda volver a tomarse.
+  const [confirmUnpack, setConfirmUnpack] = useState(false);
+  const [unpackError, setUnpackError] = useState<string | null>(null);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [partialNote, setPartialNote] = useState('');
@@ -202,6 +206,25 @@ export function PackingOrder() {
     },
     onError: (err: any) => {
       setPackError(err.response?.data?.message || 'No se pudo cerrar el pedido');
+    },
+  });
+
+  // Desempacar: revierte el pedido a 'sequenced'. Solo disponible si está
+  // en packed/classified (no en loaded/delivered).
+  const unpack = useMutation({
+    mutationFn: () => ordersApi.unpack(ordId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['order', ordId] });
+      queryClient.invalidateQueries({ queryKey: ['sequence', seqId] });
+      queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
+      queryClient.invalidateQueries({ queryKey: ['process'] });
+      queryClient.invalidateQueries({ queryKey: ['picking-b2-today'] });
+      setConfirmUnpack(false);
+      // Volvemos a la lista: el pedido reaparece como 'sequenced'.
+      navigate(`/sequences/${seqId}/packing`);
+    },
+    onError: (err: any) => {
+      setUnpackError(err.response?.data?.message || 'No se pudo desempacar');
     },
   });
 
@@ -495,6 +518,77 @@ export function PackingOrder() {
                 ? `Guardar (${bagsCount} bultos) y reimprimir`
                 : `Reimprimir albarán${bagsCount > 1 ? ` (${bagsCount} bultos)` : ''}`}
           </button>
+        </div>
+      )}
+
+      {isPacked && canManage && (order.status === 'packed' || order.status === 'classified') && (
+        <div className="card space-y-2 border-dashed bg-amber-50 p-3 ring-1 ring-amber-200">
+          <div className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+            Acciones del operador
+          </div>
+          {unpackError && (
+            <div className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700 ring-1 ring-red-200">
+              {unpackError}
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => { setUnpackError(null); setConfirmUnpack(true); }}
+            disabled={unpack.isPending}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-60"
+          >
+            <RotateCcw size={14} />
+            Desempacar (revertir a "En secuencia")
+          </button>
+          <div className="text-[10px] text-amber-700">
+            Borra el registro de quién/cuándo lo empacó y los items vuelven a estado sin marcar. Útil cuando se cerró por error o durante pruebas. La nota del cliente y el {warehouseLabel('B2')} cerrado no se tocan.
+          </div>
+        </div>
+      )}
+
+      {confirmUnpack && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="card w-full max-w-md space-y-3 p-4">
+            <div className="flex items-start gap-2">
+              <AlertOctagon className="text-red-600" size={22} />
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-800">¿Desempacar #{order.number}?</h3>
+                <p className="mt-1 text-sm text-slate-700">
+                  El pedido vuelve a estado <strong>En secuencia</strong> y se borrará:
+                </p>
+                <ul className="mt-1 list-disc pl-5 text-xs text-slate-600">
+                  <li>Quién y cuándo lo empacó</li>
+                  <li>Items confirmados (marcados como pickeados/empacados)</li>
+                  <li>
+                    Cuenta de bultos
+                    {(order.bagsExpected ?? 1) > 1 && <> (vuelve de {order.bagsExpected} a 1)</>}
+                  </li>
+                  {order.status === 'classified' && (
+                    <li>Marca de clasificado (vuelve antes de la clasificación)</li>
+                  )}
+                </ul>
+                <p className="mt-2 text-xs text-slate-500">
+                  NO se tocan: la nota del cliente, el {warehouseLabel('B2')} cerrado (si lo cerraste) ni la aprobación de entrega parcial. Otro picker (o tú) puede volver a tomar el pedido.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setConfirmUnpack(false)}
+                disabled={unpack.isPending}
+                className="btn-ghost border border-slate-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => unpack.mutate()}
+                disabled={unpack.isPending}
+                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-60"
+              >
+                {unpack.isPending ? 'Desempacando…' : 'Sí, desempacar'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
