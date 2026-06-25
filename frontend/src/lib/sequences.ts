@@ -92,9 +92,19 @@ export const ordersApi = {
   // sin obligar a loguearse antes de ver el contenido del pedido.
   getPublicByWpId: async (wpOrderId: number): Promise<OrderDetail> =>
     (await api.get(`/public/orders/${wpOrderId}`)).data.order,
-  pack: async (id: number, itemIds: number[], confirmedOldSequence?: boolean): Promise<void> => {
-    await api.post(`/orders/${id}/pack`, { itemIds, confirmedOldSequence });
+  pack: async (
+    id: number,
+    itemIds: number[],
+    confirmedOldSequence?: boolean,
+    bagsExpected?: number,
+  ): Promise<void> => {
+    await api.post(`/orders/${id}/pack`, { itemIds, confirmedOldSequence, bagsExpected });
   },
+  updateBags: async (
+    id: number,
+    bagsExpected: number,
+  ): Promise<{ ok: boolean; bagsExpected: number; changed: boolean }> =>
+    (await api.put(`/orders/${id}/bags`, { bagsExpected })).data,
   packB2: async (id: number, itemIds: number[], confirmedOldSequence?: boolean): Promise<{ ok: boolean; closedSequences: number[] }> =>
     (await api.post(`/orders/${id}/pack-b2`, { itemIds, confirmedOldSequence })).data,
   loadability: async (id: number): Promise<OrderLoadability> =>
@@ -116,9 +126,13 @@ export const ordersApi = {
     reassignedFrom?: { wpUserId: number; displayName: string; username: string } | null;
   }> => (await api.post(`/orders/${id}/claim`)).data,
   // Descarga el PDF con el header Authorization (que window.open no enviaría)
-  // y lo abre en una nueva pestaña como blob.
-  openAlbaran: async (id: number): Promise<void> => {
-    const res = await api.get(`/orders/${id}/albaran.pdf`, { responseType: 'blob' });
+  // y lo abre en una nueva pestaña como blob. Si se pasa `bags`, el backend
+  // imprime N páginas pre-numeradas "BULTO 1 DE N..." sin guardar el cambio.
+  openAlbaran: async (id: number, opts?: { bags?: number }): Promise<void> => {
+    const res = await api.get(`/orders/${id}/albaran.pdf`, {
+      responseType: 'blob',
+      params: opts?.bags ? { bags: opts.bags } : undefined,
+    });
     const url = URL.createObjectURL(res.data);
     window.open(url, '_blank', 'noopener');
     setTimeout(() => URL.revokeObjectURL(url), 60_000);

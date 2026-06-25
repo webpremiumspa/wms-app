@@ -11,6 +11,7 @@ import { CustomerNote } from '@/components/CustomerNote';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
+import { BagsStepper } from '@/components/BagsStepper';
 import { useAuth } from '@/hooks/useAuth';
 import { warehouseLabel } from '@/lib/labels';
 import { CAPS, hasCap } from '@/lib/auth';
@@ -38,6 +39,11 @@ export function PackingOrder() {
   });
 
   const [checked, setChecked] = useState<Set<number>>(new Set());
+  // Cantidad de bultos físicos. Se inicia en 1 (caso más común) y el picker
+  // sube cuando el contenido no entra en una sola bolsa. Tras empaque, la UI
+  // sincroniza con order.bagsExpected y permite editar para reimprimir.
+  const [bagsCount, setBagsCount] = useState(1);
+  const [bagsError, setBagsError] = useState<string | null>(null);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [partialNote, setPartialNote] = useState('');
@@ -174,10 +180,14 @@ export function PackingOrder() {
     const initial = new Set<number>();
     order.items.forEach((i) => { if (i.packedAt) initial.add(i.id); });
     setChecked(initial);
+    // Sincroniza el stepper con lo guardado en BD (1 por default si nunca se
+    // empacó). Esto permite que tras empaque el stepper muestre el valor
+    // actual y se pueda ajustar para reimprimir.
+    setBagsCount(Math.max(1, order.bagsExpected ?? 1));
   }, [order]);
 
   const pack = useMutation({
-    mutationFn: () => ordersApi.pack(ordId, [...checked], confirmedOldSeq || undefined),
+    mutationFn: () => ordersApi.pack(ordId, [...checked], confirmedOldSeq || undefined, bagsCount),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['order', ordId] });
       queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
@@ -185,6 +195,25 @@ export function PackingOrder() {
     },
     onError: (err: any) => {
       setPackError(err.response?.data?.message || 'No se pudo cerrar el pedido');
+    },
+  });
+
+  // Actualiza bultos en BD post-empaque y reimprime con la nueva cantidad.
+  // Si el valor no cambió, solo reimprime.
+  const reprint = useMutation({
+    mutationFn: async () => {
+      setBagsError(null);
+      const currentSaved = order?.bagsExpected ?? 1;
+      if (bagsCount !== currentSaved) {
+        await ordersApi.updateBags(ordId, bagsCount);
+      }
+      await ordersApi.openAlbaran(ordId, { bags: bagsCount });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['order', ordId] });
+    },
+    onError: (err: any) => {
+      setBagsError(err.response?.data?.message || 'No se pudo reimprimir el albarán');
     },
   });
 
@@ -381,6 +410,20 @@ export function PackingOrder() {
               Falta marcar items {warehouseLabel('B1')}. No se puede cerrar el pedido hasta confirmar todos.
             </div>
           )}
+          {/* Stepper de bultos: el picker declara cuántas bolsas físicas
+              generó al empacar. Si N>1, al cerrar se imprimen N albaranes
+              pre-numerados (1 de N, 2 de N, …). */}
+          {!onlyB2 && (
+            <div className="mb-2 flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
+              <div className="text-xs text-slate-600">
+                ¿Cuántos bultos generaste?
+                <div className="text-[10px] text-slate-400">
+                  Si {'>'}1, el albarán saldrá numerado por bulto.
+                </div>
+              </div>
+              <BagsStepper value={bagsCount} onChange={setBagsCount} disabled={pack.isPending} />
+            </div>
+          )}
           {packError && (
             <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
               {packError}
@@ -398,14 +441,33 @@ export function PackingOrder() {
       )}
 
       {isPacked && (
-        <button
-          type="button"
-          onClick={() => ordersApi.openAlbaran(ordId).catch((e) => console.error(e))}
-          className="btn-ghost w-full border border-slate-300"
-        >
-          <Printer size={18} />
-          Reimprimir albarán
-        </button>
+        <div className="card space-y-2 p-3 ring-1 ring-slate-200">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-xs text-slate-600">
+              Bultos declarados: <strong className="text-slate-800">{order.bagsExpected ?? 1}</strong>
+              <div className="text-[10px] text-slate-400">
+                Cambia el valor y reimprime para emitir albaranes con la nueva numeración.
+              </div>
+            </div>
+            <BagsStepper value={bagsCount} onChange={setBagsCount} disabled={reprint.isPending} />
+          </div>
+          {bagsError && (
+            <div className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700 ring-1 ring-red-200">{bagsError}</div>
+          )}
+          <button
+            type="button"
+            onClick={() => reprint.mutate()}
+            disabled={reprint.isPending}
+            className="btn-ghost w-full border border-slate-300"
+          >
+            <Printer size={18} />
+            {reprint.isPending
+              ? 'Generando PDF…'
+              : bagsCount !== (order.bagsExpected ?? 1)
+                ? `Guardar (${bagsCount} bultos) y reimprimir`
+                : `Reimprimir albarán${bagsCount > 1 ? ` (${bagsCount} bultos)` : ''}`}
+          </button>
+        </div>
       )}
 
       {canManage && !isPacked && (

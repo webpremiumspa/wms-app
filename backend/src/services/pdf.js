@@ -47,6 +47,7 @@ async function fetchImageBuffer(url) {
 
 // Helper: dibuja UN albarán completo en el documento actual (sin pipe, sin end).
 // Útil para reusarlo tanto en el endpoint single como en el batch.
+// opts.bagNumber / opts.totalBags pintan la franja "BULTO X DE N" arriba.
 async function drawAlbaran(doc, order, opts = {}) {
   // QR
   const qrPng = await QRCode.toBuffer(buildQrPayload(order), {
@@ -66,11 +67,24 @@ async function drawAlbaran(doc, order, opts = {}) {
     });
   }
 
+  // Franja "BULTO X DE N" arriba (solo si N > 1). Identifica físicamente
+  // cada bolsa de un pedido multi-bulto sin necesidad de escritura manual.
+  const totalBags = opts.totalBags ?? 1;
+  const bagNumber = opts.bagNumber ?? 1;
+  if (totalBags > 1) {
+    doc.save();
+    doc.rect(40, 30, 515, 30).fill('#1d4ed8');
+    doc.fillColor('#ffffff').font('Helvetica-Bold').fontSize(18)
+      .text(`📦  BULTO ${bagNumber} DE ${totalBags}`, 40, 36, { width: 515, align: 'center' });
+    doc.restore();
+  }
+  const headerYOffset = totalBags > 1 ? 40 : 0;
+
   // Header
-  doc.font('Helvetica-Bold').fontSize(20).fillColor('#0f172a').text('Albarán de pedido', 40, 40);
+  doc.font('Helvetica-Bold').fontSize(20).fillColor('#0f172a').text('Albarán de pedido', 40, 40 + headerYOffset);
   doc.font('Helvetica').fontSize(11).fillColor('#475569')
-    .text(`Pedido #${order.number}`, 40, 70)
-    .text(`Fecha: ${new Date().toLocaleString('es-CL')}`, 40, 86);
+    .text(`Pedido #${order.number}`, 40, 70 + headerYOffset)
+    .text(`Fecha: ${new Date().toLocaleString('es-CL')}`, 40, 86 + headerYOffset);
 
   // Si el pedido tiene ruta asignada al momento de imprimir, la mostramos en
   // pill azul. Si no la tiene, NO imprimimos nada — la ruta puede asignarse
@@ -87,21 +101,21 @@ async function drawAlbaran(doc, order, opts = {}) {
     const pillW = textW + padX * 2;
     const pillH = textH + padY * 2;
     doc.save();
-    doc.roundedRect(40, 106, pillW, pillH, 6).fill('#1d4ed8');
-    doc.fillColor('#ffffff').text(routeText, 40 + padX, 106 + padY);
+    doc.roundedRect(40, 106 + headerYOffset, pillW, pillH, 6).fill('#1d4ed8');
+    doc.fillColor('#ffffff').text(routeText, 40 + padX, 106 + padY + headerYOffset);
     doc.restore();
   }
 
-  doc.image(qrPng, 410, 35, { width: 140, height: 140 });
+  doc.image(qrPng, 410, 35 + headerYOffset, { width: 140, height: 140 });
   doc.font('Helvetica').fontSize(8).fillColor('#94a3b8')
-    .text('Escanea para empacar / ver pedido', 410, 180, { width: 140, align: 'center' });
+    .text('Escanea para empacar / ver pedido', 410, 180 + headerYOffset, { width: 140, align: 'center' });
 
-  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Cliente', 40, 158);
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Cliente', 40, 158 + headerYOffset);
   doc.font('Helvetica').fontSize(11).fillColor('#0f172a')
-    .text(order.customerName || '—', 40, 176)
-    .fillColor('#475569').text(order.customerAddress || '', 40, 192);
+    .text(order.customerName || '—', 40, 176 + headerYOffset)
+    .fillColor('#475569').text(order.customerAddress || '', 40, 192 + headerYOffset);
 
-  let cursorY = 230;
+  let cursorY = 230 + headerYOffset;
 
   if (order.shippingMethod) {
     doc.font('Helvetica-Bold').fontSize(10).fillColor('#0f172a')
@@ -187,17 +201,37 @@ export async function renderSequenceAlbaranesPdf(orders, stream) {
   });
 
   for (const order of orders) {
-    doc.addPage();
-    await drawAlbaran(doc, order, { itemImages });
+    const totalBags = Math.max(1, order.bagsExpected ?? 1);
+    for (let i = 1; i <= totalBags; i += 1) {
+      doc.addPage();
+      await drawAlbaran(doc, order, { itemImages, bagNumber: i, totalBags });
+    }
   }
 
   doc.end();
 }
 
-export async function renderAlbaranPdf(order, stream) {
-  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+export async function renderAlbaranPdf(order, stream, opts = {}) {
+  // Cantidad de bultos a imprimir: prioridad al override (?bags=N) y, si no,
+  // el bagsExpected guardado en el pedido. Default 1 (compat).
+  const totalBags = Math.max(1, opts.bagsOverride ?? order.bagsExpected ?? 1);
+
+  const doc = new PDFDocument({ size: 'A4', margin: 40, autoFirstPage: false });
   doc.pipe(stream);
-  await drawAlbaran(doc, order);
+
+  // Pre-fetch imágenes una vez (mismo conjunto para las N páginas).
+  const itemImages = new Map();
+  const urls = [...new Set((order.items || []).map((i) => i.product?.thumbnailUrl).filter(Boolean))];
+  const buffers = await Promise.all(urls.map(fetchImageBuffer));
+  urls.forEach((url, idx) => {
+    if (buffers[idx]) itemImages.set(url, buffers[idx]);
+  });
+
+  for (let i = 1; i <= totalBags; i += 1) {
+    doc.addPage();
+    await drawAlbaran(doc, order, { itemImages, bagNumber: i, totalBags });
+  }
+
   doc.end();
 }
 

@@ -6,16 +6,20 @@ import {
   User,
   MapPin,
   Package,
+  Printer,
   Image as ImageIcon,
   Calendar,
   Activity,
 } from 'lucide-react';
 import { trackingApi, type TrackingEvent, type TrackingOrder } from '@/lib/tracking';
+import { ordersApi } from '@/lib/sequences';
 import { eventLabel, orderStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { CustomerNote } from '@/components/CustomerNote';
+import { useAuth } from '@/hooks/useAuth';
+import { CAPS, hasCap } from '@/lib/auth';
 
 export function Tracking() {
   const [input, setInput] = useState('');
@@ -76,6 +80,10 @@ export function Tracking() {
 function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: TrackingEvent[] }) {
   const b1Items = order.items.filter((i) => i.warehouse === 'B1');
   const b2Items = order.items.filter((i) => i.warehouse === 'B2');
+  const { user } = useAuth();
+  const canReprint = hasCap(user, CAPS.PACK_B1) || hasCap(user, CAPS.SUPERVISE);
+  const bagsCount = order.bagsExpected ?? 1;
+  const isPacked = ['packed', 'classified', 'loaded', 'delivered'].includes(order.status);
 
   return (
     <div className="space-y-4">
@@ -85,12 +93,27 @@ function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: T
           <span className="text-lg font-bold">#{order.number}</span>
           <Badge variant="blue">{orderStatusLabel(order.status)}</Badge>
           {order.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
+          {bagsCount > 1 && (
+            <Badge variant="blue">
+              <Package size={11} className="inline" /> {bagsCount} bultos
+            </Badge>
+          )}
           {order.allowPartialDelivery && <Badge variant="green">Entrega parcial</Badge>}
           <ShippingBadge method={order.shippingMethod} />
         </div>
         <div className="text-xs text-slate-500">
           Creado en WC el {new Date(order.createdAt).toLocaleString('es-CL')}
         </div>
+        {canReprint && isPacked && (
+          <button
+            type="button"
+            onClick={() => ordersApi.openAlbaran(order.id, bagsCount > 1 ? { bags: bagsCount } : undefined).catch((e) => console.error(e))}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Printer size={16} />
+            {bagsCount > 1 ? `Reimprimir albarán (${bagsCount} bultos)` : 'Reimprimir albarán'}
+          </button>
+        )}
       </div>
 
       {/* Cliente */}

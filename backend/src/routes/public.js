@@ -84,6 +84,7 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
         hasB2Pending: order.hasB2Pending,
         allowPartialDelivery: order.allowPartialDelivery,
         partialDeliveryNote: order.partialDeliveryNote,
+        bagsExpected: order.bagsExpected,
         classifiedAt: order.classifiedAt,
         loadedAt: order.loadedAt,
         packable,

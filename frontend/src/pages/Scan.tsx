@@ -14,6 +14,7 @@ import {
   X,
   AlertOctagon,
   ShieldCheck,
+  Package,
 } from 'lucide-react';
 import { ordersApi } from '@/lib/sequences';
 import { dispatchApi } from '@/lib/dispatch';
@@ -56,6 +57,9 @@ export function Scan() {
   const [partialNote, setPartialNote] = useState('');
   const [partialError, setPartialError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  // Si el pedido tiene >1 bultos, el cargador/clasificador debe confirmar
+  // explícitamente que tiene todos los bultos antes de avanzar.
+  const [bagsConfirmed, setBagsConfirmed] = useState(false);
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order-public', idNum],
@@ -173,6 +177,9 @@ export function Scan() {
   const noRouteYet = !order.route && (showClassifyFlow || showLoadFlow);
   const isBlocked = order.status === 'blocked';
   const isNotPacked = ['received', 'sequenced', 'picked'].includes(order.status) && !order.packable && !order.b2Pickable;
+  // Bloqueo blando multi-bulto: si N>1, exigir checkbox antes de clasificar/cargar.
+  const bagsCount = order.bagsExpected ?? 1;
+  const requiresBagsConfirm = bagsCount > 1 && (showClassifyFlow || showLoadFlow);
 
   return (
     <ScanShell>
@@ -248,6 +255,35 @@ export function Scan() {
           </div>
         )}
 
+        {/* ─────────── Banner multi-bulto (clasificación / carga) ─────────── */}
+        {requiresBagsConfirm && (
+          <div className="rounded-lg bg-blue-50 px-3 py-3 ring-2 ring-blue-400">
+            <div className="flex items-start gap-2">
+              <Package className="shrink-0 text-blue-700" size={22} />
+              <div className="flex-1">
+                <div className="text-base font-bold uppercase text-blue-900">
+                  Pedido con {bagsCount} bultos
+                </div>
+                <div className="mt-1 text-sm text-blue-900">
+                  Verifica que tienes <strong>los {bagsCount}</strong> bultos numerados
+                  (1 de {bagsCount} … {bagsCount} de {bagsCount}) antes de {showLoadFlow ? 'cargar al vehículo' : 'clasificar'}.
+                </div>
+                <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-md bg-white px-2 py-1.5 ring-1 ring-blue-300">
+                  <input
+                    type="checkbox"
+                    checked={bagsConfirmed}
+                    onChange={(e) => setBagsConfirmed(e.target.checked)}
+                    className="mt-0.5 h-5 w-5 accent-blue-600"
+                  />
+                  <span className="text-sm font-medium text-blue-900">
+                    Confirmo que tengo los {bagsCount} bultos a la vista.
+                  </span>
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
+
         {(showClassifyFlow || showLoadFlow) && order.partialApproved && (
           <div className="rounded-lg bg-emerald-50 px-3 py-2 ring-1 ring-emerald-300">
             <div className="flex items-start gap-2">
@@ -281,7 +317,7 @@ export function Scan() {
             )}
             <button
               onClick={() => classify.mutate()}
-              disabled={classify.isPending || !order.route || !order.loadable}
+              disabled={classify.isPending || !order.route || !order.loadable || (requiresBagsConfirm && !bagsConfirmed)}
               className="btn-primary w-full"
             >
               <CheckCircle2 size={18} />
@@ -321,7 +357,7 @@ export function Scan() {
             )}
             <button
               onClick={() => markLoaded.mutate()}
-              disabled={markLoaded.isPending || !order.route || !order.loadable}
+              disabled={markLoaded.isPending || !order.route || !order.loadable || (requiresBagsConfirm && !bagsConfirmed)}
               className="btn-primary w-full"
             >
               <Truck size={18} />
@@ -459,11 +495,11 @@ export function Scan() {
             <>
               <button
                 type="button"
-                onClick={() => ordersApi.openAlbaran(order.id).catch((e) => console.error(e))}
+                onClick={() => ordersApi.openAlbaran(order.id, bagsCount > 1 ? { bags: bagsCount } : undefined).catch((e) => console.error(e))}
                 className="btn-ghost w-full border border-slate-300"
               >
                 <Printer size={18} />
-                Reimprimir albarán
+                {bagsCount > 1 ? `Reimprimir albarán (${bagsCount} bultos)` : 'Reimprimir albarán'}
               </button>
               {!showScanner && (
                 <button

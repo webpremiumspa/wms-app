@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Printer, Trash2, UserX } from 'lucide-react';
+import { ChevronLeft, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Package, Printer, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
 import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
@@ -12,19 +12,47 @@ import { CustomerNote } from '@/components/CustomerNote';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
+import { BagsStepper } from '@/components/BagsStepper';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 
 function OrderItems({ orderId }: { orderId: number }) {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ['order', orderId],
     queryFn: () => ordersApi.get(orderId),
   });
 
+  const [bagsCount, setBagsCount] = useState(1);
+  const [bagsError, setBagsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!data) return;
+    setBagsCount(Math.max(1, data.bagsExpected ?? 1));
+  }, [data?.bagsExpected]);
+
+  const reprint = useMutation({
+    mutationFn: async () => {
+      setBagsError(null);
+      const currentSaved = data?.bagsExpected ?? 1;
+      if (bagsCount !== currentSaved) {
+        await ordersApi.updateBags(orderId, bagsCount);
+      }
+      await ordersApi.openAlbaran(orderId, { bags: bagsCount });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['order', orderId] });
+    },
+    onError: (err: any) => {
+      setBagsError(err.response?.data?.message || 'No se pudo reimprimir el albarán');
+    },
+  });
+
   if (isLoading || !data) return <div className="px-4 py-3 text-sm text-slate-500">Cargando contenido…</div>;
 
   const isPacked = ['packed', 'classified', 'loaded', 'delivered'].includes(data.status);
+  const savedBags = data.bagsExpected ?? 1;
 
   return (
     <div className="space-y-2 bg-slate-50 px-4 py-3">
@@ -32,6 +60,12 @@ function OrderItems({ orderId }: { orderId: number }) {
         <div className="text-xs text-slate-500">{data.customerAddress}</div>
       )}
       <CustomerNote note={data.customerNote} />
+      {savedBags > 1 && (
+        <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-800 ring-1 ring-blue-200">
+          <Package size={14} />
+          <span><strong>{savedBags} bultos</strong> · el albarán imprime "BULTO 1 de {savedBags} … {savedBags} de {savedBags}".</span>
+        </div>
+      )}
       {data.items.map((it) => (
         <div key={it.id} className="flex items-center gap-3 rounded-lg bg-white p-2 ring-1 ring-slate-200">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md bg-slate-100">
@@ -50,14 +84,28 @@ function OrderItems({ orderId }: { orderId: number }) {
         </div>
       ))}
       {isPacked && (
-        <button
-          type="button"
-          onClick={() => ordersApi.openAlbaran(orderId).catch((e) => console.error(e))}
-          className="mt-2 flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-        >
-          <Printer size={16} />
-          Reimprimir albarán
-        </button>
+        <div className="mt-2 space-y-2 rounded-lg bg-white p-3 ring-1 ring-slate-200">
+          <div className="flex items-center justify-between gap-3">
+            <div className="text-xs text-slate-600">Reimprimir albarán</div>
+            <BagsStepper value={bagsCount} onChange={setBagsCount} disabled={reprint.isPending} />
+          </div>
+          {bagsError && (
+            <div className="rounded bg-red-50 px-2 py-1 text-xs text-red-700">{bagsError}</div>
+          )}
+          <button
+            type="button"
+            onClick={() => reprint.mutate()}
+            disabled={reprint.isPending}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            <Printer size={16} />
+            {reprint.isPending
+              ? 'Generando PDF…'
+              : bagsCount !== savedBags
+                ? `Guardar (${bagsCount} bultos) y reimprimir`
+                : `Reimprimir albarán${bagsCount > 1 ? ` (${bagsCount} bultos)` : ''}`}
+          </button>
+        </div>
       )}
     </div>
   );

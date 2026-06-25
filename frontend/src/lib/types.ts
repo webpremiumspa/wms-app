@@ -110,6 +110,10 @@ export type OrderDetail = {
   hasB2Pending: boolean;
   allowPartialDelivery: boolean;
   partialDeliveryNote: string | null;
+  // Bultos físicos generados al empacar (default 1). Si >1 el albarán se
+  // imprime numerado "1 de N, 2 de N, ..." y la UI muestra banners de
+  // verificación al clasificar/cargar.
+  bagsExpected?: number;
   createdAt?: string; // fecha de WC (cuándo se hizo el pedido)
   packedAt: string | null;
   packedBy: Picker | null;

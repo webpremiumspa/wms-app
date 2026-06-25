@@ -225,6 +225,15 @@ const packSchema = z.object({
   // (la secuencia no es de hoy ni de ayer). Sirve para auditoría: queda
   // registrado en eventos que se empacó deliberadamente desde un albarán viejo.
   confirmedOldSequence: z.boolean().optional(),
+  // Cantidad de bultos físicos que generó el empaque (default 1). El picker
+  // lo declara antes de cerrar; al imprimir N>1 albaranes pre-numerados se
+  // garantiza identificación de cada bolsa y el cargador puede verificar
+  // que tiene todos los bultos.
+  bagsExpected: z.number().int().min(1).max(20).optional(),
+});
+
+const updateBagsSchema = z.object({
+  bagsExpected: z.number().int().min(1).max(20),
 });
 
 const packB2Schema = z.object({
@@ -375,6 +384,10 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
       }),
     ] : [];
 
+    // bagsExpected: si el picker no manda nada, mantenemos el default 1.
+    // Se valida explícitamente porque el schema lo deja optional.
+    const bags = parsed.data.bagsExpected ?? 1;
+
     await prisma.$transaction([
       ...itemUpdates,
       prisma.order.update({
@@ -383,6 +396,7 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
           status: 'packed',
           packedAt: now,
           packedById: req.user.wpUserId,
+          bagsExpected: bags,
         },
       }),
       prisma.event.create({
@@ -390,7 +404,7 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
           type: 'order.packed',
           actorId: req.user.wpUserId,
           orderId: id,
-          payload: { itemIds: [...confirmed], onlyB2: b1Items.length === 0 },
+          payload: { itemIds: [...confirmed], onlyB2: b1Items.length === 0, bagsExpected: bags },
         },
       }),
     ]);
@@ -607,8 +621,48 @@ router.get('/:id/debug-images', requireCap(WMS_CAPS.SUPERVISE), async (req, res,
   }
 });
 
+// Actualiza la cantidad de bultos esperados de un pedido (post-empaque).
+// Útil cuando el picker se da cuenta al armar las bolsas que necesita más
+// bultos de los que declaró al cerrar; desde la UI llama a este endpoint y
+// luego reimprime los N albaranes pre-numerados.
+router.put('/:id/bags', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const parsed = updateBagsSchema.safeParse(req.body || {});
+    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
+
+    const order = await prisma.order.findUnique({ where: { id }, select: { id: true, bagsExpected: true } });
+    if (!order) throw new HttpError(404, 'Order not found');
+    if (order.bagsExpected === parsed.data.bagsExpected) {
+      return res.json({ ok: true, bagsExpected: order.bagsExpected, changed: false });
+    }
+
+    await prisma.$transaction([
+      prisma.order.update({
+        where: { id },
+        data: { bagsExpected: parsed.data.bagsExpected },
+      }),
+      prisma.event.create({
+        data: {
+          type: 'order.bags_updated',
+          actorId: req.user.wpUserId,
+          orderId: id,
+          payload: { from: order.bagsExpected, to: parsed.data.bagsExpected },
+        },
+      }),
+    ]);
+
+    res.json({ ok: true, bagsExpected: parsed.data.bagsExpected, changed: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Genera el albarán imprimible (PDF A4) con QR y, si corresponde,
 // marca grande de "Bodega 2 pendiente" + listado de items B2.
+// Si el pedido tiene bagsExpected > 1 (o se manda ?bags=N en la query, que
+// tiene precedencia para "previsualizar"), se generan N páginas, cada una
+// rotulada "BULTO X DE N" arriba.
 router.get('/:id/albaran.pdf', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -618,9 +672,21 @@ router.get('/:id/albaran.pdf', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE),
     });
     if (!order) throw new HttpError(404, 'Order not found');
 
+    // ?bags=N permite previsualizar/forzar otro número de bultos sin tocar
+    // el pedido (ej: el picker está decidiendo entre 2 y 3). Si no viene,
+    // usa el bagsExpected guardado en el pedido.
+    let bagsOverride = null;
+    if (req.query.bags != null) {
+      const n = Number(req.query.bags);
+      if (!Number.isFinite(n) || n < 1 || n > 20) {
+        throw new HttpError(400, 'Invalid bags param (must be 1..20)');
+      }
+      bagsOverride = n;
+    }
+
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="albaran-${order.number}.pdf"`);
-    await renderAlbaranPdf(order, res);
+    await renderAlbaranPdf(order, res, { bagsOverride });
   } catch (err) {
     next(err);
   }
