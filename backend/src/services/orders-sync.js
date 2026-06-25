@@ -260,6 +260,10 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
 // pedido ya está en el WMS y solo queremos refrescar la metadata (ej. webhook
 // disparado por la app externa de rutas después que el pedido ya fue empacado).
 // NO toca items, status, timestamps de picker — esa info es del WMS.
+// SÍ refresca datos del cliente (nombre, dirección, depto, comuna, teléfono,
+// nota) — esos datos pertenecen a WC, no al WMS, y si el cliente corrige su
+// dirección debemos verla actualizada (ej. para reimprimir el albarán o
+// llamar al cliente desde Tracking).
 export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
   const data = wcOrder || (await wcGetOrder(wpOrderId));
   const route = getMeta(data, config.meta.orderRoute) || null;
@@ -271,6 +275,24 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
   const driverName = getMeta(data, '_wdg_driver_name') || null;
   const vehicle = getMeta(data, '_wdg_vehicle') || null;
   const patente = getMeta(data, '_wdg_patente') || null;
+
+  // Datos del cliente — reutilizamos la misma normalización que syncOrder
+  // para mantener consistencia entre alta inicial y refresh por webhook.
+  const cleanStr = (v, max) => {
+    if (typeof v !== 'string') return null;
+    const t = v.trim();
+    return t ? t.slice(0, max) : null;
+  };
+  const customerName = [data.billing?.first_name, data.billing?.last_name]
+    .filter(Boolean)
+    .join(' ') || null;
+  const customerAddress = cleanStr(data.shipping?.address_1, 500);
+  const customerAddress2 = cleanStr(data.shipping?.address_2, 255);
+  const customerCity = cleanStr(data.shipping?.city, 120);
+  const customerPhone = cleanStr(data.billing?.phone || data.shipping?.phone, 40);
+  const customerNote = typeof data.customer_note === 'string' && data.customer_note.trim()
+    ? data.customer_note.trim()
+    : null;
 
   const existing = await prisma.order.findUnique({
     where: { wpOrderId: data.id },
@@ -288,6 +310,12 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
       driverName,
       vehicle,
       patente,
+      customerName,
+      customerAddress,
+      customerAddress2,
+      customerCity,
+      customerPhone,
+      customerNote,
     },
   });
 }
