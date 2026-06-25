@@ -66,17 +66,17 @@ router.get('/today', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUP
     // Si pasan processId, filtramos por proceso. Si no, mantiene compat con
     // el modo global (todas las secuencias abiertas).
     const processId = req.query.processId ? Number(req.query.processId) : null;
+    // Trae TODOS los pedidos con items B2 del proceso (cerrados y abiertos).
+    // El frontend mantiene visibles los cerrados (opacidad reducida) para que
+    // la lista no se "achique" cada vez que se cierra un pedido y los
+    // contadores reflejen progreso real (X cerrados / Y total).
     const orders = await prisma.order.findMany({
       where: {
         hasB2Pending: true,
-        b2ClosedAt: null,
         status: { in: ['sequenced', 'picked', 'packed', 'classified', 'loaded'] },
         sequenceLinks: {
           some: {
-            sequence: {
-              b2ClosedAt: null,
-              ...(processId ? { processId } : {}),
-            },
+            sequence: processId ? { processId } : {},
           },
         },
       },
@@ -89,7 +89,14 @@ router.get('/today', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUP
           include: { sequence: { select: { id: true, createdAt: true, processId: true } } },
         },
       },
-      orderBy: [{ route: 'asc' }, { stopPosition: 'asc' }, { id: 'asc' }],
+      // Abiertos primero (b2ClosedAt NULL ordena al inicio por default en
+      // MySQL ASC), luego cerrados; dentro de cada grupo, por ruta + parada.
+      orderBy: [
+        { b2ClosedAt: 'asc' },
+        { route: 'asc' },
+        { stopPosition: 'asc' },
+        { id: 'asc' },
+      ],
     });
 
     // Lista de pedidos para el listado de cards.

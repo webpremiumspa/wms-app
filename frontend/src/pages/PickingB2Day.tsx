@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, CheckCircle2, Image as ImageIcon, List, Package } from 'lucide-react';
 import clsx from 'clsx';
@@ -19,7 +19,27 @@ export function PickingB2Day() {
   const { id: processIdParam } = useParams();
   const processId = processIdParam ? Number(processIdParam) : undefined;
 
-  const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
+  // routeFilter vive en la URL (`?route=R1` o `?route=__no_route__`). Así:
+  // - el filtro se preserva al volver desde el cierre per-pedido,
+  // - es bookmarkeable y sobrevive F5,
+  // - el deep-link desde "Volver" del per-pedido funciona sin estado global.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const routeParam = searchParams.get('route');
+  const routeFilter: RouteFilterValue = (routeParam as RouteFilterValue) ?? null;
+  const setRouteFilter = useCallback(
+    (next: RouteFilterValue) => {
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          if (next == null) params.delete('route');
+          else params.set('route', next);
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [showSummary, setShowSummary] = useState(true);
   const [search, setSearch] = useState('');
 

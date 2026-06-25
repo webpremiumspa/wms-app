@@ -92,9 +92,16 @@ export function PickingB2Order() {
       queryClient.invalidateQueries({ queryKey: ['picking-b2-today'] });
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
       queryClient.invalidateQueries({ queryKey: ['process'] });
-      // Volver al picking del proceso parent (si lo sabemos).
+      // Volver al picking del proceso parent (si lo sabemos), conservando
+      // el filtro de ruta del pedido recién cerrado (queda en `?route=`).
+      // Si el pedido no tiene ruta, deja la lista en "Todas".
       const processId = order?.sequenceLinks?.find((l) => l.sequenceId === seqId)?.sequence?.processId;
-      navigate(processId ? `/processes/${processId}/picking-b2` : '/processes');
+      if (processId) {
+        const routeQS = order?.route ? `?route=${encodeURIComponent(order.route)}` : '';
+        navigate(`/processes/${processId}/picking-b2${routeQS}`);
+      } else {
+        navigate('/processes');
+      }
     },
     onError: (err: any) => {
       setPackError(err.response?.data?.message || 'No se pudo cerrar B2 del pedido');
@@ -121,7 +128,10 @@ export function PickingB2Order() {
     <div className="space-y-4 pb-4">
       {(() => {
         const processId = order.sequenceLinks?.find((l) => l.sequenceId === seqId)?.sequence?.processId;
-        const backTo = processId ? `/processes/${processId}/picking-b2` : '/processes';
+        // Mismo criterio que al cerrar: si vamos al per-proceso, llevamos
+        // el filtro de ruta del pedido en `?route=`.
+        const routeQS = order.route ? `?route=${encodeURIComponent(order.route)}` : '';
+        const backTo = processId ? `/processes/${processId}/picking-b2${routeQS}` : '/processes';
         return (
           <Link to={backTo} className="btn-ghost text-sm">
             <ChevronLeft size={16} />
