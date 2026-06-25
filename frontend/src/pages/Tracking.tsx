@@ -216,7 +216,7 @@ function ItemList({ label, items }: { label: string; items: TrackingOrder['items
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-slate-800">{it.product?.name || `Producto ${it.productId}`}</div>
+              <div className="truncate text-slate-800">{it.lineName || it.product?.name || `Producto ${it.productId}`}</div>
               <div className="text-[10px] text-slate-500">{it.product?.sku || '—'}</div>
             </div>
             <div className="font-bold text-slate-700">×{it.qty}</div>

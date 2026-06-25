@@ -15,6 +15,7 @@ export type TrackingOrderItem = {
   productId: number;
   qty: number;
   warehouse: Warehouse;
+  lineName?: string | null;
   pickedAt: string | null;
   packedAt: string | null;
   product: {

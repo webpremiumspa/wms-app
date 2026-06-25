@@ -5083,6 +5083,7 @@ export namespace Prisma {
     productId: number | null
     qty: number | null
     warehouse: $Enums.Warehouse | null
+    lineName: string | null
     pickedAt: Date | null
     packedAt: Date | null
   }
@@ -5093,6 +5094,7 @@ export namespace Prisma {
     productId: number | null
     qty: number | null
     warehouse: $Enums.Warehouse | null
+    lineName: string | null
     pickedAt: Date | null
     packedAt: Date | null
   }
@@ -5103,6 +5105,7 @@ export namespace Prisma {
     productId: number
     qty: number
     warehouse: number
+    lineName: number
     pickedAt: number
     packedAt: number
     _all: number
@@ -5129,6 +5132,7 @@ export namespace Prisma {
     productId?: true
     qty?: true
     warehouse?: true
+    lineName?: true
     pickedAt?: true
     packedAt?: true
   }
@@ -5139,6 +5143,7 @@ export namespace Prisma {
     productId?: true
     qty?: true
     warehouse?: true
+    lineName?: true
     pickedAt?: true
     packedAt?: true
   }
@@ -5149,6 +5154,7 @@ export namespace Prisma {
     productId?: true
     qty?: true
     warehouse?: true
+    lineName?: true
     pickedAt?: true
     packedAt?: true
     _all?: true
@@ -5246,6 +5252,7 @@ export namespace Prisma {
     productId: number
     qty: number
     warehouse: $Enums.Warehouse
+    lineName: string | null
     pickedAt: Date | null
     packedAt: Date | null
     _count: OrderItemCountAggregateOutputType | null
@@ -5275,6 +5282,7 @@ export namespace Prisma {
     productId?: boolean
     qty?: boolean
     warehouse?: boolean
+    lineName?: boolean
     pickedAt?: boolean
     packedAt?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
@@ -5288,6 +5296,7 @@ export namespace Prisma {
     productId?: boolean
     qty?: boolean
     warehouse?: boolean
+    lineName?: boolean
     pickedAt?: boolean
     packedAt?: boolean
   }
@@ -5309,6 +5318,7 @@ export namespace Prisma {
       productId: number
       qty: number
       warehouse: $Enums.Warehouse
+      lineName: string | null
       pickedAt: Date | null
       packedAt: Date | null
     }, ExtArgs["result"]["orderItem"]>
@@ -5687,6 +5697,7 @@ export namespace Prisma {
     readonly productId: FieldRef<"OrderItem", 'Int'>
     readonly qty: FieldRef<"OrderItem", 'Int'>
     readonly warehouse: FieldRef<"OrderItem", 'Warehouse'>
+    readonly lineName: FieldRef<"OrderItem", 'String'>
     readonly pickedAt: FieldRef<"OrderItem", 'DateTime'>
     readonly packedAt: FieldRef<"OrderItem", 'DateTime'>
   }
@@ -9912,6 +9923,7 @@ export namespace Prisma {
     productId: 'productId',
     qty: 'qty',
     warehouse: 'warehouse',
+    lineName: 'lineName',
     pickedAt: 'pickedAt',
     packedAt: 'packedAt'
   };
@@ -10436,6 +10448,7 @@ export namespace Prisma {
     productId?: IntFilter<"OrderItem"> | number
     qty?: IntFilter<"OrderItem"> | number
     warehouse?: EnumWarehouseFilter<"OrderItem"> | $Enums.Warehouse
+    lineName?: StringNullableFilter<"OrderItem"> | string | null
     pickedAt?: DateTimeNullableFilter<"OrderItem"> | Date | string | null
     packedAt?: DateTimeNullableFilter<"OrderItem"> | Date | string | null
     order?: XOR<OrderRelationFilter, OrderWhereInput>
@@ -10448,6 +10461,7 @@ export namespace Prisma {
     productId?: SortOrder
     qty?: SortOrder
     warehouse?: SortOrder
+    lineName?: SortOrderInput | SortOrder
     pickedAt?: SortOrderInput | SortOrder
     packedAt?: SortOrderInput | SortOrder
     order?: OrderOrderByWithRelationInput
@@ -10463,6 +10477,7 @@ export namespace Prisma {
     productId?: IntFilter<"OrderItem"> | number
     qty?: IntFilter<"OrderItem"> | number
     warehouse?: EnumWarehouseFilter<"OrderItem"> | $Enums.Warehouse
+    lineName?: StringNullableFilter<"OrderItem"> | string | null
     pickedAt?: DateTimeNullableFilter<"OrderItem"> | Date | string | null
     packedAt?: DateTimeNullableFilter<"OrderItem"> | Date | string | null
     order?: XOR<OrderRelationFilter, OrderWhereInput>
@@ -10475,6 +10490,7 @@ export namespace Prisma {
     productId?: SortOrder
     qty?: SortOrder
     warehouse?: SortOrder
+    lineName?: SortOrderInput | SortOrder
     pickedAt?: SortOrderInput | SortOrder
     packedAt?: SortOrderInput | SortOrder
     _count?: OrderItemCountOrderByAggregateInput
@@ -10493,6 +10509,7 @@ export namespace Prisma {
     productId?: IntWithAggregatesFilter<"OrderItem"> | number
     qty?: IntWithAggregatesFilter<"OrderItem"> | number
     warehouse?: EnumWarehouseWithAggregatesFilter<"OrderItem"> | $Enums.Warehouse
+    lineName?: StringNullableWithAggregatesFilter<"OrderItem"> | string | null
     pickedAt?: DateTimeNullableWithAggregatesFilter<"OrderItem"> | Date | string | null
     packedAt?: DateTimeNullableWithAggregatesFilter<"OrderItem"> | Date | string | null
   }
@@ -11167,6 +11184,7 @@ export namespace Prisma {
   export type OrderItemCreateInput = {
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
     order: OrderCreateNestedOneWithoutItemsInput
@@ -11179,6 +11197,7 @@ export namespace Prisma {
     productId: number
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
   }
@@ -11186,6 +11205,7 @@ export namespace Prisma {
   export type OrderItemUpdateInput = {
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order?: OrderUpdateOneRequiredWithoutItemsNestedInput
@@ -11198,6 +11218,7 @@ export namespace Prisma {
     productId?: IntFieldUpdateOperationsInput | number
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -11208,6 +11229,7 @@ export namespace Prisma {
     productId: number
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
   }
@@ -11215,6 +11237,7 @@ export namespace Prisma {
   export type OrderItemUpdateManyMutationInput = {
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -11225,6 +11248,7 @@ export namespace Prisma {
     productId?: IntFieldUpdateOperationsInput | number
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -12026,6 +12050,7 @@ export namespace Prisma {
     productId?: SortOrder
     qty?: SortOrder
     warehouse?: SortOrder
+    lineName?: SortOrder
     pickedAt?: SortOrder
     packedAt?: SortOrder
   }
@@ -12043,6 +12068,7 @@ export namespace Prisma {
     productId?: SortOrder
     qty?: SortOrder
     warehouse?: SortOrder
+    lineName?: SortOrder
     pickedAt?: SortOrder
     packedAt?: SortOrder
   }
@@ -12053,6 +12079,7 @@ export namespace Prisma {
     productId?: SortOrder
     qty?: SortOrder
     warehouse?: SortOrder
+    lineName?: SortOrder
     pickedAt?: SortOrder
     packedAt?: SortOrder
   }
@@ -13893,6 +13920,7 @@ export namespace Prisma {
   export type OrderItemCreateWithoutProductInput = {
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
     order: OrderCreateNestedOneWithoutItemsInput
@@ -13903,6 +13931,7 @@ export namespace Prisma {
     orderId: number
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
   }
@@ -13942,6 +13971,7 @@ export namespace Prisma {
     productId?: IntFilter<"OrderItem"> | number
     qty?: IntFilter<"OrderItem"> | number
     warehouse?: EnumWarehouseFilter<"OrderItem"> | $Enums.Warehouse
+    lineName?: StringNullableFilter<"OrderItem"> | string | null
     pickedAt?: DateTimeNullableFilter<"OrderItem"> | Date | string | null
     packedAt?: DateTimeNullableFilter<"OrderItem"> | Date | string | null
   }
@@ -14066,6 +14096,7 @@ export namespace Prisma {
   export type OrderItemCreateWithoutOrderInput = {
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
     product: ProductMetaCreateNestedOneWithoutOrderItemsInput
@@ -14076,6 +14107,7 @@ export namespace Prisma {
     productId: number
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
   }
@@ -15768,6 +15800,7 @@ export namespace Prisma {
     orderId: number
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
   }
@@ -15775,6 +15808,7 @@ export namespace Prisma {
   export type OrderItemUpdateWithoutProductInput = {
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order?: OrderUpdateOneRequiredWithoutItemsNestedInput
@@ -15785,6 +15819,7 @@ export namespace Prisma {
     orderId?: IntFieldUpdateOperationsInput | number
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -15794,6 +15829,7 @@ export namespace Prisma {
     orderId?: IntFieldUpdateOperationsInput | number
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -15803,6 +15839,7 @@ export namespace Prisma {
     productId: number
     qty: number
     warehouse: $Enums.Warehouse
+    lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
   }
@@ -15822,6 +15859,7 @@ export namespace Prisma {
   export type OrderItemUpdateWithoutOrderInput = {
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     product?: ProductMetaUpdateOneRequiredWithoutOrderItemsNestedInput
@@ -15832,6 +15870,7 @@ export namespace Prisma {
     productId?: IntFieldUpdateOperationsInput | number
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }
@@ -15841,6 +15880,7 @@ export namespace Prisma {
     productId?: IntFieldUpdateOperationsInput | number
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
+    lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   }

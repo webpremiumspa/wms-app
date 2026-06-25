@@ -97,6 +97,7 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
           id: it.id,
           qty: it.qty,
           warehouse: it.warehouse,
+          lineName: it.lineName,
           product: {
             sku: it.product?.sku,
             name: it.product?.name,

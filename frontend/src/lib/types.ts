@@ -82,6 +82,10 @@ export type OrderItem = {
   productId: number;
   qty: number;
   warehouse: Warehouse;
+  // Nombre del line_item de WC al momento de sync — incluye variante si la hay.
+  // Si difiere de product.name, la UI debería mostrarlo (es el dato canónico
+  // del pedido).
+  lineName?: string | null;
   pickedAt: string | null;
   packedAt: string | null;
   product: {

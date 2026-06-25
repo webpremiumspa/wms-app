@@ -108,6 +108,10 @@ model OrderItem {
   productId Int       @map("product_id")
   qty       Int
   warehouse Warehouse
+  // Nombre tal como vino del line_item de WC. Incluye la variante (ej.
+  // "Heno Oxbow - 425Gr Banana"). Si difiere de productMeta.name, la UI
+  // lo muestra para que el picker vea el sabor/color/tamaño exacto.
+  lineName  String?   @map("line_name") @db.VarChar(255)
   pickedAt  DateTime? @map("picked_at")
   packedAt  DateTime? @map("packed_at")
 

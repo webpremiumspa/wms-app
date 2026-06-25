@@ -207,7 +207,7 @@ export function PickingB2Order() {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <div className="truncate font-medium">{it.product.name}</div>
+              <div className="truncate font-medium">{it.lineName || it.product.name}</div>
               <div className="text-xs text-amber-700">{it.product.sku || '—'}</div>
             </div>
             <div className="text-lg font-bold text-amber-700">×{it.qty}</div>

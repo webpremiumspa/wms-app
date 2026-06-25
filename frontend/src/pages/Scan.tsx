@@ -441,7 +441,7 @@ export function Scan() {
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate font-medium">{it.product.name}</div>
+                    <div className="truncate font-medium">{it.lineName || it.product.name}</div>
                     <div className="text-xs text-slate-500">{it.product.sku || '—'}</div>
                   </div>
                   <div className="font-bold text-brand-700">×{it.qty}</div>

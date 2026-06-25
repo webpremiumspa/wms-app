@@ -180,6 +180,7 @@ exports.Prisma.OrderItemScalarFieldEnum = {
   productId: 'productId',
   qty: 'qty',
   warehouse: 'warehouse',
+  lineName: 'lineName',
   pickedAt: 'pickedAt',
   packedAt: 'packedAt'
 };

@@ -167,6 +167,9 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
     productId: li.product_id,
     qty: li.quantity,
     warehouse: warehouseByProduct.get(li.product_id) || 'B1',
+    // Capturamos el nombre completo del line_item (incluye variante en WC).
+    // Truncamos a 255 para respetar el VARCHAR.
+    lineName: typeof li.name === 'string' ? li.name.slice(0, 255) : null,
   }));
   const hasB2 = itemsData.some((it) => it.warehouse === 'B2');
 

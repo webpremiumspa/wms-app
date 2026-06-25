@@ -150,6 +150,7 @@ router.get('/by-wp/:wpOrderId/tracking', requireCap(WMS_CAPS.SUPERVISE), async (
           productId: it.productId,
           qty: it.qty,
           warehouse: it.warehouse,
+          lineName: it.lineName,
           pickedAt: it.pickedAt,
           packedAt: it.packedAt,
           product: it.product

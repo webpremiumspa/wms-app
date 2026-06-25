@@ -40,7 +40,7 @@ function OrderItems({ orderId }: { orderId: number }) {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">{it.product.name}</div>
+            <div className="truncate text-sm font-medium">{it.lineName || it.product.name}</div>
             <div className="text-xs text-slate-500">{it.product.sku || '—'}</div>
           </div>
           <Badge variant={it.warehouse === 'B1' ? 'blue' : 'amber'}>{warehouseLabel(it.warehouse)}</Badge>
