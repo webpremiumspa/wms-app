@@ -13,6 +13,7 @@ import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 import { BagsStepper } from '@/components/BagsStepper';
+import { ConfirmBagsModal } from '@/components/ConfirmBagsModal';
 import { applyRouteFilter, extractRoutes } from '@/lib/routeFilter';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
@@ -26,6 +27,7 @@ function OrderItems({ orderId }: { orderId: number }) {
 
   const [bagsCount, setBagsCount] = useState(1);
   const [bagsError, setBagsError] = useState<string | null>(null);
+  const [confirmReprintBags, setConfirmReprintBags] = useState(false);
 
   useEffect(() => {
     if (!data) return;
@@ -94,7 +96,15 @@ function OrderItems({ orderId }: { orderId: number }) {
           )}
           <button
             type="button"
-            onClick={() => reprint.mutate()}
+            onClick={() => {
+              // Solo confirma cuando se cambia la cuenta guardada — reimprimir
+              // tal cual no requiere fricción.
+              if (bagsCount !== savedBags) {
+                setConfirmReprintBags(true);
+              } else {
+                reprint.mutate();
+              }
+            }}
             disabled={reprint.isPending}
             className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
           >
@@ -107,6 +117,19 @@ function OrderItems({ orderId }: { orderId: number }) {
           </button>
         </div>
       )}
+      <ConfirmBagsModal
+        open={confirmReprintBags}
+        bagsCount={bagsCount}
+        mode="update"
+        fromCount={savedBags}
+        orderNumber={data.number}
+        isPending={reprint.isPending}
+        onCancel={() => setConfirmReprintBags(false)}
+        onConfirm={() => {
+          setConfirmReprintBags(false);
+          reprint.mutate();
+        }}
+      />
     </div>
   );
 }

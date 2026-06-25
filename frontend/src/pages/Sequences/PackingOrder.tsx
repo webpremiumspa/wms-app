@@ -12,6 +12,7 @@ import { ProgressBar } from '@/components/ProgressBar';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { BagsStepper } from '@/components/BagsStepper';
+import { ConfirmBagsModal } from '@/components/ConfirmBagsModal';
 import { useAuth } from '@/hooks/useAuth';
 import { warehouseLabel } from '@/lib/labels';
 import { CAPS, hasCap } from '@/lib/auth';
@@ -44,6 +45,11 @@ export function PackingOrder() {
   // sincroniza con order.bagsExpected y permite editar para reimprimir.
   const [bagsCount, setBagsCount] = useState(1);
   const [bagsError, setBagsError] = useState<string | null>(null);
+  // Modales de confirmación de bultos (evita errores por tap accidental).
+  // - confirmPackBags: antes de cerrar el pedido con N>1.
+  // - confirmReprintBags: antes de actualizar y reimprimir con N distinto al guardado.
+  const [confirmPackBags, setConfirmPackBags] = useState(false);
+  const [confirmReprintBags, setConfirmReprintBags] = useState(false);
   const [removeOpen, setRemoveOpen] = useState(false);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [partialNote, setPartialNote] = useState('');
@@ -430,7 +436,15 @@ export function PackingOrder() {
             </div>
           )}
           <button
-            onClick={() => { setPackError(null); pack.mutate(); }}
+            onClick={() => {
+              setPackError(null);
+              // Si declaró >1 bultos, confirmar antes (riesgo de tap accidental).
+              if (bagsCount > 1) {
+                setConfirmPackBags(true);
+              } else {
+                pack.mutate();
+              }
+            }}
             disabled={!allChecked || pack.isPending}
             className="btn-primary w-full"
           >
@@ -456,7 +470,16 @@ export function PackingOrder() {
           )}
           <button
             type="button"
-            onClick={() => reprint.mutate()}
+            onClick={() => {
+              // Si está cambiando el valor guardado, confirmar antes
+              // (riesgo: imprimir más papel o sobreescribir cuenta correcta).
+              // Reimprimir sin cambio no necesita confirmación.
+              if (bagsCount !== (order.bagsExpected ?? 1)) {
+                setConfirmReprintBags(true);
+              } else {
+                reprint.mutate();
+              }
+            }}
             disabled={reprint.isPending}
             className="btn-ghost w-full border border-slate-300"
           >
@@ -469,6 +492,33 @@ export function PackingOrder() {
           </button>
         </div>
       )}
+
+      <ConfirmBagsModal
+        open={confirmPackBags}
+        bagsCount={bagsCount}
+        mode="pack"
+        orderNumber={order.number}
+        isPending={pack.isPending}
+        onCancel={() => setConfirmPackBags(false)}
+        onConfirm={() => {
+          setConfirmPackBags(false);
+          pack.mutate();
+        }}
+      />
+      <ConfirmBagsModal
+        open={confirmReprintBags}
+        bagsCount={bagsCount}
+        mode="update"
+        fromCount={order.bagsExpected ?? 1}
+        orderNumber={order.number}
+        isPending={reprint.isPending}
+        onCancel={() => setConfirmReprintBags(false)}
+        onConfirm={() => {
+          setConfirmReprintBags(false);
+          reprint.mutate();
+        }}
+      />
+
 
       {canManage && !isPacked && (
         <div className="card space-y-3 border-dashed bg-slate-50 p-3">
