@@ -65,6 +65,8 @@ export function PickingB2Day() {
   // Para la tabla agrupada: si hay filtro de ruta, recalculamos sumando solo
   // los items de los pedidos visibles. Si no hay filtro, usa el summary global
   // del backend. Esto evita mostrar "10 SKUs" cuando filtraste a 2 pedidos.
+  // Mantenemos `pendingQty` y la marca `done` por pedido para que la tabla
+  // muestre tachado lo ya cerrado sin esconderlo.
   const summaryFiltered = useMemo(() => {
     if (!data) return [];
     if (routeFilter === null) return data.summary;
@@ -78,6 +80,7 @@ export function PickingB2Day() {
       rows.push({
         ...row,
         totalQty: myOrders.reduce((acc, ro) => acc + ro.qty, 0),
+        pendingQty: myOrders.filter((ro) => !ro.done).reduce((acc, ro) => acc + ro.qty, 0),
         orders: myOrders,
       });
     }
@@ -149,36 +152,82 @@ export function PickingB2Day() {
                   <tr>
                     <th className="px-2 py-1 text-left">Producto</th>
                     <th className="px-2 py-1 text-left">SKU</th>
-                    <th className="px-2 py-1 text-right">Total</th>
+                    <th className="px-2 py-1 text-right">Pend / Total</th>
                     <th className="px-2 py-1 text-left">Pedidos</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {summaryFiltered.map((row) => (
-                    <tr key={row.productId} className="border-t border-slate-100 align-top">
-                      <td className="px-2 py-2">
-                        <div className="flex items-center gap-2">
-                          {row.thumbnailUrl ? (
-                            <img src={row.thumbnailUrl} alt="" className="h-8 w-8 rounded object-cover ring-1 ring-slate-200" />
-                          ) : (
-                            <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-100">
-                              <ImageIcon size={14} className="text-slate-400" />
-                            </div>
+                  {summaryFiltered.map((row) => {
+                    const fullyDone = row.pendingQty === 0;
+                    return (
+                      <tr
+                        key={row.productId}
+                        className={clsx(
+                          'border-t border-slate-100 align-top',
+                          fullyDone && 'bg-emerald-50/40',
+                        )}
+                      >
+                        <td className="px-2 py-2">
+                          <div className="flex items-center gap-2">
+                            {row.thumbnailUrl ? (
+                              <img
+                                src={row.thumbnailUrl}
+                                alt=""
+                                className={clsx(
+                                  'h-8 w-8 rounded object-cover ring-1 ring-slate-200',
+                                  fullyDone && 'opacity-50',
+                                )}
+                              />
+                            ) : (
+                              <div className="flex h-8 w-8 items-center justify-center rounded bg-slate-100">
+                                <ImageIcon size={14} className="text-slate-400" />
+                              </div>
+                            )}
+                            <span
+                              className={clsx(
+                                'font-medium break-words',
+                                fullyDone ? 'text-slate-400 line-through' : 'text-slate-800',
+                              )}
+                            >
+                              {row.name}
+                            </span>
+                            {fullyDone && (
+                              <Badge variant="green">
+                                <CheckCircle2 size={11} className="inline" /> Listo
+                              </Badge>
+                            )}
+                          </div>
+                        </td>
+                        <td
+                          className={clsx(
+                            'px-2 py-2 font-mono',
+                            fullyDone ? 'text-slate-400 line-through' : 'text-slate-600',
                           )}
-                          <span className="font-medium text-slate-800 break-words">{row.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-2 py-2 font-mono text-slate-600">{row.sku || '—'}</td>
-                      <td className="px-2 py-2 text-right text-base font-bold text-amber-700">×{row.totalQty}</td>
-                      <td className="px-2 py-2 text-slate-500">
-                        {row.orders.map((o) => (
-                          <span key={o.wpOrderId} className="mr-2 whitespace-nowrap">
-                            #{o.number} (×{o.qty})
+                        >
+                          {row.sku || '—'}
+                        </td>
+                        <td className="px-2 py-2 text-right text-base font-bold">
+                          <span className={fullyDone ? 'text-emerald-600' : 'text-amber-700'}>
+                            ×{row.pendingQty}
                           </span>
-                        ))}
-                      </td>
-                    </tr>
-                  ))}
+                          <span className="text-xs font-normal text-slate-400"> / ×{row.totalQty}</span>
+                        </td>
+                        <td className="px-2 py-2 text-slate-500">
+                          {row.orders.map((o) => (
+                            <span
+                              key={o.wpOrderId}
+                              className={clsx(
+                                'mr-2 whitespace-nowrap',
+                                o.done && 'text-emerald-600 line-through decoration-emerald-400',
+                              )}
+                            >
+                              #{o.number} (×{o.qty})
+                            </span>
+                          ))}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             )}

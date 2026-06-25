@@ -120,13 +120,16 @@ router.get('/today', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUP
       };
     });
 
-    // Tabla informativa: por cada productId, sumar qty pendiente + lista de
-    // pedidos que lo necesitan. Items ya pickeados no cuentan en el total
-    // pendiente porque ya están en la sub-bolsa.
+    // Tabla informativa: por cada productId, listamos todos los pedidos del
+    // proceso que lo necesitan — los pickeados también, marcados con `done`
+    // para que el frontend los muestre tachados pero NO los esconda. Así la
+    // tabla no se "achica" cuando se cierran pedidos.
+    //
+    // totalQty   = qty global (incluye hechos)
+    // pendingQty = qty que aún falta sacar de bodega
     const byProduct = new Map();
     for (const o of orders) {
       for (const it of o.items) {
-        if (it.pickedAt) continue;
         const key = it.productId;
         if (!byProduct.has(key)) {
           byProduct.set(key, {
@@ -135,12 +138,19 @@ router.get('/today', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.PACK_B1, WMS_CAPS.SUP
             name: it.product?.name ?? `Producto ${it.productId}`,
             thumbnailUrl: it.product?.thumbnailUrl ?? null,
             totalQty: 0,
+            pendingQty: 0,
             orders: [],
           });
         }
         const row = byProduct.get(key);
         row.totalQty += it.qty;
-        row.orders.push({ wpOrderId: o.wpOrderId, number: o.number, qty: it.qty });
+        if (!it.pickedAt) row.pendingQty += it.qty;
+        row.orders.push({
+          wpOrderId: o.wpOrderId,
+          number: o.number,
+          qty: it.qty,
+          done: !!it.pickedAt,
+        });
       }
     }
     const summary = Array.from(byProduct.values()).sort((a, b) =>

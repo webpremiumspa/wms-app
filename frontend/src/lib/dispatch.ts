@@ -62,7 +62,8 @@ export type B2DaySummaryRow = {
   name: string;
   thumbnailUrl: string | null;
   totalQty: number;
-  orders: Array<{ wpOrderId: number; number: string; qty: number }>;
+  pendingQty: number;
+  orders: Array<{ wpOrderId: number; number: string; qty: number; done: boolean }>;
 };
 
 export type B2DayOrderRow = B2PendingPackingOrder & {
