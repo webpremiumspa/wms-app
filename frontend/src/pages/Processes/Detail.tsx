@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ClipboardList, Plus, LayoutGrid, List as ListIcon, XCircle, Package, RefreshCw } from 'lucide-react';
@@ -10,10 +10,13 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { ProgressHero } from '@/components/RouteProgressPills';
+import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import { orderStatusLabel } from '@/lib/labels';
 import type { OrderStatus } from '@/lib/types';
+
+const MAX_LOOKUP_RESULTS = 20;
 
 type View = 'list' | 'kanban';
 
@@ -34,6 +37,7 @@ export function ProcessDetail() {
   const canCreate = hasCap(user, CAPS.PACK_B1);
   const canSupervise = hasCap(user, CAPS.SUPERVISE);
   const [view, setView] = useState<View>('list');
+  const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['process', procId],
@@ -56,6 +60,14 @@ export function ProcessDetail() {
       queryClient.invalidateQueries({ queryKey: ['process', procId] });
     },
   });
+
+  const searchQuery = search.trim();
+  const lookupMatches = useMemo<ProcessOrderCard[]>(() => {
+    if (!data || !searchQuery) return [];
+    return data.orders
+      .filter((o) => matchesOrderId(o.number, searchQuery))
+      .slice(0, MAX_LOOKUP_RESULTS);
+  }, [data, searchQuery]);
 
   if (isLoading || !data) return <Spinner />;
 
@@ -165,6 +177,16 @@ export function ProcessDetail() {
         </div>
       </div>
 
+      {/* Buscador de pedido: ayuda a ubicar en qué secuencia está un # */}
+      <OrderSearchBox
+        value={search}
+        onChange={setSearch}
+        placeholder="Buscar pedido por ID en este proceso…"
+      />
+      {searchQuery && (
+        <OrderLookupResults query={searchQuery} matches={lookupMatches} />
+      )}
+
       {view === 'list' ? (
         <SequenceListView sequences={process.sequences} />
       ) : (
@@ -223,6 +245,46 @@ function SequenceListView({ sequences }: { sequences: import('@/lib/processes').
             </div>
           </div>
           <ClipboardList className="text-slate-400" size={20} />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function OrderLookupResults({ query, matches }: { query: string; matches: ProcessOrderCard[] }) {
+  if (matches.length === 0) {
+    return (
+      <div className="card p-3 text-center text-xs text-slate-500">
+        Sin pedidos que coincidan con <strong>“{query}”</strong> en este proceso.
+      </div>
+    );
+  }
+  return (
+    <div className="card space-y-1.5 p-2">
+      <div className="px-1 pb-1 text-[11px] uppercase tracking-wide text-slate-500">
+        {matches.length === MAX_LOOKUP_RESULTS
+          ? `Mostrando primeras ${MAX_LOOKUP_RESULTS} coincidencias`
+          : `${matches.length} coincidencia${matches.length === 1 ? '' : 's'}`}
+      </div>
+      {matches.map((o) => (
+        <Link
+          key={o.id}
+          to={`/sequences/${o.sequenceId}`}
+          className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
+        >
+          <div className="min-w-0 flex flex-wrap items-center gap-1.5">
+            <span className="font-semibold">
+              #<HighlightedNumber text={o.number} match={query} />
+            </span>
+            <Badge variant="blue">Sec #{o.sequenceId}</Badge>
+            {o.route && <Badge variant="gray">{o.route}</Badge>}
+            {o.stopPosition != null && <Badge variant="gray">P{o.stopPosition}</Badge>}
+            {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
+            <Badge variant="gray">{orderStatusLabel(o.status)}</Badge>
+          </div>
+          <span className="shrink-0 truncate text-xs text-slate-500">
+            {o.customerName || '—'}
+          </span>
         </Link>
       ))}
     </div>
