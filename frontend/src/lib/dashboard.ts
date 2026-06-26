@@ -4,6 +4,9 @@ export type AlertSeverity = 'info' | 'warning' | 'critical';
 
 export type DashboardSummary = {
   generatedAt: string;
+  // Si processId está presente, todos los números están scopeados a ese
+  // proceso. Si es null, es el agregado global (modo legacy).
+  processId: number | null;
   orders: {
     total: number;
     byStatus: Record<string, number>;
@@ -34,5 +37,8 @@ export type DashboardSummary = {
 };
 
 export const dashboardApi = {
-  summary: async (): Promise<DashboardSummary> => (await api.get('/dashboard/summary')).data,
+  summary: async (opts?: { processId?: number }): Promise<DashboardSummary> =>
+    (await api.get('/dashboard/summary', {
+      params: opts?.processId ? { processId: opts.processId } : undefined,
+    })).data,
 };

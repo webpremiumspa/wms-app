@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Info, Package, ClipboardList, Truck, CheckCircle2, Activity, Clock } from 'lucide-react';
 import clsx from 'clsx';
-import { dashboardApi, type AlertSeverity } from '@/lib/dashboard';
+import { dashboardApi, type AlertSeverity, type DashboardSummary } from '@/lib/dashboard';
+import { processesApi } from '@/lib/processes';
 import { eventLabel, orderStatusLabelPlural, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 
@@ -12,23 +14,97 @@ const SEVERITY_STYLES: Record<AlertSeverity, string> = {
 };
 
 export function Dashboard() {
+  // Tabs por proceso abierto. Si hay 1 solo, no se muestran las pestañas:
+  // se ve directo el contenido del único proceso vivo.
+  const { data: openProcesses, isLoading: loadingProcesses } = useQuery({
+    queryKey: ['process-open-list'],
+    queryFn: () => processesApi.openList(),
+    refetchInterval: 10_000,
+  });
+
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  // Cuando carga la lista, default al primer proceso abierto. Si el
+  // seleccionado se cerró (ya no está en la lista), volvemos al primero.
+  useEffect(() => {
+    if (!openProcesses) return;
+    if (openProcesses.length === 0) {
+      setSelectedId(null);
+      return;
+    }
+    if (selectedId == null || !openProcesses.some((p) => p.id === selectedId)) {
+      setSelectedId(openProcesses[0].id);
+    }
+  }, [openProcesses, selectedId]);
+
+  if (loadingProcesses || !openProcesses) return <Spinner />;
+
+  if (openProcesses.length === 0) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Supervisión</h2>
+        <div className="card p-6 text-center text-sm text-slate-600">
+          No hay procesos abiertos. Cuando alguien abra uno, esta vista lo mostrará automáticamente.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Supervisión</h2>
+
+      {openProcesses.length > 1 && (
+        <div className="flex gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-white p-1">
+          {openProcesses.map((p) => {
+            const active = p.id === selectedId;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setSelectedId(p.id)}
+                className={clsx(
+                  'flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition',
+                  active ? 'bg-brand-700 text-white' : 'text-slate-600 hover:bg-slate-100',
+                )}
+              >
+                {p.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {selectedId != null && <ProcessSupervisionPanel processId={selectedId} />}
+    </div>
+  );
+}
+
+function ProcessSupervisionPanel({ processId }: { processId: number }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['dashboard-summary'],
-    queryFn: dashboardApi.summary,
+    queryKey: ['dashboard-summary', processId],
+    queryFn: () => dashboardApi.summary({ processId }),
     refetchInterval: 5000,
   });
 
   if (isLoading || !data) return <Spinner />;
+  return <SupervisionContent data={data} />;
+}
 
-  const pendingPack = (data.orders.byStatus.received || 0) + (data.orders.byStatus.sequenced || 0) + (data.orders.byStatus.picked || 0);
+function SupervisionContent({ data }: { data: DashboardSummary }) {
+  const pendingPack =
+    (data.orders.byStatus.received || 0) +
+    (data.orders.byStatus.sequenced || 0) +
+    (data.orders.byStatus.picked || 0);
   const readyToClassify = data.orders.byStatus.packed || 0;
   const loaded = data.orders.byStatus.loaded || 0;
-  const b2Pct = data.pickingB2.totalSkus === 0 ? 100 : Math.round((data.pickingB2.pickedSkus / data.pickingB2.totalSkus) * 100);
+  const b2Pct = data.pickingB2.totalSkus === 0
+    ? 100
+    : Math.round((data.pickingB2.pickedSkus / data.pickingB2.totalSkus) * 100);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-xl font-semibold">Supervisión</h2>
+      <div className="flex items-baseline justify-end">
         <div className="text-xs text-slate-500">
           actualizado {new Date(data.generatedAt).toLocaleTimeString('es-CL')}
         </div>
@@ -107,7 +183,9 @@ export function Dashboard() {
           {(['received', 'sequenced', 'picked', 'packed', 'classified', 'loaded', 'delivered', 'blocked'] as const).map((key) => (
             <div key={key} className="rounded-lg bg-slate-50 px-3 py-2">
               <div className="text-xs text-slate-500">{orderStatusLabelPlural(key)}</div>
-              <div className={`text-xl font-bold ${key === 'blocked' && (data.orders.byStatus[key] || 0) > 0 ? 'text-red-700' : 'text-slate-800'}`}>{data.orders.byStatus[key] || 0}</div>
+              <div className={`text-xl font-bold ${key === 'blocked' && (data.orders.byStatus[key] || 0) > 0 ? 'text-red-700' : 'text-slate-800'}`}>
+                {data.orders.byStatus[key] || 0}
+              </div>
             </div>
           ))}
         </div>
@@ -173,5 +251,5 @@ function KpiCard({ icon: Icon, label, value, accent, small }: KpiCardProps) {
   );
 }
 
-// Suprime unused-import warning para CheckCircle2 (lo dejé por si lo necesitas)
+// Suprime unused-import warning para CheckCircle2 (lo dejo por si se usa más adelante)
 void CheckCircle2;

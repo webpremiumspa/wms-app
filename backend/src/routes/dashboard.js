@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
+import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 
 const router = Router();
@@ -9,28 +10,60 @@ router.use(requireCap(WMS_CAPS.SUPERVISE));
 
 const ACTIVE_STATUSES = ['received', 'sequenced', 'picked', 'packed', 'classified', 'loaded'];
 
-router.get('/summary', async (_req, res, next) => {
+// Filtro reusable: orders cuyo link de secuencia apunta al proceso pedido.
+// Si no se pasa processId, devuelve {} (modo global, compat).
+function orderWhereForProcess(processId) {
+  if (!processId) return {};
+  return { sequenceLinks: { some: { sequence: { processId } } } };
+}
+
+router.get('/summary', async (req, res, next) => {
   try {
-    // ─── Pedidos: conteo global y por estado ────────────────────────────────
+    // ?processId scopea el dashboard a un proceso. La vista de supervisión
+    // ahora trabaja siempre con este parámetro; sin él se mantiene el
+    // payload global por compat (otros consumidores).
+    let processId = null;
+    if (req.query.processId != null) {
+      const n = Number(req.query.processId);
+      if (!Number.isFinite(n) || n <= 0) {
+        throw new HttpError(400, 'processId inválido');
+      }
+      processId = n;
+    }
+    const orderWhere = orderWhereForProcess(processId);
+
+    // ─── Pedidos: conteo y por estado (scopeado si processId) ───────────────
     const statusGroups = await prisma.order.groupBy({
       by: ['status'],
       _count: { _all: true },
+      where: processId ? orderWhere : undefined,
     });
     const byStatus = Object.fromEntries(statusGroups.map((g) => [g.status, g._count._all]));
     const total = Object.values(byStatus).reduce((s, n) => s + n, 0);
     const activeTotal = ACTIVE_STATUSES.reduce((s, st) => s + (byStatus[st] || 0), 0);
 
     const withB2Pending = await prisma.order.count({
-      where: { hasB2Pending: true, status: { in: ACTIVE_STATUSES } },
+      where: {
+        ...orderWhere,
+        hasB2Pending: true,
+        status: { in: ACTIVE_STATUSES },
+      },
     });
 
-    // ─── Secuencias ─────────────────────────────────────────────────────────
-    const seqOpen = await prisma.sequence.count({ where: { status: 'open' } });
-    const seqClosed = await prisma.sequence.count({ where: { status: 'closed' } });
+    // ─── Secuencias del proceso (o globales si no hay processId) ────────────
+    const seqWhere = processId ? { processId } : {};
+    const seqOpen = await prisma.sequence.count({ where: { ...seqWhere, status: 'open' } });
+    const seqClosed = await prisma.sequence.count({ where: { ...seqWhere, status: 'closed' } });
 
-    // ─── Picking B2 del día (agregado por SKU) ──────────────────────────────
+    // ─── Picking B2 (agregado por SKU del proceso) ──────────────────────────
     const b2Items = await prisma.orderItem.findMany({
-      where: { warehouse: 'B2', order: { status: { in: ACTIVE_STATUSES } } },
+      where: {
+        warehouse: 'B2',
+        order: {
+          ...orderWhere,
+          status: { in: ACTIVE_STATUSES },
+        },
+      },
       select: { productId: true, pickedAt: true },
     });
     const b2ByProduct = new Map();
@@ -43,9 +76,13 @@ router.get('/summary', async (_req, res, next) => {
     const b2TotalSkus = b2ByProduct.size;
     const b2PickedSkus = Array.from(b2ByProduct.values()).filter((g) => g.picked === g.total).length;
 
-    // ─── Por ruta (clasificados / cargados / con B2) ─────────────────────────
+    // ─── Por ruta (clasificados / cargados / con B2) ────────────────────────
     const ordersByRoute = await prisma.order.findMany({
-      where: { route: { not: null }, status: { in: ['packed', 'classified', 'loaded'] } },
+      where: {
+        ...orderWhere,
+        route: { not: null },
+        status: { in: ['packed', 'classified', 'loaded'] },
+      },
       select: { route: true, status: true, hasB2Pending: true },
     });
     const routeMap = new Map();
@@ -61,17 +98,26 @@ router.get('/summary', async (_req, res, next) => {
 
     // ─── Alertas ────────────────────────────────────────────────────────────
     const alerts = [];
-    const unsequenced = byStatus.received || 0;
-    if (unsequenced >= 20) {
-      alerts.push({
-        severity: 'warning',
-        type: 'high_unsequenced',
-        message: `${unsequenced} pedidos sin asignar a secuencia.`,
-      });
+
+    // "Sin secuenciar" (received) solo tiene sentido en modo global, porque
+    // un pedido received aún no pertenece a ningún proceso.
+    if (!processId) {
+      const unsequenced = byStatus.received || 0;
+      if (unsequenced >= 20) {
+        alerts.push({
+          severity: 'warning',
+          type: 'high_unsequenced',
+          message: `${unsequenced} pedidos sin asignar a secuencia.`,
+        });
+      }
     }
 
     const oldOpenSequences = await prisma.sequence.findMany({
-      where: { status: 'open', createdAt: { lt: new Date(Date.now() - 4 * 60 * 60 * 1000) } },
+      where: {
+        ...seqWhere,
+        status: 'open',
+        createdAt: { lt: new Date(Date.now() - 4 * 60 * 60 * 1000) },
+      },
       select: { id: true, createdAt: true, b1ClosedAt: true, b2ClosedAt: true },
     });
     for (const s of oldOpenSequences) {
@@ -88,7 +134,7 @@ router.get('/summary', async (_req, res, next) => {
     }
 
     const packedNoRoute = await prisma.order.count({
-      where: { status: 'packed', route: null },
+      where: { ...orderWhere, status: 'packed', route: null },
     });
     if (packedNoRoute > 0) {
       alerts.push({
@@ -107,8 +153,8 @@ router.get('/summary', async (_req, res, next) => {
       });
     }
 
-    // Pedidos bloqueados (sacados de secuencias por faltante/cancelación).
-    // El supervisor debe decidir si reactivarlos cuando llegue stock.
+    // Pedidos bloqueados — scopeados al proceso (los que estaban en alguna
+    // de sus secuencias antes de ser bloqueados).
     const blockedCount = byStatus.blocked || 0;
     if (blockedCount > 0) {
       alerts.push({
@@ -118,9 +164,10 @@ router.get('/summary', async (_req, res, next) => {
       });
     }
 
-    // Pedidos con entrega parcial aprobada (informativo).
+    // Pedidos con entrega parcial aprobada (scopeada).
     const partialApprovedCount = await prisma.order.count({
       where: {
+        ...orderWhere,
         allowPartialDelivery: true,
         status: { in: ['packed', 'classified', 'loaded'] },
       },
@@ -133,8 +180,14 @@ router.get('/summary', async (_req, res, next) => {
       });
     }
 
-    // ─── Actividad reciente (últimos 15 eventos) ────────────────────────────
+    // ─── Actividad reciente (últimos 15 eventos, scopeada por proceso) ─────
+    // El Event no tiene FK a proceso, así que filtramos por orderId que
+    // pertenezca al proceso. Sin processId, mantenemos el comportamiento global.
+    const recentEventsWhere = processId
+      ? { order: orderWhere }
+      : undefined;
     const recentEvents = await prisma.event.findMany({
+      where: recentEventsWhere,
       orderBy: { createdAt: 'desc' },
       take: 15,
       include: {
@@ -145,6 +198,7 @@ router.get('/summary', async (_req, res, next) => {
 
     res.json({
       generatedAt: new Date().toISOString(),
+      processId,
       orders: { total, byStatus, activeTotal, withB2Pending },
       sequences: { open: seqOpen, closed: seqClosed },
       pickingB2: { totalSkus: b2TotalSkus, pickedSkus: b2PickedSkus },
