@@ -178,12 +178,14 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
   // paralelas concurrentes en order_items por FK locks).
   return retryOnDeadlock(() => prisma.$transaction(
     async (tx) => {
-      // Campos del cliente normalizados: en vez de concatenarlos en
-      // customerAddress, los guardamos por separado para imprimirlos
-      // etiquetados en el albarán. customerAddress queda solo con calle +
-      // número. La comuna (city en WC) y depto (address_2) van en columnas
-      // dedicadas. El teléfono viene del bloque billing, no shipping.
-      const customerName = [data.billing?.first_name, data.billing?.last_name]
+      // Campos del cliente normalizados. Estrategia: priorizar shipping,
+      // caer a billing si shipping está vacío. En Chile muchos pedidos
+      // tienen solo el bloque billing porque el cliente NO marca "enviar
+      // a una dirección distinta", así que el envío llega a la dirección
+      // de facturación. Si solo leemos shipping, el albarán pierde depto,
+      // dirección o comuna.
+      const customerName = [data.shipping?.first_name || data.billing?.first_name,
+                            data.shipping?.last_name  || data.billing?.last_name]
         .filter(Boolean)
         .join(' ') || null;
       const cleanStr = (v, max) => {
@@ -191,10 +193,11 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
         const t = v.trim();
         return t ? t.slice(0, max) : null;
       };
-      const customerAddress = cleanStr(data.shipping?.address_1, 500);
-      const customerAddress2 = cleanStr(data.shipping?.address_2, 255);
-      const customerCity = cleanStr(data.shipping?.city, 120);
-      const customerPhone = cleanStr(data.billing?.phone || data.shipping?.phone, 40);
+      const pick = (sh, bi, max) => cleanStr(sh, max) || cleanStr(bi, max);
+      const customerAddress  = pick(data.shipping?.address_1, data.billing?.address_1, 500);
+      const customerAddress2 = pick(data.shipping?.address_2, data.billing?.address_2, 255);
+      const customerCity     = pick(data.shipping?.city,      data.billing?.city,      120);
+      const customerPhone    = pick(data.billing?.phone,      data.shipping?.phone,    40);
 
       const order = await tx.order.upsert({
         where: { wpOrderId: data.id },
@@ -276,20 +279,23 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
   const vehicle = getMeta(data, '_wdg_vehicle') || null;
   const patente = getMeta(data, '_wdg_patente') || null;
 
-  // Datos del cliente — reutilizamos la misma normalización que syncOrder
-  // para mantener consistencia entre alta inicial y refresh por webhook.
+  // Datos del cliente — misma normalización que syncOrder: shipping
+  // primero, billing como fallback (en Chile muchos pedidos no marcan
+  // "enviar a dirección distinta" y todo queda en billing).
   const cleanStr = (v, max) => {
     if (typeof v !== 'string') return null;
     const t = v.trim();
     return t ? t.slice(0, max) : null;
   };
-  const customerName = [data.billing?.first_name, data.billing?.last_name]
+  const pick = (sh, bi, max) => cleanStr(sh, max) || cleanStr(bi, max);
+  const customerName = [data.shipping?.first_name || data.billing?.first_name,
+                        data.shipping?.last_name  || data.billing?.last_name]
     .filter(Boolean)
     .join(' ') || null;
-  const customerAddress = cleanStr(data.shipping?.address_1, 500);
-  const customerAddress2 = cleanStr(data.shipping?.address_2, 255);
-  const customerCity = cleanStr(data.shipping?.city, 120);
-  const customerPhone = cleanStr(data.billing?.phone || data.shipping?.phone, 40);
+  const customerAddress  = pick(data.shipping?.address_1, data.billing?.address_1, 500);
+  const customerAddress2 = pick(data.shipping?.address_2, data.billing?.address_2, 255);
+  const customerCity     = pick(data.shipping?.city,      data.billing?.city,      120);
+  const customerPhone    = pick(data.billing?.phone,      data.shipping?.phone,    40);
   const customerNote = typeof data.customer_note === 'string' && data.customer_note.trim()
     ? data.customer_note.trim()
     : null;
