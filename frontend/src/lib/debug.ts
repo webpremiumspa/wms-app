@@ -49,7 +49,20 @@ export type DebugOrderResponse = {
   diagnosis: string[];
 };
 
+export type ResyncOrderResponse = {
+  ok: boolean;
+  wpOrderId: number;
+  route: string | null;
+  stopPosition: number | null;
+  shippingMethod: string | null;
+  driverName: string | null;
+};
+
 export const debugApi = {
   order: async (wpOrderId: number): Promise<DebugOrderResponse> =>
     (await api.get(`/orders/debug-order/${wpOrderId}`)).data,
+  // Refresca metadata + datos del cliente del pedido desde WC (mismo helper
+  // que el webhook). NO toca items/status/timestamps WMS.
+  resync: async (wpOrderId: number): Promise<ResyncOrderResponse> =>
+    (await api.post(`/orders/by-wp/${wpOrderId}/resync`)).data,
 };

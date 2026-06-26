@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Search, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { debugApi, type DebugOrderResponse } from '@/lib/debug';
 import { orderStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
@@ -10,6 +10,9 @@ export function Debug() {
   const [result, setResult] = useState<DebugOrderResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Estado del re-sync per-pedido (botón en la tarjeta de Diagnóstico).
+  const [resyncing, setResyncing] = useState(false);
+  const [resyncMsg, setResyncMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
 
   async function lookup(e: React.FormEvent) {
     e.preventDefault();
@@ -20,6 +23,7 @@ export function Debug() {
     }
     setError(null);
     setResult(null);
+    setResyncMsg(null);
     setLoading(true);
     try {
       const r = await debugApi.order(id);
@@ -28,6 +32,24 @@ export function Debug() {
       setError(err.response?.data?.message || err.message || 'Error al consultar');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function runResync() {
+    if (!result) return;
+    setResyncing(true);
+    setResyncMsg(null);
+    try {
+      await debugApi.resync(result.wpOrderId);
+      // Re-fetch del diagnóstico para que los warnings desaparezcan al toque
+      // si el sync efectivamente alineó los datos.
+      const r = await debugApi.order(result.wpOrderId);
+      setResult(r);
+      setResyncMsg({ kind: 'ok', text: 'Pedido sincronizado con WC. Si los warnings siguen, vuelve a Consultar para ver el último estado.' });
+    } catch (err: any) {
+      setResyncMsg({ kind: 'err', text: err.response?.data?.message || err.message || 'No se pudo sincronizar' });
+    } finally {
+      setResyncing(false);
     }
   }
 
@@ -71,7 +93,32 @@ export function Debug() {
         <>
           {/* Diagnóstico interpretado */}
           <div className="card space-y-2 p-4">
-            <h3 className="text-sm font-semibold text-slate-700">Diagnóstico</h3>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold text-slate-700">Diagnóstico</h3>
+              {result.local && (
+                <button
+                  type="button"
+                  onClick={runResync}
+                  disabled={resyncing}
+                  className="flex items-center gap-1.5 rounded-lg bg-brand-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-800 disabled:opacity-60"
+                  title="Refresca ruta, conductor, vehículo y datos del cliente desde WooCommerce. NO toca items ni el estado del pedido."
+                >
+                  <RefreshCw size={13} className={resyncing ? 'animate-spin' : ''} />
+                  {resyncing ? 'Sincronizando…' : 'Sincronizar este pedido con WC'}
+                </button>
+              )}
+            </div>
+            {resyncMsg && (
+              <div
+                className={`rounded-lg px-3 py-2 text-sm ring-1 ${
+                  resyncMsg.kind === 'ok'
+                    ? 'bg-emerald-50 text-emerald-800 ring-emerald-200'
+                    : 'bg-red-50 text-red-700 ring-red-200'
+                }`}
+              >
+                {resyncMsg.text}
+              </div>
+            )}
             {result.diagnosis.map((msg, i) => {
               const isOk = msg.startsWith('Todo coincide');
               return (

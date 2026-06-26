@@ -6,6 +6,7 @@ import { requireCap, WMS_CAPS } from '../middleware/capabilities.js';
 import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { renderAlbaranPdf } from '../services/pdf.js';
+import { updateOrderMetaFromWc } from '../services/orders-sync.js';
 import { wcGetProduct, wcGetOrder, getMeta } from '../services/woocommerce.js';
 import {
   approvePartialDelivery,
@@ -205,6 +206,42 @@ router.get('/by-wp/:wpOrderId/tracking', requireCap(WMS_CAPS.SUPERVISE), async (
         })),
       },
       timeline,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Resincroniza un pedido específico con WC: refresca metadata (ruta, parada,
+// método de envío, conductor, vehículo, patente) y datos del cliente (nombre,
+// dirección, depto, comuna, teléfono, nota). NO toca status, items ni
+// timestamps WMS — eso pertenece al WMS, no a WC.
+//
+// Útil cuando el supervisor ve en Diagnóstico una diferencia entre WC y WMS
+// para un pedido que ya está en estado avanzado (packed, classified, loaded)
+// y el sync masivo lo saltea por ese motivo. Mismo helper que dispara el
+// webhook de WC al editar el pedido — comportamiento idéntico, manual.
+router.post('/by-wp/:wpOrderId/resync', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const wpOrderId = Number(req.params.wpOrderId);
+    if (!wpOrderId) throw new HttpError(400, 'Invalid wpOrderId');
+
+    const existing = await prisma.order.findUnique({
+      where: { wpOrderId },
+      select: { id: true },
+    });
+    if (!existing) {
+      throw new HttpError(404, `Pedido ${wpOrderId} no está sincronizado en el WMS. Usa "Sincronizar pedidos" primero.`);
+    }
+
+    const updated = await updateOrderMetaFromWc(wpOrderId);
+    res.json({
+      ok: true,
+      wpOrderId,
+      route: updated?.route ?? null,
+      stopPosition: updated?.stopPosition ?? null,
+      shippingMethod: updated?.shippingMethod ?? null,
+      driverName: updated?.driverName ?? null,
     });
   } catch (err) {
     next(err);
