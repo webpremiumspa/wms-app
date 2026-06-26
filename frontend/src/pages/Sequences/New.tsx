@@ -57,10 +57,32 @@ export function SequenceNew() {
 
   const orderIds = useMemo(() => [...selected], [selected]);
 
+  // Estados WC que se pueden incluir en el sync. 'en-preparacion' es el
+  // default histórico (pedidos listos para entrar a una secuencia).
+  // Los otros dos son flujos express o pendientes que el supervisor a
+  // veces necesita rescatar al armar la secuencia.
+  const SYNC_STATUSES: Array<{ slug: string; label: string }> = [
+    { slug: 'en-preparacion', label: 'En preparación' },
+    { slug: 'en-ruta-pendiente', label: 'En ruta pendiente' },
+    { slug: 'en-ruta-express', label: 'En ruta express' },
+  ];
+  const [syncStatuses, setSyncStatuses] = useState<Set<string>>(new Set(['en-preparacion']));
+  function toggleSyncStatus(slug: string) {
+    setSyncStatuses((s) => {
+      const next = new Set(s);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
+      return next;
+    });
+  }
+
   const sync = useMutation({
     // forceProductRefresh siempre on: garantiza que el sync detecte cambios
     // de bodega B1/B2 en productos de WC sin depender del cache local.
-    mutationFn: () => syncApi.orders({ forceProductRefresh: true }),
+    mutationFn: () => syncApi.orders({
+      forceProductRefresh: true,
+      statuses: Array.from(syncStatuses),
+    }),
     onSuccess: (result) => {
       setSyncResult(result);
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
@@ -193,16 +215,46 @@ export function SequenceNew() {
           <h3 className="font-semibold text-slate-800">Sincronizar desde WooCommerce</h3>
         </div>
         <p className="text-xs text-slate-500">
-          Trae al WMS todos los pedidos en estado <em>en-preparación</em> desde WooCommerce. Los duplicados se actualizan sin crear copias.
+          Trae al WMS los pedidos en los estados seleccionados. Los duplicados se actualizan sin crear copias.
         </p>
+
+        <div className="flex flex-wrap gap-2">
+          {SYNC_STATUSES.map((s) => {
+            const active = syncStatuses.has(s.slug);
+            return (
+              <label
+                key={s.slug}
+                className={clsx(
+                  'flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-xs',
+                  active
+                    ? 'border-brand-600 bg-brand-50 text-brand-800'
+                    : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50',
+                )}
+              >
+                <input
+                  type="checkbox"
+                  checked={active}
+                  onChange={() => toggleSyncStatus(s.slug)}
+                  className="h-4 w-4 accent-brand-600"
+                />
+                {s.label}
+                <code className="text-[10px] text-slate-400">{s.slug}</code>
+              </label>
+            );
+          })}
+        </div>
 
         <button
           onClick={() => sync.mutate()}
-          disabled={sync.isPending}
+          disabled={sync.isPending || syncStatuses.size === 0}
           className="btn-primary w-full sm:w-auto"
         >
           <RefreshCw size={16} className={sync.isPending ? 'animate-spin' : ''} />
-          {sync.isPending ? 'Sincronizando…' : 'Sincronizar pedidos en preparación'}
+          {sync.isPending
+            ? 'Sincronizando…'
+            : syncStatuses.size === 0
+              ? 'Selecciona al menos un estado'
+              : `Sincronizar (${syncStatuses.size} estado${syncStatuses.size === 1 ? '' : 's'})`}
         </button>
 
         {pendingTotal > 0 && (
