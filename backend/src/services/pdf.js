@@ -122,10 +122,12 @@ async function drawAlbaran(doc, order, opts = {}) {
   const valueColor = '#0f172a';
   const colW = 360; // dejamos espacio para el QR a la derecha
 
-  // Nombre del cliente (siempre se imprime)
+  // Nombre del cliente (siempre se imprime). Después del text(), pdfkit
+  // setea doc.y al final del texto escrito — lo usamos para no solaparnos
+  // si el nombre se rompe en varias líneas.
   doc.font('Helvetica-Bold').fontSize(11).fillColor(valueColor)
     .text(order.customerName || '—', 40, custY, { width: colW });
-  custY += 16;
+  custY = doc.y + 4;
 
   function drawCustomerLine(label, value) {
     if (!value) return;
@@ -133,7 +135,10 @@ async function drawAlbaran(doc, order, opts = {}) {
       .text(`${label}: `, 40, custY, { continued: true, width: colW })
       .font('Helvetica').fontSize(10).fillColor(valueColor)
       .text(String(value), { width: colW });
-    custY += 14;
+    // Usamos doc.y (no un +14 fijo) para respetar saltos de línea cuando
+    // la dirección es larga y wraps en 2-3 líneas. Si no, el campo
+    // siguiente (Comuna / Teléfono) tapa el final de la dirección.
+    custY = doc.y + 2;
   }
 
   // Dirección + depto en la misma línea ("Av. Siempre Viva 742 · Depto 12A")
