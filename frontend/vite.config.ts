@@ -47,12 +47,14 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // El SW nuevo se activa apenas se instala y toma el control de las
-        // pestañas ya abiertas. En mobile-PWA esto importa: el usuario rara
-        // vez cierra todas las pestañas, así que sin esto las actualizaciones
-        // se quedan "pendientes" indefinidamente.
-        skipWaiting: true,
-        clientsClaim: true,
+        // No usamos skipWaiting/clientsClaim aquí porque con registerType:
+        // 'prompt' el plugin necesita encontrar el SW nuevo en estado
+        // 'waiting' para mandarle SKIP_WAITING al tocar "Actualizar". Si
+        // los seteamos, el SW nuevo se activa solo y `updateServiceWorker`
+        // queda sin nada que hacer — el botón parece muerto.
+        // El flujo correcto: SW nuevo instala → se queda en waiting →
+        // banner aparece → tap Actualizar → postMessage SKIP_WAITING →
+        // controllerchange → reload con bundles nuevos.
         cleanupOutdatedCaches: true,
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
