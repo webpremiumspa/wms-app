@@ -27,12 +27,16 @@ export const ORDER_STATUS_LABELS_PLURAL: Record<OrderStatus, string> = {
   blocked: 'Bloqueados',
 };
 
-// Motivos válidos para remover un pedido de la secuencia (auditoría).
+// Motivos válidos para sacar un pedido de la secuencia (auditoría).
+// El orden importa: los primeros son los más usuales en el día a día
+// (cliente no recibe en ruta = caso más frecuente).
 export const REMOVE_REASON_LABELS: Record<string, string> = {
+  cliente_no_recibe: 'Cliente no recibe (reagenda)',
+  direccion_incorrecta: 'Dirección incorrecta / no ubicable',
   sin_stock_b1: 'Sin stock B1',
   sin_stock_b2: 'Sin stock B2',
   producto_danado: 'Producto dañado',
-  cliente_cancelo: 'Cliente canceló',
+  cliente_cancelo: 'Cliente canceló pedido',
   otro: 'Otro motivo',
 };
 

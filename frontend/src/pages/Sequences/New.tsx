@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare } from 'lucide-react';
+import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare, RotateCcw } from 'lucide-react';
 import { sequencesApi } from '@/lib/sequences';
 import { syncApi, type SyncResult } from '@/lib/sync';
 import { processesApi } from '@/lib/processes';
-import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
+import { orderStatusLabel, sequenceStatusLabel, warehouseLabel, REMOVE_REASON_LABELS } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
@@ -361,7 +361,7 @@ export function SequenceNew() {
                   isSel && 'ring-2 ring-brand-600',
                 )}
               >
-                <div className="min-w-0 space-y-1">
+                <div className="min-w-0 flex-1 space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">
                       #<HighlightedNumber text={o.number} match={search} />
@@ -373,6 +373,20 @@ export function SequenceNew() {
                   <div className="truncate text-xs text-slate-500">
                     {new Date(o.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })} · {o.customerName || '—'} · {o.itemCount} items
                   </div>
+                  {o.lastRemoval && (
+                    <div className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-[11px] leading-snug text-amber-900 ring-1 ring-amber-200">
+                      <RotateCcw size={11} className="mt-0.5 shrink-0 text-amber-700" />
+                      <span>
+                        Sacado de secuencia hace <strong>{relativeTime(o.lastRemoval.at)}</strong>
+                        {o.lastRemoval.reasonCode && (
+                          <> · motivo: <strong>{REMOVE_REASON_LABELS[o.lastRemoval.reasonCode] || o.lastRemoval.reasonCode}</strong></>
+                        )}
+                        {o.lastRemoval.reasonText && (
+                          <span className="block italic text-amber-800">"{o.lastRemoval.reasonText}"</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <input type="checkbox" readOnly checked={isSel} className="h-5 w-5" />
               </button>
@@ -431,4 +445,18 @@ export function SequenceNew() {
       </div>
     </div>
   );
+}
+
+// Tiempo relativo en español ("3 min", "2 h", "5 d"). Se usa en el badge de
+// "Sacado de secuencia hace …" para que el supervisor tenga contexto al
+// armar la próxima secuencia sin abrir el log.
+function relativeTime(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diffMs / 60000);
+  if (min < 1) return 'menos de 1 min';
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `${h} h`;
+  const d = Math.floor(h / 24);
+  return `${d} d`;
 }

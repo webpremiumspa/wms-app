@@ -12,6 +12,19 @@ export type OrderStatus =
 
 export type SequenceStatus = 'open' | 'closed';
 
+// Contexto de la última remoción del pedido de una secuencia. Aparece en la
+// vista de pendientes (pedidos que están en `received` pero ya pasaron por
+// el flujo y fueron rescatados) para que el supervisor decida si vuelve a
+// incluirlo en la próxima secuencia.
+export type LastRemovalInfo = {
+  at: string;
+  reasonCode: string | null;
+  reasonText: string | null;
+  previousStatus: string | null;
+  sequenceId: number | null;
+  processId: number | null;
+};
+
 export type PendingOrder = {
   id: number;
   wpOrderId: number;
@@ -22,6 +35,7 @@ export type PendingOrder = {
   hasB2Pending: boolean;
   itemCount: number;
   createdAt: string;
+  lastRemoval?: LastRemovalInfo | null;
 };
 
 export type FlowProgress = { total: number; pending: number };

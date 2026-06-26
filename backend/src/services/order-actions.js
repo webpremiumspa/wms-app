@@ -1,13 +1,22 @@
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
 
-// Estados en los que YA es tarde para sacar un pedido de la secuencia:
-// está clasificado, cargado o entregado — la bolsa ya salió del depósito.
-const TOO_LATE_TO_REMOVE = ['classified', 'loaded', 'delivered'];
+// Único estado en el que NO se puede sacar un pedido de una secuencia:
+// ya está entregado (es un evento final). Antes también bloqueábamos
+// classified/loaded, pero el caso real "cliente no recibe en ruta" exige
+// poder rescatar la bolsa al volver al depósito, así que ese chequeo
+// se hace ahora con confirmación reforzada en la UI, no como bloqueo duro.
+const REMOVE_BLOCKED_STATUSES = ['delivered'];
 
-// Motivos válidos para remover un pedido. Sirven para auditoría (van al log
-// de eventos) y para que el supervisor agrupe casos en el dashboard.
+// Motivos válidos para sacar un pedido de la secuencia. Algunos cierran el
+// caso ("cliente_cancelo": el pedido no vuelve), otros lo reagendan
+// implícitamente ("cliente_no_recibe", "direccion_incorrecta", etc.). En
+// todos los casos el pedido vuelve a la pila de pendientes (status='received')
+// y queda disponible para entrar a una próxima secuencia; el motivo viaja
+// en el evento de auditoría para que el supervisor lo vea como contexto.
 export const REMOVE_REASONS = Object.freeze([
+  'cliente_no_recibe',
+  'direccion_incorrecta',
   'sin_stock_b1',
   'sin_stock_b2',
   'producto_danado',
@@ -15,12 +24,17 @@ export const REMOVE_REASONS = Object.freeze([
   'otro',
 ]);
 
-// Saca un pedido de su secuencia: revierte items, marca como `blocked`, log
-// con motivo. Decrementa expectedBags para que el cierre B1 cuadre.
+// Saca un pedido de su secuencia: revierte items, lo devuelve a status
+// 'received' (lista para próxima secuencia) y deja un evento de auditoría
+// con el motivo. Decrementa expectedBags de la secuencia parent para que
+// el cierre B1 cuadre.
 //
-// El pedido queda en estado `blocked` (no `received`) para distinguirlo de
-// los pedidos "limpios" pendientes — el supervisor decide cuándo
-// reactivarlo (cuando llegue stock, etc.).
+// Antes el pedido quedaba en `blocked` esperando reactivación manual,
+// pero nunca hubo botón "Reactivar" en la UI, así que en la práctica era
+// un viaje de ida. Ahora vuelve directo a `received` con un contexto
+// audit-trail. Si hay que excluirlo de la próxima secuencia, el supervisor
+// lo ve por el badge "Removido del proceso X · motivo Y" en la lista de
+// pendientes y simplemente no lo marca.
 export async function removeOrderFromSequence({
   sequenceId,
   orderId,
@@ -34,15 +48,17 @@ export async function removeOrderFromSequence({
 
   const link = await prisma.sequenceOrder.findUnique({
     where: { sequenceId_orderId: { sequenceId, orderId } },
-    include: { order: true, sequence: true },
+    include: { order: true, sequence: { select: { id: true, processId: true } } },
   });
   if (!link) throw new HttpError(404, 'Order is not in this sequence');
 
-  if (TOO_LATE_TO_REMOVE.includes(link.order.status)) {
-    throw new HttpError(409, 'Order is already classified or loaded — cannot remove from sequence', {
+  if (REMOVE_BLOCKED_STATUSES.includes(link.order.status)) {
+    throw new HttpError(409, 'Pedido ya entregado — no se puede sacar de la secuencia.', {
       currentStatus: link.order.status,
     });
   }
+
+  const previousStatus = link.order.status;
 
   await prisma.$transaction([
     prisma.orderItem.updateMany({
@@ -52,7 +68,7 @@ export async function removeOrderFromSequence({
     prisma.order.update({
       where: { id: orderId },
       data: {
-        status: 'blocked',
+        status: 'received',
         packedAt: null,
         packedById: null,
         pickedById: null,
@@ -61,6 +77,7 @@ export async function removeOrderFromSequence({
         b2ClosedById: null,
         classifiedAt: null,
         loadedAt: null,
+        bagsExpected: 1,
         allowPartialDelivery: false,
         partialDeliveryNote: null,
       },
@@ -77,7 +94,13 @@ export async function removeOrderFromSequence({
         type: 'sequence.order_removed',
         actorId,
         orderId,
-        payload: { sequenceId, reasonCode, reasonText: reasonText || null },
+        payload: {
+          sequenceId,
+          processId: link.sequence.processId ?? null,
+          reasonCode,
+          reasonText: reasonText || null,
+          previousStatus,
+        },
       },
     }),
   ]);

@@ -147,7 +147,7 @@ export function SequenceDetail() {
   const { user } = useAuth();
   const canManage = hasCap(user, CAPS.PACK_B1) || hasCap(user, CAPS.SUPERVISE);
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const [removeTarget, setRemoveTarget] = useState<{ id: number; number: string } | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<{ id: number; number: string; status: string } | null>(null);
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
   const [search, setSearch] = useState('');
@@ -169,15 +169,19 @@ export function SequenceDetail() {
   const removeOrder = useMutation({
     mutationFn: ({ orderId, reasonCode, reasonText }: { orderId: number; reasonCode: string; reasonText: string }) =>
       sequencesApi.removeOrder(seqId, orderId, reasonCode, reasonText),
-    onSuccess: () => {
+    onSuccess: (_data, vars) => {
       queryClient.invalidateQueries({ queryKey: ['sequence', seqId] });
       queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
+      queryClient.invalidateQueries({ queryKey: ['process'] });
+      queryClient.invalidateQueries({ queryKey: ['picking-b2-today'] });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['order', vars.orderId] });
       setRemoveTarget(null);
       setRemoveError(null);
     },
     onError: (err: any) => {
-      setRemoveError(err.response?.data?.message || 'No se pudo remover el pedido');
+      setRemoveError(err.response?.data?.message || 'No se pudo sacar el pedido de la secuencia');
     },
   });
 
@@ -324,7 +328,10 @@ export function SequenceDetail() {
           .filter((order) => matchesOrderId(order.number, search))
           .map((order) => {
           const isOpen = expanded.has(order.id);
-          const tooLateToRemove = ['classified', 'loaded', 'delivered'].includes(order.status);
+          // Solo bloqueamos sacar si ya fue entregado. Para classified/loaded
+          // mostramos el botón con un aviso reforzado en el modal: la bolsa
+          // tiene que volver físicamente a la bodega.
+          const tooLateToRemove = order.status === 'delivered';
           return (
             <div key={order.id} className="card overflow-hidden">
               <button
@@ -369,16 +376,13 @@ export function SequenceDetail() {
                         <button
                           type="button"
                           onClick={() => {
-                            const msg = `¿Confirmas remover el pedido #${order.number} de la secuencia? Pasará a estado Bloqueado y se perderá el progreso de picking/packing. En el siguiente paso te pediremos el motivo.`;
-                            if (window.confirm(msg)) {
-                              setRemoveError(null);
-                              setRemoveTarget({ id: order.id, number: order.number });
-                            }
+                            setRemoveError(null);
+                            setRemoveTarget({ id: order.id, number: order.number, status: order.status });
                           }}
                           className="flex items-center gap-2 text-sm font-medium text-red-700 hover:underline"
                         >
                           <UserX size={14} />
-                          Remover de la secuencia
+                          Sacar de la secuencia (vuelve a pendientes)
                         </button>
                       </div>
                     )}
@@ -393,6 +397,7 @@ export function SequenceDetail() {
       <RemoveOrderModal
         open={removeTarget !== null}
         orderNumber={removeTarget?.number || ''}
+        currentStatus={removeTarget?.status}
         onClose={() => { setRemoveTarget(null); setRemoveError(null); }}
         onConfirm={(reasonCode, reasonText) => {
           if (removeTarget) removeOrder.mutate({ orderId: removeTarget.id, reasonCode, reasonText });

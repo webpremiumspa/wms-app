@@ -163,10 +163,16 @@ export function PackingOrder() {
       sequencesApi.removeOrder(seqId, ordId, reasonCode, reasonText),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
+      queryClient.invalidateQueries({ queryKey: ['sequence', seqId] });
       queryClient.invalidateQueries({ queryKey: ['sequences'] });
+      queryClient.invalidateQueries({ queryKey: ['process'] });
+      queryClient.invalidateQueries({ queryKey: ['picking-b2-today'] });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['order', ordId] });
+      setRemoveOpen(false);
       navigate(`/sequences/${seqId}/packing`);
     },
-    onError: (err: any) => setRemoveError(err.response?.data?.message || 'No se pudo remover el pedido'),
+    onError: (err: any) => setRemoveError(err.response?.data?.message || 'No se pudo sacar el pedido de la secuencia'),
   });
 
   const approvePartial = useMutation({
@@ -521,28 +527,53 @@ export function PackingOrder() {
         </div>
       )}
 
-      {isPacked && canManage && (order.status === 'packed' || order.status === 'classified') && (
-        <div className="card space-y-2 border-dashed bg-amber-50 p-3 ring-1 ring-amber-200">
+      {isPacked && canManage && order.status !== 'delivered' && (
+        <div className="card space-y-3 border-dashed bg-amber-50 p-3 ring-1 ring-amber-200">
           <div className="text-xs font-semibold uppercase tracking-wide text-amber-800">
             Acciones del operador
           </div>
-          {unpackError && (
-            <div className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700 ring-1 ring-red-200">
-              {unpackError}
+
+          {/* Sacar de secuencia: vuelve a pendientes — caso típico es
+              "cliente no recibe en ruta". Permitido también para
+              classified / loaded con confirmación reforzada en el modal. */}
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => { setRemoveError(null); setRemoveOpen(true); }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-red-700 ring-1 ring-red-300 hover:bg-red-50"
+            >
+              <UserX size={14} />
+              Sacar de la secuencia (vuelve a pendientes)
+            </button>
+            <div className="text-[10px] text-amber-700">
+              El pedido vuelve a la pila para entrar a una próxima secuencia. Se borra el registro de empaque y los items quedan sin marcar. La bolsa física tiene que volver a bodega.
+            </div>
+          </div>
+
+          {/* Desempacar (solo packed/classified): revierte el estado dejándolo
+              EN la misma secuencia para re-empaque. Útil para errores de
+              cierre, NO para devoluciones de ruta. */}
+          {(order.status === 'packed' || order.status === 'classified') && (
+            <div className="space-y-1 border-t border-amber-200 pt-2">
+              {unpackError && (
+                <div className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700 ring-1 ring-red-200">
+                  {unpackError}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => { setUnpackError(null); setConfirmUnpack(true); }}
+                disabled={unpack.isPending}
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-60"
+              >
+                <RotateCcw size={14} />
+                Desempacar (sigue en la misma secuencia)
+              </button>
+              <div className="text-[10px] text-amber-700">
+                Borra el registro de quién/cuándo lo empacó y los items vuelven a estado sin marcar. Útil cuando se cerró por error o durante pruebas. La nota del cliente y el {warehouseLabel('B2')} cerrado no se tocan.
+              </div>
             </div>
           )}
-          <button
-            type="button"
-            onClick={() => { setUnpackError(null); setConfirmUnpack(true); }}
-            disabled={unpack.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-amber-800 ring-1 ring-amber-300 hover:bg-amber-100 disabled:opacity-60"
-          >
-            <RotateCcw size={14} />
-            Desempacar (revertir a "En secuencia")
-          </button>
-          <div className="text-[10px] text-amber-700">
-            Borra el registro de quién/cuándo lo empacó y los items vuelven a estado sin marcar. Útil cuando se cerró por error o durante pruebas. La nota del cliente y el {warehouseLabel('B2')} cerrado no se tocan.
-          </div>
         </div>
       )}
 
@@ -625,16 +656,13 @@ export function PackingOrder() {
           <button
             type="button"
             onClick={() => {
-              const msg = `¿Confirmas remover el pedido #${order.number} de la secuencia? Pasará a estado Bloqueado y se perderá el progreso de picking/packing. En el siguiente paso te pediremos el motivo.`;
-              if (window.confirm(msg)) {
-                setRemoveError(null);
-                setRemoveOpen(true);
-              }
+              setRemoveError(null);
+              setRemoveOpen(true);
             }}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700 ring-1 ring-red-200 hover:bg-red-100"
           >
             <UserX size={14} />
-            Remover de la secuencia (sin stock / dañado / cancelado)
+            Sacar de la secuencia (vuelve a pendientes)
           </button>
 
           {order.hasB2Pending && !order.allowPartialDelivery && (
@@ -691,6 +719,7 @@ export function PackingOrder() {
       <RemoveOrderModal
         open={removeOpen}
         orderNumber={order.number}
+        currentStatus={order.status}
         onClose={() => { setRemoveOpen(false); setRemoveError(null); }}
         onConfirm={(reasonCode, reasonText) => removeOrder.mutate({ reasonCode, reasonText })}
         isPending={removeOrder.isPending}

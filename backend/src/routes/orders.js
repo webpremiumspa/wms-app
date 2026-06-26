@@ -48,21 +48,56 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
         include: { items: { select: { id: true } } },
       }),
     ]);
+
+    // Para cada pedido pendiente, su última remoción (si la tuvo). Sirve para
+    // que el supervisor vea contexto al armar la próxima secuencia: si un
+    // pedido fue removido hace 2h por "sin stock B2", probablemente NO lo
+    // quiera incluir ahora. Una sola query trae todos los eventos de tipo
+    // 'sequence.order_removed' de estos pedidos y agrupamos en JS.
+    const orderIds = orders.map((o) => o.id);
+    const removalEvents = orderIds.length > 0
+      ? await prisma.event.findMany({
+          where: { type: 'sequence.order_removed', orderId: { in: orderIds } },
+          orderBy: { createdAt: 'desc' },
+          select: { orderId: true, createdAt: true, payload: true },
+        })
+      : [];
+    // Nos quedamos con la más reciente por pedido (el findMany ya viene desc).
+    const lastRemovalByOrder = new Map();
+    for (const ev of removalEvents) {
+      if (!lastRemovalByOrder.has(ev.orderId)) {
+        lastRemovalByOrder.set(ev.orderId, ev);
+      }
+    }
+
     res.json({
       total,
       limit,
       truncated: total > orders.length,
-      orders: orders.map((o) => ({
-        id: o.id,
-        wpOrderId: o.wpOrderId,
-        number: o.number,
-        customerName: o.customerName,
-        shippingMethod: o.shippingMethod,
-        route: o.route,
-        hasB2Pending: o.hasB2Pending,
-        itemCount: o.items.length,
-        createdAt: o.createdAt,
-      })),
+      orders: orders.map((o) => {
+        const lastRem = lastRemovalByOrder.get(o.id);
+        return {
+          id: o.id,
+          wpOrderId: o.wpOrderId,
+          number: o.number,
+          customerName: o.customerName,
+          shippingMethod: o.shippingMethod,
+          route: o.route,
+          hasB2Pending: o.hasB2Pending,
+          itemCount: o.items.length,
+          createdAt: o.createdAt,
+          lastRemoval: lastRem
+            ? {
+                at: lastRem.createdAt,
+                reasonCode: lastRem.payload?.reasonCode ?? null,
+                reasonText: lastRem.payload?.reasonText ?? null,
+                previousStatus: lastRem.payload?.previousStatus ?? null,
+                sequenceId: lastRem.payload?.sequenceId ?? null,
+                processId: lastRem.payload?.processId ?? null,
+              }
+            : null,
+        };
+      }),
     });
   } catch (err) {
     next(err);
