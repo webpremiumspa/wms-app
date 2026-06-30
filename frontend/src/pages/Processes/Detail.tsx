@@ -352,6 +352,11 @@ function KanbanView({ orders }: { orders: ProcessOrderCard[] }) {
 
 // Card individual del kanban. Aparte para tener los pills B1/B2 en un solo
 // lugar y reusarlos si se agregan al lookup u otros listados.
+//
+// La card entera es clickeable: lleva al detalle de la secuencia con
+// ?focus=<orderId> — la tarjeta del pedido se expande, scrollea a la vista
+// y se resalta 3s. Mismo patrón que la búsqueda global y la búsqueda dentro
+// del proceso, así el supervisor identifica al toque dónde aterrizó.
 function KanbanCard({ order: o }: { order: ProcessOrderCard }) {
   // Estado de cada bodega:
   //   B1: cerrado cuando packedAt está seteado (status >= packed)
@@ -362,7 +367,10 @@ function KanbanCard({ order: o }: { order: ProcessOrderCard }) {
   const b2Done = !!o.b2ClosedAt;
   const showB2 = o.hasB2Pending;
   return (
-    <div className="rounded-lg bg-white p-2 text-xs ring-1 ring-slate-200">
+    <Link
+      to={`/sequences/${o.sequenceId}?focus=${o.id}`}
+      className="block rounded-lg bg-white p-2 text-xs ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-brand-300 hover:shadow-sm"
+    >
       <div className="flex flex-wrap items-center gap-1">
         <span className="font-semibold">#{o.number}</span>
         {o.route && <Badge variant="blue">{o.route}</Badge>}
@@ -378,7 +386,7 @@ function KanbanCard({ order: o }: { order: ProcessOrderCard }) {
       {o.shippingMethod && (
         <div className="mt-1"><ShippingBadge method={o.shippingMethod} /></div>
       )}
-    </div>
+    </Link>
   );
 }
 
