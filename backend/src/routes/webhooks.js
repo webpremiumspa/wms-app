@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import { config } from '../config.js';
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
-import { syncOrder, updateOrderMetaFromWc } from '../services/orders-sync.js';
+import { syncOrder, syncProduct, updateOrderMetaFromWc } from '../services/orders-sync.js';
 
 const router = Router();
 
@@ -71,6 +71,57 @@ router.post('/wc/order', async (req, res, next) => {
     }
 
     res.json({ ok: true, ignored: true, status });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Webhook de producto: WC dispara product.updated (y product.created) cuando
+// se edita un producto en el admin. Lo escuchamos para que cambios en la meta
+// `_wms_bodega` (B1/B2), el nombre, sku o imagen se reflejen en el WMS sin
+// esperar al próximo sync masivo. Sin este webhook, el WMS quedaba con la
+// bodega vieja cacheada en ProductMeta y los pedidos nuevos heredaban el
+// valor obsoleto.
+//
+// Configuración WC: WooCommerce → Ajustes → Avanzado → Webhooks → Añadir
+//   - Tema: "Producto actualizado" (y opcional: "Producto creado")
+//   - URL: https://wms.chimuelo.cl/api/hooks/wc/product
+//   - Versión API: WC API v3
+//   - Secret: mismo que el de pedido (config.wc.webhookSecret)
+router.post('/wc/product', async (req, res, next) => {
+  try {
+    // Ping de WC al crear el webhook: form-urlencoded sin firma. Devolvemos
+    // 2xx para que WC marque el webhook como activo.
+    const ctype = (req.header('content-type') || '').toLowerCase();
+    if (!ctype.includes('application/json')) {
+      return res.json({ ok: true, ping: true });
+    }
+
+    const raw = req.body;
+    if (!Buffer.isBuffer(raw) || raw.length === 0) {
+      return res.json({ ok: true, ping: true });
+    }
+
+    const sig = req.header('x-wc-webhook-signature');
+    if (!verifyWcSignature(raw, sig)) throw new HttpError(401, 'Bad webhook signature');
+
+    let payload;
+    try {
+      payload = JSON.parse(raw.toString('utf8'));
+    } catch {
+      throw new HttpError(400, 'Invalid JSON payload');
+    }
+
+    const wpProductId = payload.id;
+    if (!Number.isInteger(wpProductId) || wpProductId <= 0) {
+      return res.json({ ok: true, ignored: true, reason: 'invalid id' });
+    }
+
+    // syncProduct hace upsert con la meta de bodega normalizada desde el
+    // payload — no hace una llamada adicional a WC porque ya tenemos el
+    // producto completo en `payload`.
+    const product = await syncProduct(wpProductId, payload);
+    res.json({ ok: true, wpProductId, warehouse: product.warehouse });
   } catch (err) {
     next(err);
   }

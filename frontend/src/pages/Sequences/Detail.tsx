@@ -11,7 +11,6 @@ import { ShippingBadge } from '@/components/ShippingBadge';
 import { WcStatusBadge } from '@/components/WcStatusBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
-import { RefreshFromWcButton } from '@/components/RefreshFromWcButton';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
@@ -61,20 +60,13 @@ function OrderItems({ orderId }: { orderId: number }) {
 
   return (
     <div className="space-y-2 bg-slate-50 px-4 py-3">
-      <div className="flex items-start justify-between gap-3">
-        <CustomerBlock
-          name={data.customerName}
-          address={data.customerAddress}
-          address2={data.customerAddress2}
-          city={data.customerCity}
-          phone={data.customerPhone}
-        />
-        <RefreshFromWcButton
-          wpOrderId={data.wpOrderId}
-          orderIdLocal={data.id}
-          size="sm"
-        />
-      </div>
+      <CustomerBlock
+        name={data.customerName}
+        address={data.customerAddress}
+        address2={data.customerAddress2}
+        city={data.customerCity}
+        phone={data.customerPhone}
+      />
       <CustomerNote note={data.customerNote} />
       {savedBags > 1 && (
         <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-800 ring-1 ring-blue-200">
