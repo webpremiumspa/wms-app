@@ -82,6 +82,11 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD,
                     customerName: true,
                     shippingMethod: true,
                     hasB2Pending: true,
+                    // packedAt + b2ClosedAt: necesarios para que el kanban
+                    // detecte "Parcial" (un lado cerrado, el otro no) y
+                    // pinte los pills B1/B2 en cada card.
+                    packedAt: true,
+                    b2ClosedAt: true,
                   },
                 },
               },

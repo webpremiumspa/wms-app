@@ -36,6 +36,11 @@ export type ProcessOrderCard = {
   customerName: string | null;
   shippingMethod: string | null;
   hasB2Pending: boolean;
+  // Timestamps por bodega: el kanban los usa para detectar "Parcial"
+  // (un flujo cerrado y el otro no) y para pintar los pills B1/B2 en
+  // cada card. Null = ese lado todavía no está cerrado.
+  packedAt: string | null;
+  b2ClosedAt: string | null;
   sequenceId: number;
 };
 

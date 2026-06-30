@@ -66,7 +66,10 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
 
 // Clasificación: separación física por ruta de los pedidos empacados. El
 // operador escanea el QR y confirma. Transición packed → classified. Requiere
-// ruta asignada y B2 completo (o entrega parcial aprobada).
+// solo que el B1 esté empacado y haya ruta asignada — el flujo B2 es
+// independiente y NO bloquea clasificar (antes sí lo hacía, pero la operación
+// necesita poder clasificar un pedido con B1 listo aunque B2 todavía esté en
+// preparación). El bloqueo de B2 incompleto se mantiene en /loaded.
 router.post('/:orderId/classify', requireCap(WMS_CAPS.LOAD), async (req, res, next) => {
   try {
     const id = Number(req.params.orderId);
@@ -79,14 +82,6 @@ router.post('/:orderId/classify', requireCap(WMS_CAPS.LOAD), async (req, res, ne
       throw new HttpError(409, `Cannot classify order in status "${order.status}". Must be packed first.`);
     }
     if (!order.route) throw new HttpError(409, 'Order has no route assigned yet');
-
-    const loadability = await getOrderLoadability(id);
-    if (!loadability.loadable) {
-      throw new HttpError(409, 'Order has B2 items missing and partial delivery is not approved', {
-        missingB2Items: loadability.missingB2Items,
-        blockReason: loadability.reason,
-      });
-    }
 
     await prisma.$transaction([
       prisma.order.update({
