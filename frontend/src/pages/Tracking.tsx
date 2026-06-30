@@ -13,10 +13,11 @@ import {
 } from 'lucide-react';
 import { trackingApi, type TrackingEvent, type TrackingOrder } from '@/lib/tracking';
 import { ordersApi } from '@/lib/sequences';
-import { eventLabel, orderStatusLabel, warehouseLabel } from '@/lib/labels';
+import { eventLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { OrderStatusBadge } from '@/components/OrderStatusBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
 import { useAuth } from '@/hooks/useAuth';
@@ -92,7 +93,7 @@ function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: T
       <div className="card space-y-2 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-lg font-bold">#{order.number}</span>
-          <Badge variant="blue">{orderStatusLabel(order.status)}</Badge>
+          <OrderStatusBadge status={order.status} />
           {order.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
           {bagsCount > 1 && (
             <Badge variant="blue">

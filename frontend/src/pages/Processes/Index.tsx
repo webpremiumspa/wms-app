@@ -1,14 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Truck, ClipboardList, List as ListIcon, CalendarDays } from 'lucide-react';
+import { Plus, Truck, ClipboardList, List as ListIcon, CalendarDays, Search } from 'lucide-react';
 import clsx from 'clsx';
 import { processesApi, type DeliveryProcess } from '@/lib/processes';
+import { ordersApi, type OrderSearchMatch } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
+import { OrderStatusBadge } from '@/components/OrderStatusBadge';
+import { HighlightedNumber } from '@/components/OrderSearchBox';
 import { ProcessCalendar } from '@/components/ProcessCalendar';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
+import { warehouseLabel } from '@/lib/labels';
 
 type ViewMode = 'list' | 'calendar';
 
@@ -24,6 +28,21 @@ export function ProcessesIndex() {
   const canCreate = hasCap(user, CAPS.PACK_B1);
   const [view, setView] = useState<ViewMode>('list');
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+
+  // Buscador global de pedidos: el supervisor lo usa para ubicar un pedido
+  // sin saber a qué proceso pertenece. Atraviesa procesos abiertos y cerrados
+  // del historial. Debounce 250ms para no spammear el backend con cada tecla.
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(searchInput.trim()), 250);
+    return () => clearTimeout(t);
+  }, [searchInput]);
+  const { data: searchData, isLoading: searching } = useQuery({
+    queryKey: ['orders-search', debouncedQuery],
+    queryFn: () => ordersApi.search(debouncedQuery, 20),
+    enabled: debouncedQuery.length >= 1,
+  });
 
   // En calendario pedimos un lote más grande para cubrir varios meses.
   const limit = view === 'calendar' ? 500 : 50;
@@ -85,6 +104,29 @@ export function ProcessesIndex() {
           )}
         </div>
       </div>
+
+      {/* Buscador global de pedidos. Atraviesa procesos abiertos y cerrados:
+          el supervisor escribe el número y lo lleva directo a la secuencia
+          (resaltada con ?focus=) sin tener que abrir proceso por proceso. */}
+      <div className="card flex items-center gap-2 p-3">
+        <Search size={18} className="text-slate-400 shrink-0" />
+        <input
+          type="search"
+          inputMode="numeric"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Buscar pedido por ID en cualquier proceso (incluye historial)…"
+          className="flex-1 border-0 bg-transparent text-sm focus:outline-none"
+        />
+      </div>
+
+      {debouncedQuery.length >= 1 && (
+        <OrderSearchResults
+          query={debouncedQuery}
+          matches={searchData?.matches ?? []}
+          loading={searching}
+        />
+      )}
 
       {(openProcesses?.length ?? 0) > 0 ? (
         <div className="grid gap-2 md:grid-cols-2">
@@ -154,6 +196,80 @@ export function ProcessesIndex() {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function OrderSearchResults({
+  query,
+  matches,
+  loading,
+}: {
+  query: string;
+  matches: OrderSearchMatch[];
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="card p-3 text-center text-xs text-slate-500">
+        Buscando "{query}"…
+      </div>
+    );
+  }
+  if (matches.length === 0) {
+    return (
+      <div className="card p-3 text-center text-xs text-slate-500">
+        Sin pedidos que coincidan con <strong>"{query}"</strong> (busca en todos los procesos, incluido historial).
+      </div>
+    );
+  }
+  return (
+    <div className="card space-y-1.5 p-2">
+      <div className="px-1 pb-1 text-[11px] uppercase tracking-wide text-slate-500">
+        {matches.length} coincidencia{matches.length === 1 ? '' : 's'} para "{query}"
+      </div>
+      {matches.map((m) => {
+        // Si el pedido vive en una secuencia, vamos a esa con ?focus=. Si no
+        // (status='received', sin secuencia), vamos al detalle del pedido en
+        // /tracking — que es la única vista que toma wpOrderId sin requerir
+        // contexto de proceso.
+        const target = m.sequenceId
+          ? `/sequences/${m.sequenceId}?focus=${m.id}`
+          : `/tracking?wpOrderId=${m.wpOrderId}`;
+        return (
+          <Link
+            key={m.id}
+            to={target}
+            className="flex items-start justify-between gap-2 rounded-lg px-2 py-2 text-sm hover:bg-slate-50"
+          >
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="font-semibold">
+                  #<HighlightedNumber text={m.number} match={query} />
+                </span>
+                {m.route && <Badge variant="blue">{m.route}</Badge>}
+                {m.stopPosition != null && <Badge variant="gray">P{m.stopPosition}</Badge>}
+                {m.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
+                <OrderStatusBadge status={m.status} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                {m.customerName && <span className="truncate">{m.customerName}</span>}
+                {m.processName ? (
+                  <span>
+                    Proceso <strong className="text-slate-700">{m.processName}</strong>
+                    {m.processStatus === 'closed' && ' (cerrado)'}
+                    {m.sequenceId && (
+                      <> · Sec <strong className="text-slate-700">#{m.sequenceId}</strong></>
+                    )}
+                  </span>
+                ) : (
+                  <span className="italic">sin proceso (pedido pendiente)</span>
+                )}
+              </div>
+            </div>
+          </Link>
+        );
+      })}
     </div>
   );
 }

@@ -82,8 +82,35 @@ export type OrderLoadability = {
   reason?: string;
 };
 
+// Resultado de búsqueda global de pedidos (substring match sobre `number`).
+// Aparece cuando el supervisor busca un pedido desde el índice de Procesos:
+// devuelve el proceso/secuencia donde vive el pedido (o null si todavía no
+// entró a ninguno).
+export type OrderSearchMatch = {
+  id: number;
+  wpOrderId: number;
+  number: string;
+  status: import('./types').OrderStatus;
+  customerName: string | null;
+  route: string | null;
+  stopPosition: number | null;
+  hasB2Pending: boolean;
+  createdAt: string;
+  sequenceId: number | null;
+  sequenceStatus: 'open' | 'closed' | null;
+  processId: number | null;
+  processName: string | null;
+  processStatus: 'open' | 'closed' | null;
+};
+
 export const ordersApi = {
   get: async (id: number): Promise<OrderDetail> => (await api.get(`/orders/${id}`)).data.order,
+
+  // Búsqueda global por substring del number. Atraviesa procesos abiertos y
+  // cerrados — el supervisor lo usa para ubicar un pedido sin saber a qué
+  // proceso pertenece.
+  search: async (query: string, limit = 20): Promise<{ matches: OrderSearchMatch[]; total: number; query: string }> =>
+    (await api.get('/orders/search', { params: { q: query, limit } })).data,
   getByWpId: async (wpOrderId: number): Promise<OrderDetail> =>
     (await api.get(`/orders/by-wp/${wpOrderId}`)).data.order,
 

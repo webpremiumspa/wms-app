@@ -4,11 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Package, Printer, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
 import { sequencesApi, ordersApi } from '@/lib/sequences';
-import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
+import { sequenceStatusLabel, warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { WcStatusBadge } from '@/components/WcStatusBadge';
+import { OrderStatusBadge } from '@/components/OrderStatusBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
@@ -397,17 +398,7 @@ export function SequenceDetail() {
                     </span>
                     {order.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={order.shippingMethod} />
-                    <Badge
-                      variant={
-                        order.status === 'received' || order.status === 'sequenced'
-                          ? 'gray'
-                          : order.status === 'picked'
-                          ? 'blue'
-                          : 'green'
-                      }
-                    >
-                      {orderStatusLabel(order.status)}
-                    </Badge>
+                    <OrderStatusBadge status={order.status} />
                     <WcStatusBadge slug={order.wcStatus} />
                   </div>
                   <div className="truncate text-xs text-slate-500">

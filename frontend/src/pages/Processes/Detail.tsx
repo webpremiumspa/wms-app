@@ -9,6 +9,7 @@ import { processesApi, type ProcessOrderCard } from '@/lib/processes';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { OrderStatusBadge } from '@/components/OrderStatusBadge';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 import { useAuth } from '@/hooks/useAuth';
@@ -307,7 +308,7 @@ function OrderLookupResults({ query, matches }: { query: string; matches: Proces
             {o.route && <Badge variant="gray">{o.route}</Badge>}
             {o.stopPosition != null && <Badge variant="gray">P{o.stopPosition}</Badge>}
             {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
-            <Badge variant="gray">{orderStatusLabel(o.status)}</Badge>
+            <OrderStatusBadge status={o.status} />
           </div>
           <span className="shrink-0 truncate text-xs text-slate-500">
             {o.customerName || '—'}

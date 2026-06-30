@@ -18,11 +18,11 @@ import {
 } from 'lucide-react';
 import { ordersApi } from '@/lib/sequences';
 import { dispatchApi } from '@/lib/dispatch';
-import { orderStatusLabel, warehouseLabel } from '@/lib/labels';
+import { warehouseLabel } from '@/lib/labels';
 import { Spinner } from '@/components/Spinner';
 import { B2Alert } from '@/components/B2Alert';
-import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { OrderStatusBadge } from '@/components/OrderStatusBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
 import { QRScanner } from '@/components/QRScanner';
@@ -189,7 +189,7 @@ export function Scan() {
         <div className="card space-y-2 p-4">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xl font-bold">#{order.number}</span>
-            <Badge variant={isAlreadyLoaded ? 'green' : 'gray'}>{orderStatusLabel(order.status)}</Badge>
+            <OrderStatusBadge status={order.status} />
             <ShippingBadge method={order.shippingMethod} />
           </div>
           <CustomerBlock

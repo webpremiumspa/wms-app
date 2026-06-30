@@ -35,6 +35,69 @@ router.delete('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), asyn
   }
 });
 
+// Búsqueda global de pedidos por number (substring match). Incluye TODOS los
+// procesos abiertos y cerrados — el supervisor usa esto desde el índice de
+// Procesos para encontrar un pedido sin saber a qué proceso pertenece.
+// Devuelve hasta `limit` matches con el proceso y secuencia a los que
+// pertenece cada pedido. Los pedidos sin secuencia/proceso (status='received')
+// igual aparecen con processId/sequenceId=null.
+router.get('/search', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const q = String(req.query.q || '').trim();
+    if (q.length < 1) {
+      return res.json({ matches: [] });
+    }
+    const limit = Math.min(Number(req.query.limit) || 20, 50);
+
+    const orders = await prisma.order.findMany({
+      where: { number: { contains: q } },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        sequenceLinks: {
+          include: {
+            sequence: {
+              select: {
+                id: true,
+                status: true,
+                processId: true,
+                process: { select: { id: true, name: true, status: true } },
+              },
+            },
+          },
+          take: 1, // un pedido vive en una sola secuencia a la vez
+        },
+      },
+    });
+
+    const matches = orders.map((o) => {
+      const link = o.sequenceLinks[0];
+      const seq = link?.sequence;
+      const proc = seq?.process;
+      return {
+        id: o.id,
+        wpOrderId: o.wpOrderId,
+        number: o.number,
+        status: o.status,
+        customerName: o.customerName,
+        route: o.route,
+        stopPosition: o.stopPosition,
+        hasB2Pending: o.hasB2Pending,
+        createdAt: o.createdAt,
+        sequenceId: seq?.id ?? null,
+        sequenceStatus: seq?.status ?? null,
+        processId: proc?.id ?? null,
+        processName: proc?.name ?? null,
+        processStatus: proc?.status ?? null,
+      };
+    });
+
+    res.json({ matches, total: matches.length, query: q });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     // Default alto: el operador del WMS necesita ver TODOS los pendientes del
