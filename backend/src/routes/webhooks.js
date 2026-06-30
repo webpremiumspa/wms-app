@@ -1,9 +1,28 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
 import { config } from '../config.js';
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
 import { syncOrder, syncProduct, updateOrderMetaFromWc } from '../services/orders-sync.js';
+
+// Log temporal de webhooks para diagnosticar por qué los cambios en WC no
+// se reflejan en el WMS. Cada entrega deja una línea en ~/wms-webhook.log con:
+//   - timestamp
+//   - topic + wpId
+//   - shipping.address_1 / billing.address_1 / shipping.city / billing.city
+//     que recibió en el payload
+//   - lo que quedó guardado en BD después del update (customerAddress + city)
+// Quitar este bloque una vez que esté diagnosticado.
+const WEBHOOK_LOG = `${os.homedir()}/wms-webhook.log`;
+function wlog(msg) {
+  try {
+    fs.appendFileSync(WEBHOOK_LOG, `${new Date().toISOString()} ${msg}\n`);
+  } catch {
+    /* nunca rompemos el webhook por un fallo de log */
+  }
+}
 
 const router = Router();
 
@@ -60,8 +79,18 @@ router.post('/wc/order', async (req, res, next) => {
       select: { id: true, status: true },
     });
 
+    // [DEBUG TEMPORAL] qué llegó del payload (solo los campos relevantes
+    // para entender por qué no actualiza customerAddress).
+    wlog(`order.updated wpId=${wpId} status=${status} existing=${existing ? existing.id : 'NO'} ship_a1="${payload.shipping?.address_1 ?? ''}" bill_a1="${payload.billing?.address_1 ?? ''}" ship_city="${payload.shipping?.city ?? ''}" bill_city="${payload.billing?.city ?? ''}"`);
+
     if (existing) {
       await updateOrderMetaFromWc(wpId, payload);
+      // [DEBUG TEMPORAL] qué quedó en BD inmediatamente después del update.
+      const after = await prisma.order.findUnique({
+        where: { wpOrderId: wpId },
+        select: { customerName: true, customerAddress: true, customerAddress2: true, customerCity: true, customerPhone: true, wcStatus: true },
+      });
+      wlog(`order.updated POST-UPDATE wpId=${wpId} db.customerAddress="${after?.customerAddress ?? ''}" db.customerCity="${after?.customerCity ?? ''}" db.customerName="${after?.customerName ?? ''}" db.wcStatus="${after?.wcStatus ?? ''}"`);
       return res.json({ ok: true, action: 'meta-updated', orderId: existing.id });
     }
 
