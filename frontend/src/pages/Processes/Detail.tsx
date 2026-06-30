@@ -20,35 +20,22 @@ const MAX_LOOKUP_RESULTS = 20;
 
 type View = 'list' | 'kanban';
 
-// Columnas del kanban. 'pendiente' agrupa 3 status; 'parcial' es una columna
-// virtual que captura pedidos mixtos B1+B2 donde un flujo cerró y el otro no
-// (ver isPartial). 'parcial' precede a 'empacado' porque representa pedidos
-// "a medias" — uno de los dos flujos sigue en preparación.
-type ColKey = OrderStatus | 'pendiente' | 'parcial';
+// Columnas del kanban. Cada pedido vive en la columna que corresponde a su
+// `status` global (que se rige por B1 + el atajo B2-only). El estado por
+// bodega se ve en los pills B1/B2 de cada card — antes había una columna
+// 'Parcial' que mezclaba dos casos opuestos ("B1 listo, falta B2" vs
+// "B2 listo, falta B1") y escondía el progreso real (un pedido packed
+// esperando B2 desaparecía de 'Empacado'); por eso se quitó.
+type ColKey = OrderStatus | 'pendiente';
 
 const KANBAN_COLS: Array<{ key: ColKey; label: string; statuses: OrderStatus[]; accent: string }> = [
   { key: 'pendiente', label: 'Pendiente', statuses: ['received', 'sequenced', 'picked'], accent: 'bg-slate-50 ring-slate-200' },
-  { key: 'parcial', label: 'Parcial', statuses: [], accent: 'bg-violet-50 ring-violet-200' },
   { key: 'packed', label: 'Empacado', statuses: ['packed'], accent: 'bg-blue-50 ring-blue-200' },
   { key: 'classified', label: 'Clasificado', statuses: ['classified'], accent: 'bg-amber-50 ring-amber-200' },
   { key: 'loaded', label: 'Cargado', statuses: ['loaded'], accent: 'bg-emerald-50 ring-emerald-200' },
   { key: 'delivered', label: 'Entregado', statuses: ['delivered'], accent: 'bg-emerald-100 ring-emerald-300' },
   { key: 'blocked', label: 'Bloqueado', statuses: ['blocked'], accent: 'bg-red-50 ring-red-300' },
 ];
-
-// Un pedido es "Parcial" cuando tiene items B1 Y B2, ya cerró uno de los dos
-// flujos, pero el otro sigue pendiente. Se excluye de su columna por status
-// para que aparezca SOLO en 'Parcial' (cero ambigüedad en los conteos).
-// Estados loaded/delivered/blocked nunca son parciales: ya salieron del flujo
-// intermedio. received/sequenced/picked tampoco son parciales por sí mismos,
-// salvo que el flujo B2 haya cerrado adelantado (caso "B2 listo, B1 pendiente").
-function isPartial(o: ProcessOrderCard): boolean {
-  if (!o.hasB2Pending) return false; // sin items B2 no hay 'parcial' posible
-  if (['loaded', 'delivered', 'blocked'].includes(o.status)) return false;
-  const b1Done = ['packed', 'classified'].includes(o.status);
-  const b2Done = !!o.b2ClosedAt;
-  return b1Done !== b2Done; // exactamente uno terminó
-}
 
 export function ProcessDetail() {
   const { id } = useParams();
@@ -336,12 +323,7 @@ function KanbanView({ orders }: { orders: ProcessOrderCard[] }) {
     <div className="overflow-x-auto">
       <div className="grid min-w-max grid-flow-col auto-cols-[280px] gap-3">
         {KANBAN_COLS.map((col) => {
-          // 'parcial' es virtual: no se filtra por status, sino por isPartial.
-          // Las demás columnas excluyen explícitamente los pedidos parciales
-          // para que aparezcan SOLO en 'Parcial' (cero duplicados).
-          const colOrders = col.key === 'parcial'
-            ? orders.filter(isPartial)
-            : orders.filter((o) => (col.statuses as OrderStatus[]).includes(o.status) && !isPartial(o));
+          const colOrders = orders.filter((o) => (col.statuses as OrderStatus[]).includes(o.status));
           return (
             <div key={col.key} className={clsx('rounded-xl p-2 ring-1', col.accent)}>
               <div className="flex items-center justify-between p-2">
@@ -361,7 +343,7 @@ function KanbanView({ orders }: { orders: ProcessOrderCard[] }) {
         })}
       </div>
       <div className="mt-2 text-[10px] italic text-slate-500">
-        Estados visibles en kanban. Total: {orders.length} pedidos. {orderStatusLabel('received')} y otros pre-empaque agrupados en "Pendiente". "Parcial" agrupa pedidos mixtos B1+B2 donde un flujo cerró y el otro sigue pendiente.
+        Estados visibles en kanban. Total: {orders.length} pedidos. {orderStatusLabel('received')} y otros pre-empaque agrupados en "Pendiente". Cada card muestra pills B1/B2 con el estado de cada bodega (verde si cerrado, gris si pendiente).
       </div>
     </div>
   );
