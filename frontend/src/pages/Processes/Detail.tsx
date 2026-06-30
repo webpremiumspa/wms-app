@@ -148,7 +148,7 @@ export function ProcessDetail() {
       {/* Refrescar rutas para este proceso */}
       <div className="card flex flex-wrap items-center justify-between gap-2 p-3">
         <div className="text-xs text-slate-600">
-          ¿La app de rutas asignó después de empacar y no se ven actualizadas? Forzá un refresh.
+          ¿La app de rutas asignó después de empacar y no se ven actualizadas? Fuerza un refresh.
         </div>
         <button
           type="button"

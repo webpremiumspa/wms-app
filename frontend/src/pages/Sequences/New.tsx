@@ -418,7 +418,7 @@ export function SequenceNew() {
           </div>
           {pendingTruncated && (
             <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800 ring-1 ring-amber-200">
-              Mostrando {pendingList.length} de {pendingTotal} pedidos pendientes. Si necesitas ver el resto, contactá soporte para aumentar el límite.
+              Mostrando {pendingList.length} de {pendingTotal} pedidos pendientes. Si necesitas ver el resto, contacta a soporte para aumentar el límite.
             </div>
           )}
         <OrderSearchBox value={search} onChange={setSearch} />

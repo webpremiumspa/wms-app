@@ -55,7 +55,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={() => {
-              if (window.confirm('¿Forzar actualización? Esto borra el caché de la app y la recarga desde cero. Usá esto si ves datos desactualizados.')) {
+              if (window.confirm('¿Forzar actualización? Esto borra el caché de la app y la recarga desde cero. Usa esto si ves datos desactualizados.')) {
                 forceHardRefresh();
               }
             }}
