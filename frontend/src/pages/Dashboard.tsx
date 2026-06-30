@@ -54,26 +54,27 @@ export function Dashboard() {
     <div className="space-y-4">
       <h2 className="text-xl font-semibold">Supervisión</h2>
 
-      {openProcesses.length > 1 && (
-        <div className="flex gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-white p-1">
-          {openProcesses.map((p) => {
-            const active = p.id === selectedId;
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setSelectedId(p.id)}
-                className={clsx(
-                  'flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition',
-                  active ? 'bg-brand-700 text-white' : 'text-slate-600 hover:bg-slate-100',
-                )}
-              >
-                {p.name}
-              </button>
-            );
-          })}
-        </div>
-      )}
+      {/* Selector de proceso SIEMPRE visible, incluso con un solo proceso
+          abierto. Hace explícito que la vista está scopeada a UN proceso (no
+          es global). Con 2+ procesos funciona como tabs reales para alternar. */}
+      <div className="flex gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-white p-1">
+        {openProcesses.map((p) => {
+          const active = p.id === selectedId;
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => setSelectedId(p.id)}
+              className={clsx(
+                'flex-1 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition',
+                active ? 'bg-brand-700 text-white' : 'text-slate-600 hover:bg-slate-100',
+              )}
+            >
+              {p.name}
+            </button>
+          );
+        })}
+      </div>
 
       {selectedId != null && <ProcessSupervisionPanel processId={selectedId} />}
     </div>
