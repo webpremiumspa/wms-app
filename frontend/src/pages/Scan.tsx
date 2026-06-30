@@ -651,12 +651,34 @@ function SelectorAction({
 }
 
 function ScanShell({ children }: { children: React.ReactNode }) {
+  // Esta pantalla la abren los conductores al escanear el QR del albarán.
+  // El badge "Vista Conductor" hace explícito de qué vista se trata para
+  // quien la abre sin contexto, y el title de la pestaña refleja lo mismo
+  // (útil cuando el conductor tiene varias pestañas abiertas).
   return (
     <div className="min-h-screen bg-slate-100">
-      <header className="flex h-14 items-center border-b border-slate-200 bg-white px-4">
+      <ScanDocumentTitle />
+      <header className="flex h-14 items-center gap-2 border-b border-slate-200 bg-white px-4">
         <div className="text-base font-bold text-brand-800">WMS Chimuelo</div>
+        <span className="inline-flex items-center rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold text-brand-700 ring-1 ring-brand-200">
+          Vista Conductor
+        </span>
       </header>
       <main className="mx-auto max-w-2xl px-4 py-4">{children}</main>
     </div>
   );
+}
+
+// Setea el title de la pestaña a "Vista Conductor · #<orderNumber>" mientras
+// la vista está montada. Lee el wpOrderId de la URL para que el title
+// refleje el pedido actual; al desmontar restaura el title original. Es un
+// componente para poder usar hooks sin reescribir Scan al envoltorio.
+function ScanDocumentTitle() {
+  const { wpOrderId } = useParams();
+  useEffect(() => {
+    const previous = document.title;
+    document.title = wpOrderId ? `Vista Conductor · #${wpOrderId}` : 'Vista Conductor';
+    return () => { document.title = previous; };
+  }, [wpOrderId]);
+  return null;
 }
