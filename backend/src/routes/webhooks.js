@@ -1,28 +1,9 @@
 import { Router } from 'express';
 import crypto from 'node:crypto';
-import fs from 'node:fs';
-import os from 'node:os';
 import { config } from '../config.js';
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
 import { syncOrder, syncProduct, updateOrderMetaFromWc } from '../services/orders-sync.js';
-
-// Log temporal de webhooks para diagnosticar por qué los cambios en WC no
-// se reflejan en el WMS. Cada entrega deja una línea en ~/wms-webhook.log con:
-//   - timestamp
-//   - topic + wpId
-//   - shipping.address_1 / billing.address_1 / shipping.city / billing.city
-//     que recibió en el payload
-//   - lo que quedó guardado en BD después del update (customerAddress + city)
-// Quitar este bloque una vez que esté diagnosticado.
-const WEBHOOK_LOG = `${os.homedir()}/wms-webhook.log`;
-function wlog(msg) {
-  try {
-    fs.appendFileSync(WEBHOOK_LOG, `${new Date().toISOString()} ${msg}\n`);
-  } catch {
-    /* nunca rompemos el webhook por un fallo de log */
-  }
-}
 
 const router = Router();
 
@@ -41,33 +22,21 @@ function verifyWcSignature(rawBody, signature) {
 
 router.post('/wc/order', async (req, res, next) => {
   try {
-    // [DEBUG TEMPORAL] dejar evidencia de TODO request al endpoint, incluso
-    // si después falla la firma o el body está vacío. Así sabemos que el
-    // handler se ejecuta aunque el webhook se rechace por HMAC.
-    const ctype0 = req.header('content-type') || '';
-    const bodyLen = Buffer.isBuffer(req.body) ? req.body.length : (req.body ? String(req.body).length : 0);
-    wlog(`order POST ENTER ctype="${ctype0}" bodyLen=${bodyLen} topic="${req.header('x-wc-webhook-topic') || ''}" sig="${(req.header('x-wc-webhook-signature') || '').slice(0, 16)}..."`);
-
     // WC's webhook.created "ping" usa application/x-www-form-urlencoded
     // (body = "webhook_id=N") y NO trae firma HMAC. Lo único que pide es
     // un 2xx para marcar el webhook como activo.
-    const ctype = ctype0.toLowerCase();
+    const ctype = (req.header('content-type') || '').toLowerCase();
     if (!ctype.includes('application/json')) {
-      wlog(`order POST EXIT ping (no json ctype)`);
       return res.json({ ok: true, ping: true });
     }
 
     const raw = req.body;
     if (!Buffer.isBuffer(raw) || raw.length === 0) {
-      wlog(`order POST EXIT ping (empty body)`);
       return res.json({ ok: true, ping: true });
     }
 
     const sig = req.header('x-wc-webhook-signature');
-    if (!verifyWcSignature(raw, sig)) {
-      wlog(`order POST EXIT 401 (bad signature)`);
-      throw new HttpError(401, 'Bad webhook signature');
-    }
+    if (!verifyWcSignature(raw, sig)) throw new HttpError(401, 'Bad webhook signature');
 
     let payload;
     try {
@@ -91,18 +60,8 @@ router.post('/wc/order', async (req, res, next) => {
       select: { id: true, status: true },
     });
 
-    // [DEBUG TEMPORAL] qué llegó del payload (solo los campos relevantes
-    // para entender por qué no actualiza customerAddress).
-    wlog(`order.updated wpId=${wpId} status=${status} existing=${existing ? existing.id : 'NO'} ship_a1="${payload.shipping?.address_1 ?? ''}" bill_a1="${payload.billing?.address_1 ?? ''}" ship_city="${payload.shipping?.city ?? ''}" bill_city="${payload.billing?.city ?? ''}"`);
-
     if (existing) {
       await updateOrderMetaFromWc(wpId, payload);
-      // [DEBUG TEMPORAL] qué quedó en BD inmediatamente después del update.
-      const after = await prisma.order.findUnique({
-        where: { wpOrderId: wpId },
-        select: { customerName: true, customerAddress: true, customerAddress2: true, customerCity: true, customerPhone: true, wcStatus: true },
-      });
-      wlog(`order.updated POST-UPDATE wpId=${wpId} db.customerAddress="${after?.customerAddress ?? ''}" db.customerCity="${after?.customerCity ?? ''}" db.customerName="${after?.customerName ?? ''}" db.wcStatus="${after?.wcStatus ?? ''}"`);
       return res.json({ ok: true, action: 'meta-updated', orderId: existing.id });
     }
 
