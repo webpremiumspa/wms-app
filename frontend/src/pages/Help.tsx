@@ -96,7 +96,7 @@ const SECTIONS: Section[] = [
 
         <h4>Vista calendario</h4>
         <p>
-          En <strong>Procesos → Calendario</strong>, ves el mes con cada día coloreado según haya procesos abiertos (ámbar) o cerrados (verde). Toca un día para expandir sus procesos. Útil para ver la cadencia (idealmente 1-2 procesos por día).
+          En <strong>Procesos → Calendario</strong>, ves el mes con cada día coloreado según haya procesos abiertos (ámbar) o cerrados (verde). Toca un día para expandir sus procesos. Útil para ver la cadencia de los turnos.
         </p>
 
         <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700 ring-1 ring-slate-200">

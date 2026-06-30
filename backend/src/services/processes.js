@@ -1,25 +1,11 @@
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
 
-// Máximo de procesos abiertos en paralelo (matutino + vespertino).
-const MAX_OPEN_PROCESSES = 2;
-
-// Crea un proceso nuevo. Tope de negocio: máximo MAX_OPEN_PROCESSES abiertos
-// en simultáneo (típicamente matutino y vespertino). Si se alcanza el tope,
-// falla con 409 indicando los abiertos actuales.
+// Crea un proceso nuevo. No hay tope de procesos abiertos en paralelo: el
+// supervisor es quien decide cuántos turnos correr. Antes había un cap rígido
+// de 2 (matutino + vespertino) pero la operación necesita más flexibilidad
+// para eventos, días puente o procesos express.
 export async function createProcess({ name, scheduledAt, actorId }) {
-  const openProcesses = await prisma.deliveryProcess.findMany({
-    where: { status: 'open' },
-    select: { id: true, name: true },
-    orderBy: { createdAt: 'asc' },
-  });
-  if (openProcesses.length >= MAX_OPEN_PROCESSES) {
-    throw new HttpError(
-      409,
-      `Ya hay ${openProcesses.length} proceso(s) abierto(s) (máximo ${MAX_OPEN_PROCESSES}): ${openProcesses.map((p) => `#${p.id} ${p.name}`).join(', ')}. Cierra alguno antes de crear uno nuevo.`,
-      { openProcesses },
-    );
-  }
   return prisma.deliveryProcess.create({
     data: {
       name: name.trim(),
@@ -69,7 +55,7 @@ export async function getActiveProcess() {
   });
 }
 
-// Devuelve todos los procesos abiertos (hasta MAX_OPEN_PROCESSES).
+// Devuelve todos los procesos abiertos (sin tope de cantidad).
 export async function listOpenProcesses() {
   return prisma.deliveryProcess.findMany({
     where: { status: 'open' },

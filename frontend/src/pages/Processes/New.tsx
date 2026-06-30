@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronLeft, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Info } from 'lucide-react';
 import { processesApi } from '@/lib/processes';
-
-const MAX_OPEN = 2;
 
 function suggestedName(): string {
   const d = new Date();
@@ -39,7 +37,6 @@ export function ProcessNew() {
   });
 
   const openCount = openProcesses?.length ?? 0;
-  const atLimit = openCount >= MAX_OPEN;
 
   return (
     <div className="space-y-4">
@@ -50,21 +47,12 @@ export function ProcessNew() {
       <h2 className="text-xl font-semibold">Nuevo proceso de preparación y carga</h2>
 
       {openCount > 0 && (
-        <div className={`card flex items-start gap-2 p-4 ring-1 ${atLimit ? 'ring-amber-200' : 'ring-slate-200'}`}>
-          <AlertTriangle size={18} className={`shrink-0 ${atLimit ? 'text-amber-700' : 'text-slate-500'}`} />
-          <div className={`text-sm ${atLimit ? 'text-amber-900' : 'text-slate-700'}`}>
-            {atLimit ? (
-              <>
-                Ya hay {openCount} procesos abiertos (límite: {MAX_OPEN}):{' '}
-                <strong>{openProcesses!.map((p) => p.name).join(', ')}</strong>.
-                Cierra alguno antes de crear uno nuevo.
-              </>
-            ) : (
-              <>
-                Hay {openCount} proceso abierto: <strong>{openProcesses![0].name}</strong>.
-                Puedes abrir uno más en paralelo (matutino + vespertino).
-              </>
-            )}
+        <div className="card flex items-start gap-2 p-4 ring-1 ring-slate-200">
+          <Info size={18} className="shrink-0 text-slate-500" />
+          <div className="text-sm text-slate-700">
+            Ya hay {openCount} proceso{openCount === 1 ? '' : 's'} abierto{openCount === 1 ? '' : 's'}:{' '}
+            <strong>{openProcesses!.map((p) => p.name).join(', ')}</strong>.
+            Puedes abrir cuantos necesites en paralelo.
           </div>
         </div>
       )}
@@ -93,7 +81,7 @@ export function ProcessNew() {
         <button
           type="button"
           onClick={() => create.mutate()}
-          disabled={create.isPending || !name.trim() || atLimit}
+          disabled={create.isPending || !name.trim()}
           className="btn-primary w-full"
         >
           <CheckCircle2 size={18} />

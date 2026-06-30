@@ -34,7 +34,7 @@ router.get('/', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD, WM
 
 // Proceso activo más antiguo (legacy: cuando había max 1 abierto). Se usa
 // para mostrar el contexto principal. Para listar TODOS los abiertos en
-// paralelo (matutino + vespertino), usar /processes/open.
+// paralelo, usar /processes/open.
 router.get('/active', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
   try {
     const process = await getActiveProcess();
@@ -44,8 +44,8 @@ router.get('/active', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LO
   }
 });
 
-// Lista de procesos abiertos (hasta MAX_OPEN_PROCESSES). El frontend lo usa
-// en Inicio para mostrar una card por cada uno (matutino + vespertino).
+// Lista de procesos abiertos (sin tope). El frontend la usa en Inicio para
+// mostrar una card por cada uno.
 router.get('/open', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
   try {
     const processes = await listOpenProcesses();

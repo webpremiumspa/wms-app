@@ -27,7 +27,7 @@ export function Home() {
         <p className="text-sm text-slate-500">¿Qué vas a hacer hoy?</p>
       </div>
 
-      {/* Cards de procesos abiertos (matutino + vespertino, hasta 2 a la vez) */}
+      {/* Cards de procesos abiertos. Sin tope: puede haber N en paralelo. */}
       {openCount > 0 ? (
         <div className="grid gap-3 md:grid-cols-2">
           {openProcesses!.map((p) => (
@@ -49,7 +49,7 @@ export function Home() {
               <ChevronRight className="text-emerald-700" size={22} />
             </Link>
           ))}
-          {canCreate && openCount < 2 && (
+          {canCreate && (
             <Link
               to="/processes/new"
               className="card flex items-center gap-4 bg-brand-50 p-5 ring-1 ring-dashed ring-brand-300 transition hover:shadow-md"
@@ -60,7 +60,7 @@ export function Home() {
               <div className="min-w-0 flex-1">
                 <div className="text-xs uppercase tracking-wide text-brand-700">Abrir otro proceso</div>
                 <div className="text-sm text-brand-900">
-                  Puedes tener hasta 2 procesos en paralelo (matutino + vespertino).
+                  Puedes tener varios procesos en paralelo (matutino, vespertino, expresses, etc.).
                 </div>
               </div>
             </Link>

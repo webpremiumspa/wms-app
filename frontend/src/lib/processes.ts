@@ -54,7 +54,7 @@ export const processesApi = {
   active: async (): Promise<DeliveryProcess | null> =>
     (await api.get('/processes/active')).data.process,
 
-  // Hasta 2 abiertos en paralelo (matutino + vespertino).
+  // Devuelve todos los procesos abiertos (sin tope de cantidad).
   openList: async (): Promise<DeliveryProcess[]> =>
     (await api.get('/processes/open')).data.processes,
 
