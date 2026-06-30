@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ClipboardCheck, CheckCircle2, ChevronDown, ChevronRight, Image as ImageIcon, Package, Printer, Trash2, UserX } from 'lucide-react';
 import clsx from 'clsx';
@@ -8,8 +8,10 @@ import { orderStatusLabel, sequenceStatusLabel, warehouseLabel } from '@/lib/lab
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { WcStatusBadge } from '@/components/WcStatusBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
+import { RefreshFromWcButton } from '@/components/RefreshFromWcButton';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
@@ -59,13 +61,20 @@ function OrderItems({ orderId }: { orderId: number }) {
 
   return (
     <div className="space-y-2 bg-slate-50 px-4 py-3">
-      <CustomerBlock
-        name={data.customerName}
-        address={data.customerAddress}
-        address2={data.customerAddress2}
-        city={data.customerCity}
-        phone={data.customerPhone}
-      />
+      <div className="flex items-start justify-between gap-3">
+        <CustomerBlock
+          name={data.customerName}
+          address={data.customerAddress}
+          address2={data.customerAddress2}
+          city={data.customerCity}
+          phone={data.customerPhone}
+        />
+        <RefreshFromWcButton
+          wpOrderId={data.wpOrderId}
+          orderIdLocal={data.id}
+          size="sm"
+        />
+      </div>
       <CustomerNote note={data.customerNote} />
       {savedBags > 1 && (
         <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-1.5 text-xs text-blue-800 ring-1 ring-blue-200">
@@ -152,10 +161,45 @@ export function SequenceDetail() {
   const [routeFilter, setRouteFilter] = useState<RouteFilterValue>(null);
   const [search, setSearch] = useState('');
 
+  // Pedido al que hay que saltar (viene del query param ?focus=<orderId>).
+  // Cuando llega de la búsqueda en la vista del proceso, expandimos esa
+  // tarjeta, la scrolleamos a la vista y la resaltamos por unos segundos
+  // — evita que el operador tenga que volver a buscar el mismo pedido.
+  const [searchParams] = useSearchParams();
+  const focusRaw = searchParams.get('focus');
+  const focusId = focusRaw && /^\d+$/.test(focusRaw) ? Number(focusRaw) : null;
+  const [highlightId, setHighlightId] = useState<number | null>(null);
+  const orderRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
+
   const { data, isLoading } = useQuery({
     queryKey: ['sequence', seqId],
     queryFn: () => sequencesApi.get(seqId),
   });
+
+  // Al recibir el detalle de la secuencia y haber un focusId pendiente,
+  // expandimos la tarjeta, scrolleamos a ella y la resaltamos 3s.
+  useEffect(() => {
+    if (!focusId || !data) return;
+    const exists = data.orders.some((so) => so.order.id === focusId);
+    if (!exists) return;
+    setExpanded((s) => {
+      if (s.has(focusId)) return s;
+      const next = new Set(s);
+      next.add(focusId);
+      return next;
+    });
+    setHighlightId(focusId);
+    // Espera un tick para que el DOM se actualice y la ref exista.
+    const t = setTimeout(() => {
+      const el = orderRefs.current.get(focusId);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+    const clear = setTimeout(() => setHighlightId(null), 3500);
+    return () => {
+      clearTimeout(t);
+      clearTimeout(clear);
+    };
+  }, [focusId, data]);
 
   const deleteSeq = useMutation({
     mutationFn: () => sequencesApi.delete(seqId),
@@ -332,8 +376,19 @@ export function SequenceDetail() {
           // mostramos el botón con un aviso reforzado en el modal: la bolsa
           // tiene que volver físicamente a la bodega.
           const tooLateToRemove = order.status === 'delivered';
+          const isHighlighted = highlightId === order.id;
           return (
-            <div key={order.id} className="card overflow-hidden">
+            <div
+              key={order.id}
+              ref={(el) => {
+                if (el) orderRefs.current.set(order.id, el);
+                else orderRefs.current.delete(order.id);
+              }}
+              className={clsx(
+                'card overflow-hidden transition',
+                isHighlighted && 'ring-2 ring-amber-400 ring-offset-2',
+              )}
+            >
               <button
                 onClick={() => toggle(order.id)}
                 className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-slate-50"
@@ -361,6 +416,7 @@ export function SequenceDetail() {
                     >
                       {orderStatusLabel(order.status)}
                     </Badge>
+                    <WcStatusBadge slug={order.wcStatus} />
                   </div>
                   <div className="truncate text-xs text-slate-500">
                     {order.customerName || '—'}

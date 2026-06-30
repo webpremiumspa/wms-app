@@ -85,6 +85,8 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
           shippingMethod: o.shippingMethod,
           route: o.route,
           hasB2Pending: o.hasB2Pending,
+          wcStatus: o.wcStatus,
+          wcStatusUpdatedAt: o.wcStatusUpdatedAt,
           itemCount: o.items.length,
           createdAt: o.createdAt,
           lastRemoval: lastRem

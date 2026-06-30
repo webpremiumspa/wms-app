@@ -148,6 +148,8 @@ exports.Prisma.OrderScalarFieldEnum = {
   wpOrderId: 'wpOrderId',
   number: 'number',
   status: 'status',
+  wcStatus: 'wcStatus',
+  wcStatusUpdatedAt: 'wcStatusUpdatedAt',
   route: 'route',
   stopPosition: 'stopPosition',
   customerName: 'customerName',

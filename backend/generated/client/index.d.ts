@@ -3769,6 +3769,8 @@ export namespace Prisma {
     wpOrderId: number | null
     number: string | null
     status: $Enums.OrderStatus | null
+    wcStatus: string | null
+    wcStatusUpdatedAt: Date | null
     route: string | null
     stopPosition: number | null
     customerName: string | null
@@ -3804,6 +3806,8 @@ export namespace Prisma {
     wpOrderId: number | null
     number: string | null
     status: $Enums.OrderStatus | null
+    wcStatus: string | null
+    wcStatusUpdatedAt: Date | null
     route: string | null
     stopPosition: number | null
     customerName: string | null
@@ -3839,6 +3843,8 @@ export namespace Prisma {
     wpOrderId: number
     number: number
     status: number
+    wcStatus: number
+    wcStatusUpdatedAt: number
     route: number
     stopPosition: number
     customerName: number
@@ -3898,6 +3904,8 @@ export namespace Prisma {
     wpOrderId?: true
     number?: true
     status?: true
+    wcStatus?: true
+    wcStatusUpdatedAt?: true
     route?: true
     stopPosition?: true
     customerName?: true
@@ -3933,6 +3941,8 @@ export namespace Prisma {
     wpOrderId?: true
     number?: true
     status?: true
+    wcStatus?: true
+    wcStatusUpdatedAt?: true
     route?: true
     stopPosition?: true
     customerName?: true
@@ -3968,6 +3978,8 @@ export namespace Prisma {
     wpOrderId?: true
     number?: true
     status?: true
+    wcStatus?: true
+    wcStatusUpdatedAt?: true
     route?: true
     stopPosition?: true
     customerName?: true
@@ -4090,6 +4102,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status: $Enums.OrderStatus
+    wcStatus: string | null
+    wcStatusUpdatedAt: Date | null
     route: string | null
     stopPosition: number | null
     customerName: string | null
@@ -4144,6 +4158,8 @@ export namespace Prisma {
     wpOrderId?: boolean
     number?: boolean
     status?: boolean
+    wcStatus?: boolean
+    wcStatusUpdatedAt?: boolean
     route?: boolean
     stopPosition?: boolean
     customerName?: boolean
@@ -4187,6 +4203,8 @@ export namespace Prisma {
     wpOrderId?: boolean
     number?: boolean
     status?: boolean
+    wcStatus?: boolean
+    wcStatusUpdatedAt?: boolean
     route?: boolean
     stopPosition?: boolean
     customerName?: boolean
@@ -4242,6 +4260,8 @@ export namespace Prisma {
       wpOrderId: number
       number: string
       status: $Enums.OrderStatus
+      wcStatus: string | null
+      wcStatusUpdatedAt: Date | null
       route: string | null
       stopPosition: number | null
       customerName: string | null
@@ -4649,6 +4669,8 @@ export namespace Prisma {
     readonly wpOrderId: FieldRef<"Order", 'Int'>
     readonly number: FieldRef<"Order", 'String'>
     readonly status: FieldRef<"Order", 'OrderStatus'>
+    readonly wcStatus: FieldRef<"Order", 'String'>
+    readonly wcStatusUpdatedAt: FieldRef<"Order", 'DateTime'>
     readonly route: FieldRef<"Order", 'String'>
     readonly stopPosition: FieldRef<"Order", 'Int'>
     readonly customerName: FieldRef<"Order", 'String'>
@@ -9932,6 +9954,8 @@ export namespace Prisma {
     wpOrderId: 'wpOrderId',
     number: 'number',
     status: 'status',
+    wcStatus: 'wcStatus',
+    wcStatusUpdatedAt: 'wcStatusUpdatedAt',
     route: 'route',
     stopPosition: 'stopPosition',
     customerName: 'customerName',
@@ -10308,6 +10332,8 @@ export namespace Prisma {
     wpOrderId?: IntFilter<"Order"> | number
     number?: StringFilter<"Order"> | string
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+    wcStatus?: StringNullableFilter<"Order"> | string | null
+    wcStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     route?: StringNullableFilter<"Order"> | string | null
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
@@ -10349,6 +10375,8 @@ export namespace Prisma {
     wpOrderId?: SortOrder
     number?: SortOrder
     status?: SortOrder
+    wcStatus?: SortOrderInput | SortOrder
+    wcStatusUpdatedAt?: SortOrderInput | SortOrder
     route?: SortOrderInput | SortOrder
     stopPosition?: SortOrderInput | SortOrder
     customerName?: SortOrderInput | SortOrder
@@ -10393,6 +10421,8 @@ export namespace Prisma {
     NOT?: OrderWhereInput | OrderWhereInput[]
     number?: StringFilter<"Order"> | string
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+    wcStatus?: StringNullableFilter<"Order"> | string | null
+    wcStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     route?: StringNullableFilter<"Order"> | string | null
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
@@ -10434,6 +10464,8 @@ export namespace Prisma {
     wpOrderId?: SortOrder
     number?: SortOrder
     status?: SortOrder
+    wcStatus?: SortOrderInput | SortOrder
+    wcStatusUpdatedAt?: SortOrderInput | SortOrder
     route?: SortOrderInput | SortOrder
     stopPosition?: SortOrderInput | SortOrder
     customerName?: SortOrderInput | SortOrder
@@ -10477,6 +10509,8 @@ export namespace Prisma {
     wpOrderId?: IntWithAggregatesFilter<"Order"> | number
     number?: StringWithAggregatesFilter<"Order"> | string
     status?: EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
+    wcStatus?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    wcStatusUpdatedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
     route?: StringNullableWithAggregatesFilter<"Order"> | string | null
     stopPosition?: IntNullableWithAggregatesFilter<"Order"> | number | null
     customerName?: StringNullableWithAggregatesFilter<"Order"> | string | null
@@ -11030,6 +11064,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -11068,6 +11104,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -11105,6 +11143,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11143,6 +11183,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11181,6 +11223,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -11215,6 +11259,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11247,6 +11293,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -11987,6 +12035,8 @@ export namespace Prisma {
     wpOrderId?: SortOrder
     number?: SortOrder
     status?: SortOrder
+    wcStatus?: SortOrder
+    wcStatusUpdatedAt?: SortOrder
     route?: SortOrder
     stopPosition?: SortOrder
     customerName?: SortOrder
@@ -12033,6 +12083,8 @@ export namespace Prisma {
     wpOrderId?: SortOrder
     number?: SortOrder
     status?: SortOrder
+    wcStatus?: SortOrder
+    wcStatusUpdatedAt?: SortOrder
     route?: SortOrder
     stopPosition?: SortOrder
     customerName?: SortOrder
@@ -12068,6 +12120,8 @@ export namespace Prisma {
     wpOrderId?: SortOrder
     number?: SortOrder
     status?: SortOrder
+    wcStatus?: SortOrder
+    wcStatusUpdatedAt?: SortOrder
     route?: SortOrder
     stopPosition?: SortOrder
     customerName?: SortOrder
@@ -13608,6 +13662,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13645,6 +13701,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13691,6 +13749,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13728,6 +13788,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13774,6 +13836,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13811,6 +13875,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13963,6 +14029,8 @@ export namespace Prisma {
     wpOrderId?: IntFilter<"Order"> | number
     number?: StringFilter<"Order"> | string
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
+    wcStatus?: StringNullableFilter<"Order"> | string | null
+    wcStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
     route?: StringNullableFilter<"Order"> | string | null
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
@@ -14496,6 +14564,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -14533,6 +14603,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -14608,6 +14680,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -14645,6 +14719,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15047,6 +15123,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -15084,6 +15162,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -15172,6 +15252,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15209,6 +15291,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15284,6 +15368,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -15321,6 +15407,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -15418,6 +15506,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15455,6 +15545,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15513,6 +15605,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -15547,6 +15641,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -15581,6 +15677,8 @@ export namespace Prisma {
     wpOrderId: number
     number: string
     status?: $Enums.OrderStatus
+    wcStatus?: string | null
+    wcStatusUpdatedAt?: Date | string | null
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -15687,6 +15785,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15724,6 +15824,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15761,6 +15863,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15794,6 +15898,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15831,6 +15937,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15868,6 +15976,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15901,6 +16011,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15938,6 +16050,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15975,6 +16089,8 @@ export namespace Prisma {
     wpOrderId?: IntFieldUpdateOperationsInput | number
     number?: StringFieldUpdateOperationsInput | string
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
+    wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null

@@ -199,12 +199,18 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
       const customerCity     = pick(data.shipping?.city,      data.billing?.city,      120);
       const customerPhone    = pick(data.billing?.phone,      data.shipping?.phone,    40);
 
+      // Estado WC tal cual (slug). Lo guardamos para mostrarlo como chip de
+      // contexto independiente del status interno del WMS.
+      const wcStatusSlug = typeof data.status === 'string' && data.status.trim() ? data.status.trim().slice(0, 60) : null;
+
       const order = await tx.order.upsert({
         where: { wpOrderId: data.id },
         create: {
           wpOrderId: data.id,
           number: String(data.number ?? data.id),
           status: 'received',
+          wcStatus: wcStatusSlug,
+          wcStatusUpdatedAt: wcStatusSlug ? new Date() : null,
           route,
           stopPosition: Number.isFinite(stopPosition) ? stopPosition : null,
           customerName,
@@ -224,6 +230,8 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
         },
         update: {
           number: String(data.number ?? data.id),
+          wcStatus: wcStatusSlug,
+          wcStatusUpdatedAt: wcStatusSlug ? new Date() : null,
           route,
           stopPosition: Number.isFinite(stopPosition) ? stopPosition : null,
           customerName,
@@ -306,6 +314,10 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
   });
   if (!existing) return null;
 
+  // Estado WC tal cual (slug WC), refrescado en cada webhook. Mantiene el
+  // chip sincronizado en la UI sin tocar el status interno del WMS.
+  const wcStatusSlug = typeof data.status === 'string' && data.status.trim() ? data.status.trim().slice(0, 60) : null;
+
   return prisma.order.update({
     where: { id: existing.id },
     data: {
@@ -322,6 +334,8 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
       customerCity,
       customerPhone,
       customerNote,
+      wcStatus: wcStatusSlug,
+      wcStatusUpdatedAt: wcStatusSlug ? new Date() : null,
     },
   });
 }

@@ -9,6 +9,7 @@ import { orderStatusLabel, sequenceStatusLabel, warehouseLabel, REMOVE_REASON_LA
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { WcStatusBadge } from '@/components/WcStatusBadge';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 import type { StockProblem } from '@/lib/types';
 import clsx from 'clsx';
@@ -21,6 +22,12 @@ export function SequenceNew() {
   const [search, setSearch] = useState('');
 
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+  // `hasSynced` controla si mostramos o no la lista de pedidos pendientes.
+  // Mantenerlos visibles permanentemente arrastra estado obsoleto: un pedido
+  // puede haber cambiado en WC entre que se cargó la pantalla y el operador
+  // arma la secuencia. Exigir presionar Sincronizar garantiza que la lista
+  // refleje el estado real al momento de armar la próxima secuencia.
+  const [hasSynced, setHasSynced] = useState(false);
 
   // processId puede venir por URL (cuando se llega desde "Generar secuencia"
   // dentro de un proceso). Si no viene y solo hay 1 abierto, lo deducimos.
@@ -48,7 +55,10 @@ export function SequenceNew() {
   const { data: pending, isLoading } = useQuery({
     queryKey: ['orders', 'pending'],
     queryFn: sequencesApi.pendingOrders,
-    enabled: !!targetProcess,
+    // Solo cargamos cuando ya se presionó Sincronizar — antes de eso ni
+    // siquiera consultamos al backend, para que la pantalla no muestre
+    // pedidos potencialmente obsoletos al entrar.
+    enabled: !!targetProcess && hasSynced,
   });
 
   const pendingList = pending?.orders ?? [];
@@ -64,7 +74,7 @@ export function SequenceNew() {
   const SYNC_STATUSES: Array<{ slug: string; label: string }> = [
     { slug: 'en-preparacion', label: 'En preparación' },
     { slug: 'en-ruta-pendiente', label: 'En ruta pendiente' },
-    { slug: 'en-ruta-express', label: 'En ruta express' },
+    { slug: 'en-ruta-express-y', label: 'En ruta express' },
   ];
   const [syncStatuses, setSyncStatuses] = useState<Set<string>>(new Set(['en-preparacion']));
   function toggleSyncStatus(slug: string) {
@@ -85,6 +95,7 @@ export function SequenceNew() {
     }),
     onSuccess: (result) => {
       setSyncResult(result);
+      setHasSynced(true);
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
     },
   });
@@ -95,6 +106,8 @@ export function SequenceNew() {
       setSelected(new Set());
       setSyncResult(null);
       setProblems(null);
+      // Mantiene hasSynced=true porque ya pasamos por la sincronización;
+      // simplemente la lista queda vacía.
       queryClient.invalidateQueries({ queryKey: ['orders', 'pending'] });
     },
   });
@@ -356,8 +369,16 @@ export function SequenceNew() {
         )}
       </div>
 
-      {/* Lista de pedidos pendientes */}
-      {isLoading ? (
+      {/* Lista de pedidos pendientes — solo aparece después de sincronizar */}
+      {!hasSynced ? (
+        <div className="card p-6 text-center text-sm text-slate-500">
+          Presiona <strong>Sincronizar</strong> para traer los pedidos desde WooCommerce.
+          <br />
+          <span className="text-xs text-slate-400">
+            La lista no se mantiene entre visitas para evitar trabajar con datos desactualizados.
+          </span>
+        </div>
+      ) : isLoading ? (
         <Spinner />
       ) : pendingList.length === 0 ? (
         <div className="card p-6 text-center text-slate-500">
@@ -421,6 +442,7 @@ export function SequenceNew() {
                     {o.route && <Badge variant="blue">{o.route}</Badge>}
                     {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={o.shippingMethod} />
+                    <WcStatusBadge slug={o.wcStatus} />
                   </div>
                   <div className="truncate text-xs text-slate-500">
                     {new Date(o.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })} · {o.customerName || '—'} · {o.itemCount} items

@@ -33,6 +33,10 @@ export type PendingOrder = {
   shippingMethod: string | null;
   route: string | null;
   hasB2Pending: boolean;
+  // Estado WC tal cual (slug). Refrescado por webhook order.updated; sirve
+  // como chip de contexto en la UI: independiente del status interno WMS.
+  wcStatus?: string | null;
+  wcStatusUpdatedAt?: string | null;
   itemCount: number;
   createdAt: string;
   lastRemoval?: LastRemovalInfo | null;
@@ -75,6 +79,9 @@ export type SequenceOrderInfo = {
   hasB2Pending: boolean;
   route: string | null;
   stopPosition: number | null;
+  // Estado WC tal cual (slug). Para chip de contexto.
+  wcStatus?: string | null;
+  wcStatusUpdatedAt?: string | null;
 };
 
 export type PendingPackingOrder = {

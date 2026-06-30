@@ -119,6 +119,18 @@ export function ProcessDetail() {
             </Link>
           )}
           <Link
+            to={`/processes/${procId}/picking-b1`}
+            className="card flex items-center gap-3 p-4 ring-1 ring-brand-200 hover:shadow-md"
+          >
+            <div className="rounded-lg bg-brand-50 p-2 text-brand-700">
+              <Package size={20} />
+            </div>
+            <div>
+              <div className="font-medium">Picking {warehouseLabel('B1')} del proceso</div>
+              <div className="text-xs text-slate-500">Tabla agrupada por SKU para recorrer Bodega 1</div>
+            </div>
+          </Link>
+          <Link
             to={`/processes/${procId}/picking-b2`}
             className="card flex items-center gap-3 p-4 ring-1 ring-amber-200 hover:shadow-md"
           >
@@ -269,7 +281,10 @@ function OrderLookupResults({ query, matches }: { query: string; matches: Proces
       {matches.map((o) => (
         <Link
           key={o.id}
-          to={`/sequences/${o.sequenceId}`}
+          // ?focus=<orderId> hace que la pantalla de detalle de la secuencia
+          // expanda y scrollee a esa tarjeta — evita que el operador tenga
+          // que volver a buscar el mismo pedido tras navegar.
+          to={`/sequences/${o.sequenceId}?focus=${o.id}`}
           className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
         >
           <div className="min-w-0 flex flex-wrap items-center gap-1.5">

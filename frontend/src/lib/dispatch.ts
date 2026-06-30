@@ -89,6 +89,37 @@ export const pickingB2Api = {
     })).data,
 };
 
+// Equivalente B1 de la vista del día. Misma forma de response pero los items
+// reportados son los B1 y `b1ClosedAt` (= packedAt del pedido) reemplaza a
+// `b2ClosedAt`. Útil como guía de recorrido de Bodega 1 antes de empacar.
+export type B1DayOrderRow = {
+  id: number;
+  wpOrderId: number;
+  number: string;
+  customerName: string | null;
+  shippingMethod: string | null;
+  route: string | null;
+  stopPosition: number | null;
+  status: string;
+  itemCount: number;
+  pickedCount: number;
+  b1ClosedAt: string | null;
+  sequenceId: number | null;
+  sequenceCreatedAt: string | null;
+};
+
+export type B1DayResponse = {
+  orders: B1DayOrderRow[];
+  summary: B2DaySummaryRow[];
+};
+
+export const pickingB1Api = {
+  today: async (opts?: { processId?: number }): Promise<B1DayResponse> =>
+    (await api.get('/picking/b1/today', {
+      params: opts?.processId ? { processId: opts.processId } : undefined,
+    })).data,
+};
+
 export const dispatchApi = {
   scan: async (qr: string): Promise<DispatchOrder> => (await api.post('/dispatch/scan', { qr })).data.order,
   classify: async (orderId: number): Promise<void> => {

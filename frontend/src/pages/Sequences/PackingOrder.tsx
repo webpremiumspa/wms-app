@@ -9,6 +9,7 @@ import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
+import { RefreshFromWcButton } from '@/components/RefreshFromWcButton';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
@@ -303,13 +304,20 @@ export function PackingOrder() {
           <ShippingBadge method={order.shippingMethod} />
           {isPacked && <Badge variant="green">Empacado</Badge>}
         </div>
-        <CustomerBlock
-          name={order.customerName}
-          address={order.customerAddress}
-          address2={order.customerAddress2}
-          city={order.customerCity}
-          phone={order.customerPhone}
-        />
+        <div className="flex items-start justify-between gap-3">
+          <CustomerBlock
+            name={order.customerName}
+            address={order.customerAddress}
+            address2={order.customerAddress2}
+            city={order.customerCity}
+            phone={order.customerPhone}
+          />
+          <RefreshFromWcButton
+            wpOrderId={order.wpOrderId}
+            orderIdLocal={order.id}
+            size="sm"
+          />
+        </div>
         <CustomerNote note={order.customerNote} />
         {/* Doble verificación visual: fecha del pedido WC + secuencia. Ayuda
             a detectar albaranes viejos reciclados antes de empacar. */}

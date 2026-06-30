@@ -55,6 +55,14 @@ model Order {
   wpOrderId       Int      @unique @map("wp_order_id")
   number          String   @db.VarChar(64)
   status          OrderStatus @default(received)
+  // Estado WC tal cual (slug). Independiente de `status` interno del WMS:
+  // refleja lo que se ve en el admin de WC ("en-preparacion",
+  // "en-ruta-pendiente", "en-ruta-express-y", "completed", "cancelled"...).
+  // Se refresca por webhook order.updated. Útil como chip de contexto en la
+  // UI: si un pedido cambió de estado en WC, el supervisor lo ve sin tener
+  // que pegarle a sync manual.
+  wcStatus        String?  @map("wc_status") @db.VarChar(60)
+  wcStatusUpdatedAt DateTime? @map("wc_status_updated_at")
   route           String?  @db.VarChar(64)
   stopPosition    Int?     @map("stop_position")
   customerName     String?  @map("customer_name") @db.VarChar(200)

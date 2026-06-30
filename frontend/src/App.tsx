@@ -13,6 +13,7 @@ import { SequenceDetail } from '@/pages/Sequences/Detail';
 import { PackingList } from '@/pages/Sequences/PackingList';
 import { PackingOrder } from '@/pages/Sequences/PackingOrder';
 import { SequenceClose } from '@/pages/Sequences/Close';
+import { PickingB1Day } from '@/pages/PickingB1Day';
 import { PickingB2Day } from '@/pages/PickingB2Day';
 import { PickingB2Order } from '@/pages/Sequences/PickingB2Order';
 import { PickingB2GlobalRedirect, SequenceB2Redirect } from '@/pages/Redirects';
@@ -45,6 +46,7 @@ export default function App() {
               <Route path="processes" element={<ProcessesIndex />} />
               <Route path="processes/new" element={<ProcessNew />} />
               <Route path="processes/:id" element={<ProcessDetail />} />
+              <Route path="processes/:id/picking-b1" element={<PickingB1Day />} />
               <Route path="processes/:id/picking-b2" element={<PickingB2Day />} />
               <Route path="sequences/new" element={<SequenceNew />} />
               <Route path="sequences/:id" element={<SequenceDetail />} />

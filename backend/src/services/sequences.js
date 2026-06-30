@@ -236,28 +236,65 @@ export async function packOrderB2({ orderId, itemIds, actorId, confirmedOldSeque
     throw new HttpError(409, 'All B2 items must be checked before closing', { missingItemIds: missing });
   }
 
+  // Pedido sin items B1: el picking B2 es a la vez la única acción de
+  // preparación del pedido. En ese caso, al cerrar B2 lo avanzamos hasta
+  // 'loaded' en una sola transición — no hay paso B1 que esperar, así que
+  // mantenerlo en 'sequenced' o 'received' sería ruido en los kanban y la
+  // dispatch. Cuando hay items B1, el status global lo decide el flujo B1
+  // (en ese caso este endpoint solo cierra el sub-flujo B2 y no toca status).
+  const b1Items = order.items.filter((i) => i.warehouse === 'B1');
+  const onlyB2 = b1Items.length === 0;
+
   const now = new Date();
   const itemUpdates = confirmed.size > 0 ? [
     prisma.orderItem.updateMany({
       where: { id: { in: [...confirmed] }, orderId, warehouse: 'B2' },
-      data: { pickedAt: now },
+      data: { pickedAt: now, packedAt: now },
     }),
   ] : [];
+
+  const orderUpdateData = {
+    b2ClosedAt: now,
+    b2ClosedById: actorId,
+  };
+  if (onlyB2) {
+    // Atajo: pedidos solo B2 ya quedaron "preparados" al cerrar B2 — no hay
+    // bolsa B1 que armar ni clasificación que esperar. Avanzamos status a
+    // 'loaded' y sellamos los timestamps de packing/classify/load para que
+    // los kanban y reportes lo muestren correctamente.
+    orderUpdateData.status = 'loaded';
+    orderUpdateData.packedAt = now;
+    orderUpdateData.packedById = actorId;
+    orderUpdateData.classifiedAt = now;
+    orderUpdateData.loadedAt = now;
+  }
 
   await prisma.$transaction([
     ...itemUpdates,
     prisma.order.update({
       where: { id: orderId },
-      data: { b2ClosedAt: now, b2ClosedById: actorId },
+      data: orderUpdateData,
     }),
     prisma.event.create({
       data: {
         type: 'order.b2_packed',
         actorId,
         orderId,
-        payload: { itemIds: [...confirmed], partial: missing.length > 0 },
+        payload: { itemIds: [...confirmed], partial: missing.length > 0, onlyB2 },
       },
     }),
+    ...(onlyB2
+      ? [
+          prisma.event.create({
+            data: {
+              type: 'order.loaded_b2_only',
+              actorId,
+              orderId,
+              payload: { reason: 'no_b1_items' },
+            },
+          }),
+        ]
+      : []),
   ]);
 
   if (confirmedOldSequence) {
