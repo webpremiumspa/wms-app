@@ -76,7 +76,11 @@ export function ProcessDetail() {
   });
 
   const refreshRoutes = useMutation({
-    mutationFn: () => syncApi.routes(),
+    // Scopeado al proceso actual: el endpoint refresca solo los pedidos
+    // ligados a las secuencias de este proceso. Antes refrescaba TODOS los
+    // pedidos activos del WMS lo cual confundía el conteo ("38 de 38" en un
+    // proceso con 14 pedidos).
+    mutationFn: () => syncApi.routes({ processId: procId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['process', procId] });
     },
@@ -183,7 +187,7 @@ export function ProcessDetail() {
       </div>
       {refreshRoutes.data && (
         <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-200">
-          Rutas actualizadas: {refreshRoutes.data.updated} de {refreshRoutes.data.total} pedidos.
+          Rutas actualizadas: {refreshRoutes.data.updated} de {refreshRoutes.data.total} pedidos de este proceso.
         </div>
       )}
 

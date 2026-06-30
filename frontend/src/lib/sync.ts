@@ -32,11 +32,18 @@ export type RoutesSyncResult = {
   updated: number;
   failed?: number;
   errors?: Array<{ wpOrderId: number; message: string }>;
+  // Eco del processId enviado. null si el caller pidió refresh global (todos
+  // los procesos). El frontend lo usa para mostrar contexto en el banner.
+  processId: number | null;
 };
 
 export const syncApi = {
   orders: async (params: SyncParams): Promise<SyncResult> =>
     (await api.post('/sync/orders', params)).data,
-  routes: async (): Promise<RoutesSyncResult> =>
-    (await api.post('/sync/routes')).data,
+  // Si se pasa processId, el backend acota el refresh a los pedidos de ese
+  // proceso. Sin processId refresca todos los pedidos activos del WMS.
+  routes: async (opts?: { processId?: number }): Promise<RoutesSyncResult> =>
+    (await api.post('/sync/routes', null, {
+      params: opts?.processId ? { processId: opts.processId } : undefined,
+    })).data,
 };

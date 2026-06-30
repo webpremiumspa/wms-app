@@ -211,17 +211,30 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
 // activos del WMS (no entregados). Útil cuando la app externa de rutas asigna
 // rutas DESPUÉS del packing y queremos forzar la sincronización sin esperar
 // el webhook.
+//
+// Acepta ?processId=N para scopear el refresh a un solo proceso. Sin el
+// parámetro refresca TODOS los pedidos activos del WMS (compat con el botón
+// global, si llega a existir uno).
 router.post('/routes', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.LOAD, WMS_CAPS.PACK_B1), async (req, res, next) => {
   try {
-    // Pedidos activos: cualquier estado menos delivered. Limitamos a 500 para
-    // que el endpoint no se cuelgue si hubo backlog.
+    const processIdRaw = req.query.processId;
+    const processId = processIdRaw && /^\d+$/.test(String(processIdRaw)) ? Number(processIdRaw) : null;
+
+    // Pedidos activos: cualquier estado menos delivered. Si viene processId,
+    // los acotamos a las secuencias de ese proceso. Limitamos a 500 para que
+    // el endpoint no se cuelgue si hubo backlog.
     const orders = await prisma.order.findMany({
-      where: { status: { not: 'delivered' } },
+      where: {
+        status: { not: 'delivered' },
+        ...(processId
+          ? { sequenceLinks: { some: { sequence: { processId } } } }
+          : {}),
+      },
       select: { wpOrderId: true },
       take: 500,
     });
     if (orders.length === 0) {
-      return res.json({ ok: true, total: 0, updated: 0 });
+      return res.json({ ok: true, total: 0, updated: 0, processId });
     }
 
     const ids = orders.map((o) => o.wpOrderId);
@@ -256,7 +269,7 @@ router.post('/routes', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.LOAD, WMS_CAPS.PA
       }
     }
 
-    res.json({ ok: true, total: ids.length, updated, failed, errors });
+    res.json({ ok: true, total: ids.length, updated, failed, errors, processId });
   } catch (err) {
     next(err);
   }
