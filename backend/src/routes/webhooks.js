@@ -41,21 +41,33 @@ function verifyWcSignature(rawBody, signature) {
 
 router.post('/wc/order', async (req, res, next) => {
   try {
+    // [DEBUG TEMPORAL] dejar evidencia de TODO request al endpoint, incluso
+    // si después falla la firma o el body está vacío. Así sabemos que el
+    // handler se ejecuta aunque el webhook se rechace por HMAC.
+    const ctype0 = req.header('content-type') || '';
+    const bodyLen = Buffer.isBuffer(req.body) ? req.body.length : (req.body ? String(req.body).length : 0);
+    wlog(`order POST ENTER ctype="${ctype0}" bodyLen=${bodyLen} topic="${req.header('x-wc-webhook-topic') || ''}" sig="${(req.header('x-wc-webhook-signature') || '').slice(0, 16)}..."`);
+
     // WC's webhook.created "ping" usa application/x-www-form-urlencoded
     // (body = "webhook_id=N") y NO trae firma HMAC. Lo único que pide es
     // un 2xx para marcar el webhook como activo.
-    const ctype = (req.header('content-type') || '').toLowerCase();
+    const ctype = ctype0.toLowerCase();
     if (!ctype.includes('application/json')) {
+      wlog(`order POST EXIT ping (no json ctype)`);
       return res.json({ ok: true, ping: true });
     }
 
     const raw = req.body;
     if (!Buffer.isBuffer(raw) || raw.length === 0) {
+      wlog(`order POST EXIT ping (empty body)`);
       return res.json({ ok: true, ping: true });
     }
 
     const sig = req.header('x-wc-webhook-signature');
-    if (!verifyWcSignature(raw, sig)) throw new HttpError(401, 'Bad webhook signature');
+    if (!verifyWcSignature(raw, sig)) {
+      wlog(`order POST EXIT 401 (bad signature)`);
+      throw new HttpError(401, 'Bad webhook signature');
+    }
 
     let payload;
     try {
