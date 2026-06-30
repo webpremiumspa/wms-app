@@ -122,6 +122,10 @@ export type OrderDetail = {
   wpOrderId: number;
   number: string;
   status: OrderStatus;
+  // Estado WC tal cual (slug). Para chip de contexto independiente del
+  // status interno del WMS. Refrescado por webhook order.updated.
+  wcStatus?: string | null;
+  wcStatusUpdatedAt?: string | null;
   route: string | null;
   stopPosition: number | null;
   customerName: string | null;

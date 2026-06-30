@@ -10,6 +10,7 @@ import { ShippingBadge } from '@/components/ShippingBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
 import { RefreshFromWcButton } from '@/components/RefreshFromWcButton';
+import { WcStatusBadge } from '@/components/WcStatusBadge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
@@ -303,6 +304,7 @@ export function PackingOrder() {
           {order.allowPartialDelivery && <Badge variant="green">Entrega parcial aprobada</Badge>}
           <ShippingBadge method={order.shippingMethod} />
           {isPacked && <Badge variant="green">Empacado</Badge>}
+          <WcStatusBadge slug={order.wcStatus} />
         </div>
         <div className="flex items-start justify-between gap-3">
           <CustomerBlock
