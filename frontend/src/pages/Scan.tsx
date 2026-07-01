@@ -49,14 +49,13 @@ export function Scan() {
   const canLoad = hasCap(user, CAPS.LOAD);
   const canPack = hasCap(user, CAPS.PACK_B1);
   const canPickB2 = hasCap(user, CAPS.PACK_B2);
-  const canApprovePartial = canPack || hasCap(user, CAPS.SUPERVISE);
 
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [showSelector, setShowSelector] = useState(false);
-  const [showPartialForm, setShowPartialForm] = useState(false);
-  const [partialNote, setPartialNote] = useState('');
-  const [partialError, setPartialError] = useState<string | null>(null);
+  // Nota: se sacaron showPartialForm / partialNote / partialError junto con
+  // el bloqueo de carga por B2 incompleto. El endpoint POST /orders/:id/
+  // partial-delivery sigue existiendo, pero no se llama desde Scan.
   const [actionError, setActionError] = useState<string | null>(null);
   // Si el pedido tiene >1 bultos, el cargador/clasificador debe confirmar
   // explícitamente que tiene todos los bultos antes de avanzar.
@@ -99,18 +98,9 @@ export function Scan() {
     },
   });
 
-  const approvePartial = useMutation({
-    mutationFn: () => ordersApi.approvePartialDelivery(order!.id, partialNote),
-    onSuccess: () => {
-      setShowPartialForm(false);
-      setPartialNote('');
-      setPartialError(null);
-      queryClient.invalidateQueries({ queryKey: ['order-public', idNum] });
-    },
-    onError: (err: any) => {
-      setPartialError(err.response?.data?.message || 'No se pudo aprobar la entrega parcial');
-    },
-  });
+  // Nota: la mutación approvePartial se eliminó junto con el bloqueo de
+  // carga por B2 incompleto. El endpoint sigue disponible en ordersApi si
+  // hace falta en otro lugar.
 
   // Auto-redirect a packing/picking-b2 si solo aplica una de esas acciones.
   // Para 'classify' y 'load' no redirige — se muestran en esta misma pantalla.
@@ -234,30 +224,11 @@ export function Scan() {
           />
         )}
 
-        {/* ─────────── Bloqueo B2 (para clasificación / carga) ─────────── */}
-        {(showClassifyFlow || showLoadFlow) && !order.loadable && (order.missingB2Items?.length ?? 0) > 0 && (
-          <div className="rounded-lg bg-red-50 px-3 py-3 ring-2 ring-red-400">
-            <div className="flex items-start gap-2">
-              <AlertOctagon className="shrink-0 text-red-700" size={22} />
-              <div className="flex-1">
-                <div className="text-base font-bold uppercase text-red-800">{warehouseLabel('B2')} incompleto — NO {showLoadFlow ? 'cargar' : 'clasificar'}</div>
-                <div className="mt-1 text-sm text-red-900">
-                  Falta{(order.missingB2Items!.length === 1 ? '' : 'n')} <strong>{order.missingB2Items!.length} item{order.missingB2Items!.length === 1 ? '' : 's'}</strong> del granel {warehouseLabel('B2')}:
-                </div>
-                <ul className="mt-1 list-disc pl-5 text-xs text-red-900">
-                  {order.missingB2Items!.map((it) => (
-                    <li key={it.productId}>
-                      {it.qty}× {it.name || `Producto ${it.productId}`} {it.sku && <span className="text-red-700">({it.sku})</span>}
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-2 text-xs text-red-800">
-                  Deja la bolsa hasta que se complete {warehouseLabel('B2')}, o autoriza entrega parcial si el cliente acepta.
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Nota: hasta v0.18.2 aquí había un banner rojo que bloqueaba
+            clasificar/cargar cuando faltaban items B2. La regla cambió: ahora
+            el operador puede cargar aunque el B2 esté incompleto (decide el
+            humano frente al camión). El listado informativo de items B2
+            faltantes sigue mostrándose arriba vía B2Alert. */}
 
         {/* ─────────── Banner multi-bulto (clasificación / carga) ─────────── */}
         {requiresBagsConfirm && (
@@ -321,22 +292,12 @@ export function Scan() {
             )}
             <button
               onClick={() => classify.mutate()}
-              disabled={classify.isPending || !order.route || !order.loadable || (requiresBagsConfirm && !bagsConfirmed)}
+              disabled={classify.isPending || !order.route || (requiresBagsConfirm && !bagsConfirmed)}
               className="btn-primary w-full"
             >
               <CheckCircle2 size={18} />
               {classify.isPending ? 'Clasificando…' : 'Confirmar clasificación'}
             </button>
-            {!order.loadable && canApprovePartial && !showPartialForm && (
-              <button
-                type="button"
-                onClick={() => { setPartialError(null); setShowPartialForm(true); }}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-300 hover:bg-emerald-100"
-              >
-                <ShieldCheck size={14} />
-                Autorizar entrega parcial (cliente acepta sin estos items)
-              </button>
-            )}
           </div>
         )}
 
@@ -361,59 +322,20 @@ export function Scan() {
             )}
             <button
               onClick={() => markLoaded.mutate()}
-              disabled={markLoaded.isPending || !order.route || !order.loadable || (requiresBagsConfirm && !bagsConfirmed)}
+              disabled={markLoaded.isPending || !order.route || (requiresBagsConfirm && !bagsConfirmed)}
               className="btn-primary w-full"
             >
               <Truck size={18} />
               {markLoaded.isPending ? 'Marcando…' : 'Confirmar carga al vehículo'}
             </button>
-            {!order.loadable && canApprovePartial && !showPartialForm && (
-              <button
-                type="button"
-                onClick={() => { setPartialError(null); setShowPartialForm(true); }}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-300 hover:bg-emerald-100"
-              >
-                <ShieldCheck size={14} />
-                Autorizar entrega parcial (cliente acepta sin estos items)
-              </button>
-            )}
           </div>
         )}
 
-        {/* Form de aprobación parcial (compartido por classify y load flow) */}
-        {(showClassifyFlow || showLoadFlow) && showPartialForm && (
-          <div className="card space-y-2 p-3 ring-1 ring-emerald-200">
-            <div className="text-xs font-medium text-slate-700">Nota de aprobación (queda en el log)</div>
-            <textarea
-              value={partialNote}
-              onChange={(e) => setPartialNote(e.target.value)}
-              maxLength={500}
-              rows={2}
-              placeholder="Ej: Cliente acepta sin Beneful 10kg — quedó en deuda para el próximo envío."
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-            {partialError && (
-              <div className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">{partialError}</div>
-            )}
-            <div className="flex items-center justify-end gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => { setShowPartialForm(false); setPartialNote(''); }}
-                className="text-xs text-slate-600 hover:underline"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => approvePartial.mutate()}
-                disabled={approvePartial.isPending}
-                className="rounded-lg bg-emerald-600 px-3 py-1 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-60"
-              >
-                {approvePartial.isPending ? 'Aprobando…' : 'Confirmar aprobación'}
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Nota: hasta v0.18.2 aquí había un form para aprobar entrega
+            parcial cuando el B2 estaba incompleto. Ya no aplica porque el
+            /loaded no bloquea. El endpoint POST /orders/:id/partial-delivery
+            sigue existiendo por si se aprueba por otro medio (queda como
+            pieza opcional para preservar el badge y la sección del albarán). */}
 
         {/* ─────────── Éxito clasificación / carga ─────────── */}
         {justClassified && (

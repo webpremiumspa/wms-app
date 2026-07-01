@@ -99,8 +99,12 @@ router.post('/:orderId/classify', requireCap(WMS_CAPS.LOAD), async (req, res, ne
   }
 });
 
-// Confirma carga al vehículo. Bloqueo B2 también aplica acá — sin entrega
-// parcial aprobada y con items B2 faltantes, devuelve 409 con detalles.
+// Confirma carga al vehículo. NO bloquea aunque el pedido tenga items B2
+// pendientes: el operador de carga es el responsable de decidir si el pedido
+// sale con o sin todos los items. La sección "faltan estos items del B2" del
+// albarán sigue disponible si el supervisor aprueba entrega parcial vía el
+// endpoint POST /orders/:id/partial-delivery, pero ya NO es un requisito para
+// cargar.
 router.post('/:orderId/loaded', requireCap(WMS_CAPS.LOAD), async (req, res, next) => {
   try {
     const id = Number(req.params.orderId);
@@ -112,14 +116,6 @@ router.post('/:orderId/loaded', requireCap(WMS_CAPS.LOAD), async (req, res, next
     }
     if (order.status !== 'classified') {
       throw new HttpError(409, `Cannot load order in status "${order.status}". Must be classified first.`);
-    }
-
-    const loadability = await getOrderLoadability(id);
-    if (!loadability.loadable) {
-      throw new HttpError(409, 'Order has B2 items missing and partial delivery is not approved', {
-        missingB2Items: loadability.missingB2Items,
-        blockReason: loadability.reason,
-      });
     }
 
     await prisma.$transaction([
