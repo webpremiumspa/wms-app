@@ -30,9 +30,15 @@ export type PendingOrder = {
   wpOrderId: number;
   number: string;
   customerName: string | null;
+  // Comuna del cliente — usada por el filtro rápido de la vista Nueva
+  // Secuencia para segmentar los pendientes por comuna de envío.
+  customerCity?: string | null;
   shippingMethod: string | null;
   route: string | null;
   hasB2Pending: boolean;
+  // hasB1Items complementa hasB2Pending: juntos permiten al filtro rápido
+  // distinguir Solo B1 / Solo B2 / Mixto (sin volver a pedir los items).
+  hasB1Items?: boolean;
   // Estado WC tal cual (slug). Refrescado por webhook order.updated; sirve
   // como chip de contexto en la UI: independiente del status interno WMS.
   wcStatus?: string | null;

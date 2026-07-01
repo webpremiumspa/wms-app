@@ -109,7 +109,10 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
         where: { status: 'received' },
         take: limit,
         orderBy: { createdAt: 'asc' },
-        include: { items: { select: { id: true } } },
+        // items.warehouse permite calcular hasB1Items (para distinguir en el
+        // filtro rapido "Solo B2" vs "Mixto"); el id sigue sirviendo para el
+        // conteo total de items.
+        include: { items: { select: { id: true, warehouse: true } } },
       }),
     ]);
 
@@ -145,9 +148,15 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
           wpOrderId: o.wpOrderId,
           number: o.number,
           customerName: o.customerName,
+          customerCity: o.customerCity,
           shippingMethod: o.shippingMethod,
           route: o.route,
           hasB2Pending: o.hasB2Pending,
+          // hasB1Items = true si el pedido tiene al menos un item con
+          // warehouse='B1'. Junto con hasB2Pending permite distinguir en el
+          // filtro rapido de la vista Nueva Secuencia si el pedido es
+          // Solo B1 / Solo B2 / Mixto.
+          hasB1Items: o.items.some((it) => it.warehouse === 'B1'),
           wcStatus: o.wcStatus,
           wcStatusUpdatedAt: o.wcStatusUpdatedAt,
           itemCount: o.items.length,

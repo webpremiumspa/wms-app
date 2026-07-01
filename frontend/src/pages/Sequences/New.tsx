@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type Dispatch, type SetStateAction } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, ChevronLeft, RefreshCw, CheckCircle2, X, Trash2, CheckSquare, RotateCcw } from 'lucide-react';
@@ -11,7 +11,7 @@ import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { WcStatusBadge } from '@/components/WcStatusBadge';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
-import type { StockProblem } from '@/lib/types';
+import type { PendingOrder, StockProblem } from '@/lib/types';
 import clsx from 'clsx';
 
 export function SequenceNew() {
@@ -28,6 +28,30 @@ export function SequenceNew() {
   // arma la secuencia. Exigir presionar Sincronizar garantiza que la lista
   // refleje el estado real al momento de armar la próxima secuencia.
   const [hasSynced, setHasSynced] = useState(false);
+
+  // Filtros rápidos sobre la lista de pendientes ya sincronizada. Son
+  // visuales — no cambian la selección: un pedido tildado que sale del
+  // filtro sigue seleccionado y va a la secuencia igual. Multiselección
+  // dentro de cada grupo (OR intra-grupo), AND entre grupos.
+  //   filterCities:    Set de comunas tildadas
+  //   filterMethods:   Set de métodos de envío tildados
+  //   filterWarehouse: Set con alguno de: 'b1-only' | 'b2-only' | 'mixed'
+  const [filterCities, setFilterCities] = useState<Set<string>>(new Set());
+  const [filterMethods, setFilterMethods] = useState<Set<string>>(new Set());
+  const [filterWarehouse, setFilterWarehouse] = useState<Set<string>>(new Set());
+  function toggleInSet(setter: Dispatch<SetStateAction<Set<string>>>, key: string) {
+    setter((s) => {
+      const next = new Set(s);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+  function clearAllFilters() {
+    setFilterCities(new Set());
+    setFilterMethods(new Set());
+    setFilterWarehouse(new Set());
+  }
 
   // processId puede venir por URL (cuando se llega desde "Generar secuencia"
   // dentro de un proceso). Si no viene y solo hay 1 abierto, lo deducimos.
@@ -64,6 +88,47 @@ export function SequenceNew() {
   const pendingList = pending?.orders ?? [];
   const pendingTotal = pending?.total ?? 0;
   const pendingTruncated = pending?.truncated ?? false;
+
+  // Opciones dinámicas para los pills de filtro: solo mostramos las comunas
+  // y métodos de envío que existen efectivamente en la lista actual, no una
+  // lista fija. Así el operador ve solo lo que puede filtrar.
+  const availableCities = useMemo(() => {
+    const s = new Set<string>();
+    for (const o of pendingList) if (o.customerCity) s.add(o.customerCity);
+    return [...s].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [pendingList]);
+  const availableMethods = useMemo(() => {
+    const s = new Set<string>();
+    for (const o of pendingList) if (o.shippingMethod) s.add(o.shippingMethod);
+    return [...s].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [pendingList]);
+
+  // Devuelve el tipo de bodega del pedido para el filtro:
+  //   'b1-only' → tiene B1 y no tiene B2
+  //   'b2-only' → tiene B2 y no tiene B1
+  //   'mixed'   → tiene ambos
+  function warehouseTypeOf(o: PendingOrder): 'b1-only' | 'b2-only' | 'mixed' | 'unknown' {
+    const hasB1 = o.hasB1Items ?? true; // fallback conservador para payloads viejos
+    const hasB2 = o.hasB2Pending;
+    if (hasB1 && hasB2) return 'mixed';
+    if (hasB1 && !hasB2) return 'b1-only';
+    if (!hasB1 && hasB2) return 'b2-only';
+    return 'unknown';
+  }
+
+  // Lista visible: aplica todos los filtros (AND entre grupos, OR dentro).
+  // Un grupo sin nada tildado no filtra. El buscador de ID se aplica
+  // encima, en el .filter() del render.
+  const visibleList = useMemo(() => {
+    return pendingList.filter((o) => {
+      if (filterCities.size > 0 && !(o.customerCity && filterCities.has(o.customerCity))) return false;
+      if (filterMethods.size > 0 && !(o.shippingMethod && filterMethods.has(o.shippingMethod))) return false;
+      if (filterWarehouse.size > 0 && !filterWarehouse.has(warehouseTypeOf(o))) return false;
+      return true;
+    });
+  }, [pendingList, filterCities, filterMethods, filterWarehouse]);
+
+  const anyFilterActive = filterCities.size + filterMethods.size + filterWarehouse.size > 0;
 
   const orderIds = useMemo(() => [...selected], [selected]);
 
@@ -388,20 +453,33 @@ export function SequenceNew() {
         <>
           <div className="flex items-center justify-between text-sm">
             <span className="text-slate-600">
-              {pendingList.length} pedido{pendingList.length === 1 ? '' : 's'} pendientes · {selected.size} seleccionado{selected.size === 1 ? '' : 's'}
+              {anyFilterActive ? (
+                <>Mostrando <strong>{visibleList.length}</strong> de {pendingList.length} pedido{pendingList.length === 1 ? '' : 's'}</>
+              ) : (
+                <>{pendingList.length} pedido{pendingList.length === 1 ? '' : 's'} pendientes</>
+              )}
+              {' · '}{selected.size} seleccionado{selected.size === 1 ? '' : 's'}
             </span>
             <div className="flex items-center gap-3">
-              {selected.size < pendingList.length && (
+              {(anyFilterActive ? visibleList : pendingList).some((o) => !selected.has(o.id)) && (
                 <button
                   type="button"
                   onClick={() => {
-                    setSelected(new Set(pendingList.map((o) => o.id)));
+                    // Con filtros activos, "Seleccionar todos" agrega solo
+                    // los visibles a la selección existente. Sin filtros,
+                    // reemplaza por la lista completa (comportamiento previo).
+                    setSelected((s) => {
+                      if (!anyFilterActive) return new Set(pendingList.map((o) => o.id));
+                      const next = new Set(s);
+                      for (const o of visibleList) next.add(o.id);
+                      return next;
+                    });
                     setProblems(null);
                   }}
                   className="flex items-center gap-1 text-brand-700 hover:underline"
                 >
                   <CheckSquare size={14} />
-                  Seleccionar todos
+                  {anyFilterActive ? 'Seleccionar visibles' : 'Seleccionar todos'}
                 </button>
               )}
               {selected.size > 0 && (
@@ -421,9 +499,115 @@ export function SequenceNew() {
               Mostrando {pendingList.length} de {pendingTotal} pedidos pendientes. Si necesitas ver el resto, contacta a soporte para aumentar el límite.
             </div>
           )}
+        {/* Barra de filtros rápidos. Se pueblan dinámicamente con los valores
+            distintos presentes en la lista actual — el operador solo ve los
+            que puede filtrar. Multiselección dentro de cada grupo, AND entre
+            grupos. Los filtros son visuales: no cambian la selección. */}
+        {(availableCities.length > 0 || availableMethods.length > 0 || pendingList.length > 0) && (
+          <div className="card space-y-2 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-600">
+                Filtros rápidos
+              </span>
+              {anyFilterActive && (
+                <button
+                  type="button"
+                  onClick={clearAllFilters}
+                  className="flex items-center gap-1 text-xs text-brand-700 hover:underline"
+                >
+                  <X size={12} />
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[11px] text-slate-500">Bodega</span>
+              <div className="flex flex-wrap gap-1.5">
+                {(['b1-only', 'mixed', 'b2-only'] as const).map((key) => {
+                  const label = key === 'b1-only' ? `Solo ${warehouseLabel('B1')}`
+                    : key === 'b2-only' ? `Solo ${warehouseLabel('B2')}`
+                    : `Mixto ${warehouseLabel('B1')} + ${warehouseLabel('B2')}`;
+                  const active = filterWarehouse.has(key);
+                  const count = pendingList.filter((o) => warehouseTypeOf(o) === key).length;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleInSet(setFilterWarehouse, key)}
+                      className={clsx(
+                        'rounded-full px-2.5 py-1 text-xs ring-1 transition',
+                        active
+                          ? 'bg-brand-700 text-white ring-brand-700'
+                          : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50',
+                      )}
+                    >
+                      {label} <span className={active ? 'text-brand-100' : 'text-slate-400'}>({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {availableCities.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] text-slate-500">Comuna</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableCities.map((city) => {
+                    const active = filterCities.has(city);
+                    const count = pendingList.filter((o) => o.customerCity === city).length;
+                    return (
+                      <button
+                        key={city}
+                        type="button"
+                        onClick={() => toggleInSet(setFilterCities, city)}
+                        className={clsx(
+                          'rounded-full px-2.5 py-1 text-xs ring-1 transition',
+                          active
+                            ? 'bg-brand-700 text-white ring-brand-700'
+                            : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50',
+                        )}
+                      >
+                        {city} <span className={active ? 'text-brand-100' : 'text-slate-400'}>({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {availableMethods.length > 0 && (
+              <div className="flex flex-col gap-1.5">
+                <span className="text-[11px] text-slate-500">Método de envío</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableMethods.map((method) => {
+                    const active = filterMethods.has(method);
+                    const count = pendingList.filter((o) => o.shippingMethod === method).length;
+                    return (
+                      <button
+                        key={method}
+                        type="button"
+                        onClick={() => toggleInSet(setFilterMethods, method)}
+                        className={clsx(
+                          'rounded-full px-2.5 py-1 text-xs ring-1 transition',
+                          active
+                            ? 'bg-brand-700 text-white ring-brand-700'
+                            : 'bg-white text-slate-700 ring-slate-300 hover:bg-slate-50',
+                        )}
+                      >
+                        {method} <span className={active ? 'text-brand-100' : 'text-slate-400'}>({count})</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         <OrderSearchBox value={search} onChange={setSearch} />
         <div className="space-y-2">
-          {pendingList.filter((o) => matchesOrderId(o.number, search)).map((o) => {
+          {visibleList.filter((o) => matchesOrderId(o.number, search)).map((o) => {
             const isSel = selected.has(o.id);
             return (
               <button
@@ -445,7 +629,9 @@ export function SequenceNew() {
                     <WcStatusBadge slug={o.wcStatus} />
                   </div>
                   <div className="truncate text-xs text-slate-500">
-                    {new Date(o.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })} · {o.customerName || '—'} · {o.itemCount} items
+                    {new Date(o.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })} · {o.customerName || '—'}
+                    {o.customerCity && <> · {o.customerCity}</>}
+                    {' · '}{o.itemCount} items
                   </div>
                   {o.lastRemoval && (
                     <div className="flex items-start gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-[11px] leading-snug text-amber-900 ring-1 ring-amber-200">
