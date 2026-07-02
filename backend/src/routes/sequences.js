@@ -253,7 +253,23 @@ router.get('/:id/albaranes.pdf', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE
       : orders;
 
     if (filtered.length === 0) {
-      throw new HttpError(409, 'No printable orders in this sequence');
+      // Distinguir la causa para dar al operador un mensaje procesable:
+      //   - Si hay pedidos en la secuencia pero todos son solo B2 y el toggle
+      //     los excluyó, decirlo explícitamente para que sepa qué destildar.
+      //   - Si no hay ningún pedido imprimible (secuencia vacía o con pedidos
+      //     ya entregados/removidos), aclarar que no es un tema del filtro.
+      if (excludeOnlyB2 && orders.length > 0) {
+        throw new HttpError(
+          409,
+          `Todos los pedidos de esta secuencia son solo B2 (${orders.length} pedido${orders.length === 1 ? '' : 's'} sin items B1). Desmarca "Excluir pedidos solo B2" para imprimir sus albaranes igual — sirven de comprobante para el conductor.`,
+          { reason: 'all_orders_are_b2_only', totalOrders: orders.length },
+        );
+      }
+      throw new HttpError(
+        409,
+        'No hay pedidos imprimibles en esta secuencia (los pedidos deben estar en secuencia, empacados, clasificados o cargados).',
+        { reason: 'no_printable_orders' },
+      );
     }
 
     res.setHeader('Content-Type', 'application/pdf');

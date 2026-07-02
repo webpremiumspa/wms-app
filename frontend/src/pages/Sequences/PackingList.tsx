@@ -56,13 +56,22 @@ export function PackingList() {
   // Aplica filtro por ruta + orden por stopPosition desc (parada lejana primero).
   const sorted = applyRouteFilter(data, routeFilter);
 
-  async function printAll() {
+  // Cuando el backend devuelve reason='all_orders_are_b2_only', guardamos el
+  // flag para ofrecer un botón "Imprimir igual" que reintenta sin el filtro.
+  // Sin esto el operador ve el error y no sabe qué acción tomar.
+  const [printErrorAllB2, setPrintErrorAllB2] = useState(false);
+
+  async function printAll(overrideExcludeOnlyB2?: boolean) {
     setPrintError(null);
+    setPrintErrorAllB2(false);
     setPrinting(true);
+    const effectiveExclude = overrideExcludeOnlyB2 !== undefined ? overrideExcludeOnlyB2 : excludeOnlyB2;
     try {
-      await sequencesApi.openAlbaranesBatch(seqId, { excludeOnlyB2 });
+      await sequencesApi.openAlbaranesBatch(seqId, { excludeOnlyB2: effectiveExclude });
     } catch (e: any) {
+      const reason = e.response?.data?.details?.reason;
       setPrintError(e.response?.data?.message || 'No se pudieron generar los albaranes');
+      setPrintErrorAllB2(reason === 'all_orders_are_b2_only');
     } finally {
       setPrinting(false);
     }
@@ -105,7 +114,7 @@ export function PackingList() {
             </div>
             <button
               type="button"
-              onClick={printAll}
+              onClick={() => printAll()}
               disabled={printing}
               className="btn-primary shrink-0"
             >
@@ -127,7 +136,20 @@ export function PackingList() {
         </div>
       )}
       {printError && (
-        <div className="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 md:block">{printError}</div>
+        <div className="hidden rounded-lg bg-red-50 px-3 py-3 text-sm text-red-700 ring-1 ring-red-200 md:block">
+          <div>{printError}</div>
+          {printErrorAllB2 && (
+            <button
+              type="button"
+              onClick={() => printAll(false)}
+              disabled={printing}
+              className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-xs font-medium text-red-800 ring-1 ring-red-300 hover:bg-red-100 disabled:opacity-60"
+            >
+              <Printer size={13} />
+              {printing ? 'Generando…' : `Imprimir igual (sin excluir solo ${warehouseLabel('B2')})`}
+            </button>
+          )}
+        </div>
       )}
 
       {/* Cámara embebida para que el picker escanee el siguiente albarán sin
