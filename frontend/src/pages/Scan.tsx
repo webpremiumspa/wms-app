@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import clsx from 'clsx';
 import {
   Truck,
   Printer,
@@ -58,8 +59,21 @@ export function Scan() {
   // partial-delivery sigue existiendo, pero no se llama desde Scan.
   const [actionError, setActionError] = useState<string | null>(null);
   // Si el pedido tiene >1 bultos, el cargador/clasificador debe confirmar
-  // explícitamente que tiene todos los bultos antes de avanzar.
-  const [bagsConfirmed, setBagsConfirmed] = useState(false);
+  // uno por uno. En la operación real las bolsas van a un sector y las
+  // cajas a otro, así que exigir "los tengo todos a la vista" era imposible
+  // de cumplir. Con checks por bulto individual el conductor puede tildar
+  // "Bulto 1 de 3" mientras está en la zona de bolsas, después "Bulto 3 de 3"
+  // cuando pasa por la zona de cajas, etc. Al tildar todos se habilita el
+  // botón de clasificar/cargar.
+  const [confirmedBags, setConfirmedBags] = useState<Set<number>>(new Set());
+  function toggleBag(n: number) {
+    setConfirmedBags((s) => {
+      const next = new Set(s);
+      if (next.has(n)) next.delete(n);
+      else next.add(n);
+      return next;
+    });
+  }
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order-public', idNum],
@@ -180,9 +194,15 @@ export function Scan() {
   const noRouteYet = !order.route && (showClassifyFlow || showLoadFlow);
   const isBlocked = order.status === 'blocked';
   const isNotPacked = ['received', 'sequenced', 'picked'].includes(order.status) && !order.packable && !order.b2Pickable;
-  // Bloqueo blando multi-bulto: si N>1, exigir checkbox antes de clasificar/cargar.
+  // Bloqueo blando multi-bulto: si N>1, exigir tildar los N checkboxes antes
+  // de clasificar/cargar. allBagsConfirmed es true cuando el operador tildó
+  // cada bulto (por su número 1..N).
   const bagsCount = order.bagsExpected ?? 1;
   const requiresBagsConfirm = bagsCount > 1 && (showClassifyFlow || showLoadFlow);
+  const allBagsConfirmed = !requiresBagsConfirm || (() => {
+    for (let i = 1; i <= bagsCount; i += 1) if (!confirmedBags.has(i)) return false;
+    return true;
+  })();
 
   return (
     <ScanShell>
@@ -242,7 +262,10 @@ export function Scan() {
             humano frente al camión). El listado informativo de items B2
             faltantes sigue mostrándose arriba vía B2Alert. */}
 
-        {/* ─────────── Banner multi-bulto (clasificación / carga) ─────────── */}
+        {/* ─────────── Banner multi-bulto (clasificación / carga) ───────────
+            Un checkbox por bulto. Las bolsas y las cajas viven en zonas
+            distintas del deposito; el conductor tilda cada bulto a medida
+            que lo ubica. Solo se habilita el boton al tildar los N. */}
         {requiresBagsConfirm && (
           <div className="rounded-lg bg-blue-50 px-3 py-3 ring-2 ring-blue-400">
             <div className="flex items-start gap-2">
@@ -252,20 +275,59 @@ export function Scan() {
                   Pedido con {bagsCount} bultos
                 </div>
                 <div className="mt-1 text-sm text-blue-900">
-                  Verifica que tienes <strong>los {bagsCount}</strong> bultos numerados
-                  (1 de {bagsCount} … {bagsCount} de {bagsCount}) antes de {showLoadFlow ? 'cargar al vehículo' : 'clasificar'}.
+                  Tilda cada bulto a medida que lo ubicas (bolsas y cajas suelen estar en zonas distintas).
+                  Confirma los <strong>{bagsCount}</strong> antes de {showLoadFlow ? 'cargar al vehículo' : 'clasificar'}.
                 </div>
-                <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-md bg-white px-2 py-1.5 ring-1 ring-blue-300">
-                  <input
-                    type="checkbox"
-                    checked={bagsConfirmed}
-                    onChange={(e) => setBagsConfirmed(e.target.checked)}
-                    className="mt-0.5 h-5 w-5 accent-blue-600"
-                  />
-                  <span className="text-sm font-medium text-blue-900">
-                    Confirmo que tengo los {bagsCount} bultos a la vista.
+                <div className="mt-2 space-y-1.5">
+                  {Array.from({ length: bagsCount }, (_, idx) => idx + 1).map((n) => {
+                    const checked = confirmedBags.has(n);
+                    return (
+                      <label
+                        key={n}
+                        className={clsx(
+                          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 ring-1 transition',
+                          checked
+                            ? 'bg-emerald-50 ring-emerald-300'
+                            : 'bg-white ring-blue-300 hover:bg-blue-100/40',
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleBag(n)}
+                          className="h-5 w-5 accent-blue-600"
+                        />
+                        <span className={clsx('text-sm font-medium', checked ? 'text-emerald-900' : 'text-blue-900')}>
+                          Bulto <strong>{n} de {bagsCount}</strong>
+                          {checked && ' ✓'}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="mt-2 flex items-center justify-between text-xs">
+                  <span className="text-blue-800">
+                    {confirmedBags.size}/{bagsCount} confirmados
                   </span>
-                </label>
+                  {confirmedBags.size < bagsCount && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmedBags(new Set(Array.from({ length: bagsCount }, (_, idx) => idx + 1)))}
+                      className="text-blue-700 underline hover:text-blue-900"
+                    >
+                      Marcar todos
+                    </button>
+                  )}
+                  {confirmedBags.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setConfirmedBags(new Set())}
+                      className="text-slate-500 underline hover:text-slate-700"
+                    >
+                      Limpiar
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -304,7 +366,7 @@ export function Scan() {
             )}
             <button
               onClick={() => classify.mutate()}
-              disabled={classify.isPending || !order.route || (requiresBagsConfirm && !bagsConfirmed)}
+              disabled={classify.isPending || !order.route || !allBagsConfirmed}
               className="btn-primary w-full"
             >
               <CheckCircle2 size={18} />
@@ -334,7 +396,7 @@ export function Scan() {
             )}
             <button
               onClick={() => markLoaded.mutate()}
-              disabled={markLoaded.isPending || !order.route || (requiresBagsConfirm && !bagsConfirmed)}
+              disabled={markLoaded.isPending || !order.route || !allBagsConfirmed}
               className="btn-primary w-full"
             >
               <Truck size={18} />
