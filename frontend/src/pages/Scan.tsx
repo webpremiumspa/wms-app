@@ -102,22 +102,32 @@ export function Scan() {
   // carga por B2 incompleto. El endpoint sigue disponible en ordersApi si
   // hace falta en otro lugar.
 
-  // Auto-redirect a packing/picking-b2 si solo aplica una de esas acciones.
-  // Para 'classify' y 'load' no redirige — se muestran en esta misma pantalla.
-  const navAction: 'pack' | 'pickB2' | null = (() => {
-    if (!user || !order) return null;
-    const opts: Array<'pack' | 'pickB2'> = [];
-    if (canPack && order.packable && order.openSequenceId) opts.push('pack');
-    if (canPickB2 && order.b2Pickable && order.openSequenceId) opts.push('pickB2');
-    return opts.length === 1 ? opts[0] : null;
+  // Acciones potenciales que aplican al usuario para este pedido, en orden
+  // de prioridad para el modal (classify primero — permite despachar aunque
+  // B2 siga abierto; pickB2 y pack pueden esperar). 'classify' se renderiza
+  // inline en esta misma vista (showClassifyFlow), así que si es la única
+  // opción NO navegamos: dejamos que el flujo classify aparezca aquí mismo.
+  const availableActions: Array<'classify' | 'pickB2' | 'pack'> = (() => {
+    if (!user || !order) return [];
+    const list: Array<'classify' | 'pickB2' | 'pack'> = [];
+    // classify: exige status='packed' + cap load. La ruta no la exigimos
+    // aquí — si falta, el flujo inline muestra el aviso "sin ruta asignada"
+    // y el botón queda deshabilitado.
+    if (canLoad && order.status === 'packed') list.push('classify');
+    if (canPickB2 && order.b2Pickable && order.openSequenceId) list.push('pickB2');
+    if (canPack && order.packable && order.openSequenceId) list.push('pack');
+    return list;
   })();
 
-  const showSelectorNow = (() => {
-    if (!user || !order) return false;
-    const opts: number = (canPack && order.packable && order.openSequenceId ? 1 : 0)
-      + (canPickB2 && order.b2Pickable && order.openSequenceId ? 1 : 0);
-    return opts >= 2;
+  // Auto-redirect solo cuando queda 1 acción que efectivamente tiene su vista
+  // separada. classify vive inline en Scan, entonces no navega.
+  const navAction: 'pack' | 'pickB2' | null = (() => {
+    if (availableActions.length !== 1) return null;
+    const only = availableActions[0];
+    return only === 'pack' || only === 'pickB2' ? only : null;
   })();
+
+  const showSelectorNow = availableActions.length >= 2;
 
   useEffect(() => {
     if (!user || !order) return;
@@ -131,7 +141,7 @@ export function Scan() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, order?.id, order?.status]);
 
-  function pickSelectorAction(kind: 'pack' | 'pickB2') {
+  function pickSelectorAction(kind: 'classify' | 'pack' | 'pickB2') {
     setShowSelector(false);
     if (!order) return;
     if (kind === 'pack' && order.openSequenceId) {
@@ -139,6 +149,8 @@ export function Scan() {
     } else if (kind === 'pickB2' && order.openSequenceId) {
       navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`);
     }
+    // kind === 'classify': quedamos en esta vista. showClassifyFlow renderiza
+    // el bloque de clasificación con el botón "Confirmar clasificación".
   }
 
   if (!Number.isFinite(idNum) || idNum <= 0) {
@@ -490,9 +502,10 @@ export function Scan() {
         </div>
       </div>
 
-      {/* Modal selector cuando hay 2+ acciones de PACKING posibles
-          (cap B1 + cap B2 sobre el mismo pedido). Las acciones load/classify
-          NO entran al selector porque ahora se ejecutan inline. */}
+      {/* Modal selector cuando hay 2+ acciones aplicables (ver
+          availableActions). classify sí entra al selector cuando la cuenta
+          tiene cap load además de otra cap — antes se auto-navegaba a
+          pickB2 y el usuario quedaba trabado ahí sin poder despachar. */}
       {showSelector && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="card w-full max-w-md space-y-3 p-4">
@@ -503,12 +516,15 @@ export function Scan() {
               </p>
             </div>
             <div className="space-y-2">
-              {canPack && order.packable && (
+              {/* Orden intencional: classify primero (permite despachar el
+                  pedido aunque el B2 siga pendiente), luego pickB2, luego
+                  pack. Coincide con availableActions arriba. */}
+              {canLoad && order.status === 'packed' && (
                 <SelectorAction
-                  icon={<ClipboardCheck size={20} />}
-                  title={`Empacar ${warehouseLabel('B1')}`}
-                  description={`Armar la bolsa con los items de ${warehouseLabel('B1')} y cerrar el pedido.`}
-                  onClick={() => pickSelectorAction('pack')}
+                  icon={<CheckCircle2 size={20} />}
+                  title="Clasificar"
+                  description={`Confirmar que el pedido está listo para su ruta. El ${warehouseLabel('B2')} pendiente NO bloquea — se completa aparte.`}
+                  onClick={() => pickSelectorAction('classify')}
                 />
               )}
               {canPickB2 && order.b2Pickable && (
@@ -517,6 +533,14 @@ export function Scan() {
                   title={`Pickear ${warehouseLabel('B2')}`}
                   description={`Armar la sub-bolsa con los items de ${warehouseLabel('B2')} y cerrar el ${warehouseLabel('B2')}.`}
                   onClick={() => pickSelectorAction('pickB2')}
+                />
+              )}
+              {canPack && order.packable && (
+                <SelectorAction
+                  icon={<ClipboardCheck size={20} />}
+                  title={`Empacar ${warehouseLabel('B1')}`}
+                  description={`Armar la bolsa con los items de ${warehouseLabel('B1')} y cerrar el pedido.`}
+                  onClick={() => pickSelectorAction('pack')}
                 />
               )}
             </div>
