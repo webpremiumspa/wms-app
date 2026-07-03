@@ -53,6 +53,13 @@ export type RouteSummary = {
   classified: number;
   loaded: number;
   b2Count: number;
+  // Multi-bulto: conteos por bulto de toda la ruta. bagsTotal es la suma de
+  // bagsExpected de todos los pedidos; bagsClassified/bagsLoaded contabilizan
+  // los bultos registrados. Solo tienen valor cuando hay pedidos multi-bulto
+  // — el frontend los usa para mostrar sub-línea "1/3 bultos".
+  bagsTotal?: number;
+  bagsClassified?: number;
+  bagsLoaded?: number;
   orders: Array<{ id: number; number: string; route: string; stopPosition: number | null; status: string; hasB2Pending: boolean }>;
 };
 

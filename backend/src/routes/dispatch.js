@@ -184,6 +184,9 @@ router.post('/:orderId/bag/:bag/undo', requireCap(WMS_CAPS.LOAD), async (req, re
 });
 
 // Resumen del día por ruta: cuántos pedidos esperados, clasificados, cargados.
+// Multi-bulto: además del conteo por pedido, agregamos sub-conteos por bulto
+// (bagsTotal, bagsClassified, bagsLoaded) para que la UI del scan pueda
+// mostrar "1/3 bultos" cuando el pedido ya avanzó pero aún no se completó.
 router.get('/today', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
   try {
     const orders = await prisma.order.findMany({
@@ -191,9 +194,32 @@ router.get('/today', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (_req,
         status: { in: ['packed', 'classified', 'loaded'] },
         route: { not: null },
       },
-      select: { id: true, number: true, route: true, stopPosition: true, status: true, hasB2Pending: true },
+      select: {
+        id: true,
+        number: true,
+        route: true,
+        stopPosition: true,
+        status: true,
+        hasB2Pending: true,
+        bagsExpected: true,
+      },
       orderBy: [{ route: 'asc' }, { stopPosition: 'asc' }],
     });
+
+    // Conteo agregado de bultos ya registrados por (orderId, event). Un solo
+    // groupBy evita el N+1 sobre order_bag_events.
+    const orderIds = orders.map((o) => o.id);
+    let bagCounts = new Map(); // key: `${orderId}:${event}`, value: count
+    if (orderIds.length > 0) {
+      const grouped = await prisma.orderBagEvent.groupBy({
+        by: ['orderId', 'event'],
+        where: { orderId: { in: orderIds } },
+        _count: { _all: true },
+      });
+      for (const g of grouped) {
+        bagCounts.set(`${g.orderId}:${g.event}`, g._count._all);
+      }
+    }
 
     const byRoute = new Map();
     for (const o of orders) {
@@ -203,12 +229,29 @@ router.get('/today', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (_req,
         classified: 0,
         loaded: 0,
         b2Count: 0,
+        // Sub-conteos por bulto — suman todos los bultos de la ruta.
+        bagsTotal: 0,
+        bagsClassified: 0,
+        bagsLoaded: 0,
         orders: [],
       };
+      const bagsExpected = Math.max(1, o.bagsExpected ?? 1);
+      const clsCount = Math.min(bagsExpected, bagCounts.get(`${o.id}:classified`) || 0);
+      const ldCount = Math.min(bagsExpected, bagCounts.get(`${o.id}:loaded`) || 0);
+
       r.total += 1;
       if (o.status === 'classified' || o.status === 'loaded') r.classified += 1;
       if (o.status === 'loaded') r.loaded += 1;
       if (o.hasB2Pending) r.b2Count += 1;
+      r.bagsTotal += bagsExpected;
+      // Si el pedido ya está classified/loaded, contamos como bagsExpected
+      // completos (los bultos se registran al llegar al último, pero
+      // pedidos ya completos podrían no tener eventos por bulto si el
+      // pedido es single-bulto — en ese caso asumimos completos).
+      r.bagsClassified += o.status === 'classified' || o.status === 'loaded'
+        ? bagsExpected
+        : clsCount;
+      r.bagsLoaded += o.status === 'loaded' ? bagsExpected : ldCount;
       r.orders.push(o);
       byRoute.set(o.route, r);
     }

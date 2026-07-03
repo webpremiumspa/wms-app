@@ -10,11 +10,29 @@ type ProgressHeroProps = {
   total: number;
   verb: string;        // ej. "clasificados", "cargados", "empacados"
   accent?: 'brand' | 'amber';
+  // Sub-línea multi-bulto opcional. Si el conjunto tiene pedidos multi-bulto
+  // y hay progreso parcial (bultos ya registrados pero pedidos aún
+  // incompletos), mostramos "1/3 bultos ya registrados" abajo del número
+  // grande. Sin bagsTotal o si bagsTotal == total (todos single-bulto), no
+  // aparece nada.
+  bagsDone?: number;
+  bagsTotal?: number;
+  bagsVerb?: string;   // ej. "bultos ya registrados"
 };
 
-export function ProgressHero({ title, done, total, verb, accent = 'brand' }: ProgressHeroProps) {
+export function ProgressHero({ title, done, total, verb, accent = 'brand', bagsDone, bagsTotal, bagsVerb }: ProgressHeroProps) {
   const pct = total > 0 ? Math.round((done / total) * 100) : 0;
   const isComplete = total > 0 && done === total;
+  // Mostrar sub-línea de bultos solo si:
+  //   - hay al menos un pedido multi-bulto en el conjunto (bagsTotal > total)
+  //   - Y hay progreso parcial ya registrado que aún no llega al 100% del hero
+  //     (bagsDone > 0 y done < total)
+  //   - Y el hero no muestra ya 100% (isComplete)
+  const showBagSubline = !isComplete
+    && typeof bagsTotal === 'number' && typeof bagsDone === 'number'
+    && bagsTotal > total
+    && bagsDone > 0
+    && bagsDone < bagsTotal;
   const baseAccentBg = accent === 'amber' ? 'bg-amber-50' : 'bg-brand-50';
   const baseAccentRing = accent === 'amber' ? 'ring-amber-300' : 'ring-brand-300';
   const baseAccentText = accent === 'amber' ? 'text-amber-700' : 'text-brand-700';
@@ -37,6 +55,11 @@ export function ProgressHero({ title, done, total, verb, accent = 'brand' }: Pro
           <div className={clsx('mt-0.5 text-2xl font-bold', isComplete ? 'text-emerald-800' : baseAccentText2)}>
             {done}/{total} {verb}
           </div>
+          {showBagSubline && (
+            <div className={clsx('mt-0.5 text-xs font-medium', baseAccentText)}>
+              Progreso parcial: <strong>{bagsDone}/{bagsTotal}</strong> {bagsVerb || 'bultos ya registrados'}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {isComplete && <CheckCircle2 className="text-emerald-700" size={28} />}
@@ -111,5 +134,20 @@ export function RouteProgressHero({ routes, mode, highlightRoute }: Props) {
   if (!current) return null;
   const done = mode === 'classified' ? current.classified : current.loaded;
   const verb = mode === 'classified' ? 'clasificados' : 'cargados';
-  return <ProgressHero title={`Ruta ${current.route}`} done={done} total={current.total} verb={verb} />;
+  // Sub-línea multi-bulto: sumamos los bultos registrados del modo actual
+  // sobre el total de bultos de la ruta. Solo aparece si hay pedidos multi
+  // bulto y hay progreso parcial (ver ProgressHero).
+  const bagsDone = mode === 'classified' ? current.bagsClassified : current.bagsLoaded;
+  const bagsVerb = mode === 'classified' ? 'bultos clasificados' : 'bultos cargados';
+  return (
+    <ProgressHero
+      title={`Ruta ${current.route}`}
+      done={done}
+      total={current.total}
+      verb={verb}
+      bagsDone={bagsDone}
+      bagsTotal={current.bagsTotal}
+      bagsVerb={bagsVerb}
+    />
+  );
 }
