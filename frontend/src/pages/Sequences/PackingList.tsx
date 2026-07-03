@@ -29,6 +29,10 @@ export function PackingList() {
   const seqId = Number(id);
   const navigate = useNavigate();
   const [printError, setPrintError] = useState<string | null>(null);
+  // Cuando el backend devuelve reason='all_orders_are_b2_only', guardamos el
+  // flag para ofrecer un botón "Imprimir igual" que reintenta sin el filtro.
+  // Sin esto el operador ve el error y no sabe qué acción tomar.
+  const [printErrorAllB2, setPrintErrorAllB2] = useState(false);
   const [printing, setPrinting] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
@@ -55,11 +59,6 @@ export function PackingList() {
   const { routes, hasNoRoute } = extractRoutes(data);
   // Aplica filtro por ruta + orden por stopPosition desc (parada lejana primero).
   const sorted = applyRouteFilter(data, routeFilter);
-
-  // Cuando el backend devuelve reason='all_orders_are_b2_only', guardamos el
-  // flag para ofrecer un botón "Imprimir igual" que reintenta sin el filtro.
-  // Sin esto el operador ve el error y no sabe qué acción tomar.
-  const [printErrorAllB2, setPrintErrorAllB2] = useState(false);
 
   async function printAll(overrideExcludeOnlyB2?: boolean) {
     setPrintError(null);
