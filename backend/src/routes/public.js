@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
 import { getOrderLoadability } from '../services/order-actions.js';
+import { getBagEventsFor } from '../services/bag-events.js';
 
 const router = Router();
 
@@ -41,6 +42,11 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
     // bloqueo B2 o el banner de entrega parcial. Se incluye en la respuesta
     // pública porque cualquiera con el albarán físico ya conoce los items.
     const loadability = await getOrderLoadability(order.id);
+
+    // Progreso de bultos: para pedidos multi-bulto, cuáles ya fueron
+    // clasificados y cuáles ya fueron cargados. La UI de scan usa esto para
+    // mostrar "1/3 clasificados", pintar el bulto activo, etc.
+    const bagProgress = await getBagEventsFor(order.id);
 
     // Progreso de la secuencia abierta del pedido: para que la vista de scan
     // (clasificación / carga) muestre un warning suave si aún hay pedidos
@@ -88,6 +94,8 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
         allowPartialDelivery: order.allowPartialDelivery,
         partialDeliveryNote: order.partialDeliveryNote,
         bagsExpected: order.bagsExpected,
+        bagsClassified: bagProgress.classified,
+        bagsLoaded: bagProgress.loaded,
         classifiedAt: order.classifiedAt,
         loadedAt: order.loadedAt,
         packable,

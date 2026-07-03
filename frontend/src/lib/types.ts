@@ -151,6 +151,12 @@ export type OrderDetail = {
   // imprime numerado "1 de N, 2 de N, ..." y la UI muestra banners de
   // verificación al clasificar/cargar.
   bagsExpected?: number;
+  // Multi-bulto: para pedidos con bagsExpected>1, qué bultos ya fueron
+  // clasificados / cargados. Cada entrada trae bag (número), at (timestamp)
+  // y actorName (quién lo registró). La UI de scan usa esto para pintar el
+  // bulto activo verde/gris y mostrar "1/3 clasificados".
+  bagsClassified?: Array<{ bag: number; at: string; actorName: string | null }>;
+  bagsLoaded?: Array<{ bag: number; at: string; actorName: string | null }>;
   createdAt?: string; // fecha de WC (cuándo se hizo el pedido)
   packedAt: string | null;
   packedBy: Picker | null;

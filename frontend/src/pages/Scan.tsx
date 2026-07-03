@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import clsx from 'clsx';
 import {
@@ -31,6 +31,10 @@ import { RouteProgressPills, RouteProgressHero } from '@/components/RouteProgres
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 
+// Extrae el wpOrderId de un texto QR. Acepta:
+//   /scan/<id>            (nuevo formato URL)
+//   /scan/<id>?bag=N      (multi-bulto, el bag lo lee el consumer aparte)
+//   WMS:<id>              (legacy)
 function parseQrToWpId(raw: string): number | null {
   const trimmed = raw.trim();
   const urlMatch = trimmed.match(/\/scan\/(\d+)(?:[/?#]|$)/);
@@ -38,6 +42,16 @@ function parseQrToWpId(raw: string): number | null {
   const wmsMatch = trimmed.match(/^WMS:(\d+)$/);
   if (wmsMatch) return Number(wmsMatch[1]);
   return null;
+}
+
+// Extrae el bag number del query string del scan escaneado (si viene).
+// Ej. /scan/123?bag=2 → 2. Se usa cuando el conductor pega la URL en el
+// scanner y necesitamos leer el bag desde el texto directamente.
+export function parseQrToBagNumber(raw: string): number | null {
+  const m = raw.match(/[?&]bag=(\d+)(?:&|$|#)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
 }
 
 export function Scan() {
@@ -54,26 +68,37 @@ export function Scan() {
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [showSelector, setShowSelector] = useState(false);
-  // Nota: se sacaron showPartialForm / partialNote / partialError junto con
-  // el bloqueo de carga por B2 incompleto. El endpoint POST /orders/:id/
-  // partial-delivery sigue existiendo, pero no se llama desde Scan.
   const [actionError, setActionError] = useState<string | null>(null);
-  // Si el pedido tiene >1 bultos, el cargador/clasificador debe confirmar
-  // uno por uno. En la operación real las bolsas van a un sector y las
-  // cajas a otro, así que exigir "los tengo todos a la vista" era imposible
-  // de cumplir. Con checks por bulto individual el conductor puede tildar
-  // "Bulto 1 de 3" mientras está en la zona de bolsas, después "Bulto 3 de 3"
-  // cuando pasa por la zona de cajas, etc. Al tildar todos se habilita el
-  // botón de clasificar/cargar.
-  const [confirmedBags, setConfirmedBags] = useState<Set<number>>(new Set());
-  function toggleBag(n: number) {
-    setConfirmedBags((s) => {
-      const next = new Set(s);
-      if (next.has(n)) next.delete(n);
-      else next.add(n);
-      return next;
-    });
-  }
+
+  // Multi-bulto: el número del bulto activo viene por ?bag=N en la URL del
+  // QR escaneado. Si no viene (albarán viejo pre-multi-bulto), la vista
+  // muestra un fallback donde el operador elige a mano cuál es.
+  const [searchParams] = useSearchParams();
+  const bagFromQuery = (() => {
+    const raw = searchParams.get('bag');
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
+  // Si el usuario elige el bulto vía fallback UI, guardamos su elección
+  // aquí (equivalente a haber venido con ?bag=N).
+  const [manualBag, setManualBag] = useState<number | null>(null);
+  const activeBag = bagFromQuery ?? manualBag;
+
+  // Info del último bulto que registré en este mismo scan — se usa para la
+  // card "Deshacer" con countdown. Al deshacer o al pasar los 30s, se limpia.
+  const [lastRegisteredBag, setLastRegisteredBag] = useState<{
+    bag: number;
+    event: 'classified' | 'loaded';
+    at: number;
+  } | null>(null);
+  // Countdown "Deshacer" — tick cada segundo mientras hay algo por deshacer.
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => {
+    if (!lastRegisteredBag) return;
+    const t = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [lastRegisteredBag]);
 
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order-public', idNum],
@@ -88,10 +113,14 @@ export function Scan() {
     refetchInterval: 8_000,
   });
 
+  // Clasificar un bulto. Si el pedido es multi-bulto, se pasa el bag.
+  // El backend devuelve progress { done, total } y complete: true cuando se
+  // registró el último bulto (recién ahí transiciona a status='classified').
   const classify = useMutation({
-    mutationFn: () => dispatchApi.classify(order!.id),
-    onSuccess: () => {
+    mutationFn: (bag?: number) => dispatchApi.classify(order!.id, bag),
+    onSuccess: (_data, bag) => {
       setActionError(null);
+      if (bag) setLastRegisteredBag({ bag, event: 'classified', at: Date.now() });
       queryClient.invalidateQueries({ queryKey: ['order-public', idNum] });
       queryClient.invalidateQueries({ queryKey: ['dispatch-today'] });
     },
@@ -101,14 +130,30 @@ export function Scan() {
   });
 
   const markLoaded = useMutation({
-    mutationFn: () => dispatchApi.loaded(order!.id),
-    onSuccess: () => {
+    mutationFn: (bag?: number) => dispatchApi.loaded(order!.id, bag),
+    onSuccess: (_data, bag) => {
       setActionError(null);
+      if (bag) setLastRegisteredBag({ bag, event: 'loaded', at: Date.now() });
       queryClient.invalidateQueries({ queryKey: ['order-public', idNum] });
       queryClient.invalidateQueries({ queryKey: ['dispatch-today'] });
     },
     onError: (err: any) => {
       setActionError(err.response?.data?.message || 'No se pudo confirmar la carga');
+    },
+  });
+
+  // Deshacer bulto — solo dentro de la ventana 30s desde el registro.
+  const undoBag = useMutation({
+    mutationFn: (args: { bag: number; event: 'classified' | 'loaded' }) =>
+      dispatchApi.undoBag(order!.id, args.bag, args.event),
+    onSuccess: () => {
+      setActionError(null);
+      setLastRegisteredBag(null);
+      queryClient.invalidateQueries({ queryKey: ['order-public', idNum] });
+      queryClient.invalidateQueries({ queryKey: ['dispatch-today'] });
+    },
+    onError: (err: any) => {
+      setActionError(err.response?.data?.message || 'No se pudo deshacer el bulto');
     },
   });
 
@@ -194,15 +239,33 @@ export function Scan() {
   const noRouteYet = !order.route && (showClassifyFlow || showLoadFlow);
   const isBlocked = order.status === 'blocked';
   const isNotPacked = ['received', 'sequenced', 'picked'].includes(order.status) && !order.packable && !order.b2Pickable;
-  // Bloqueo blando multi-bulto: si N>1, exigir tildar los N checkboxes antes
-  // de clasificar/cargar. allBagsConfirmed es true cuando el operador tildó
-  // cada bulto (por su número 1..N).
+
+  // Multi-bulto: derivadas del progreso por bulto que trae el response.
   const bagsCount = order.bagsExpected ?? 1;
-  const requiresBagsConfirm = bagsCount > 1 && (showClassifyFlow || showLoadFlow);
-  const allBagsConfirmed = !requiresBagsConfirm || (() => {
-    for (let i = 1; i <= bagsCount; i += 1) if (!confirmedBags.has(i)) return false;
-    return true;
-  })();
+  const isMultiBag = bagsCount > 1 && (showClassifyFlow || showLoadFlow);
+  const activeEvent: 'classified' | 'loaded' | null = showClassifyFlow
+    ? 'classified'
+    : showLoadFlow
+      ? 'loaded'
+      : null;
+  const bagsForEvent = activeEvent === 'classified'
+    ? (order.bagsClassified ?? [])
+    : activeEvent === 'loaded'
+      ? (order.bagsLoaded ?? [])
+      : [];
+  const doneBags = new Set(bagsForEvent.map((b) => b.bag));
+  const remainingBags = Array.from({ length: bagsCount }, (_, i) => i + 1).filter((n) => !doneBags.has(n));
+  // El bulto activo (viene del ?bag= del QR o de la elección manual del
+  // operador). Si el operador no eligió, mostramos el fallback UI para que
+  // pique un botón "Bulto N de M".
+  const needsBagPick = isMultiBag && activeBag == null;
+  // Habilitar botón de acción: no procesando + ruta OK + (single-bulto o activeBag válido).
+  const canFire = !classify.isPending && !markLoaded.isPending && !!order.route
+    && (!isMultiBag || (activeBag != null && !doneBags.has(activeBag)));
+
+  // Countdown deshacer derivado (no hook).
+  const undoRemainingMs = lastRegisteredBag ? Math.max(0, 30000 - (nowTick - lastRegisteredBag.at)) : 0;
+  const canUndo = !!lastRegisteredBag && undoRemainingMs > 0 && !undoBag.isPending;
 
   return (
     <ScanShell>
@@ -262,74 +325,112 @@ export function Scan() {
             humano frente al camión). El listado informativo de items B2
             faltantes sigue mostrándose arriba vía B2Alert. */}
 
-        {/* ─────────── Banner multi-bulto (clasificación / carga) ───────────
-            Un checkbox por bulto. Las bolsas y las cajas viven en zonas
-            distintas del deposito; el conductor tilda cada bulto a medida
-            que lo ubica. Solo se habilita el boton al tildar los N. */}
-        {requiresBagsConfirm && (
-          <div className="rounded-lg bg-blue-50 px-3 py-3 ring-2 ring-blue-400">
+        {/* ─────────── Multi-bulto: identifica el bulto activo y muestra progreso ───────────
+            Cada scan registra UN bulto (el que trae ?bag=N en el QR o el
+            elegido en el fallback). El pedido pasa a classified/loaded solo
+            al registrar los N. Ver services/bag-events.js. */}
+        {isMultiBag && needsBagPick && (
+          <div className="rounded-lg bg-amber-50 px-3 py-3 ring-2 ring-amber-400">
             <div className="flex items-start gap-2">
-              <Package className="shrink-0 text-blue-700" size={22} />
+              <Package className="shrink-0 text-amber-700" size={22} />
               <div className="flex-1">
-                <div className="text-base font-bold uppercase text-blue-900">
-                  Pedido con {bagsCount} bultos
+                <div className="text-base font-bold uppercase text-amber-900">
+                  Pedido con {bagsCount} bultos · elige cuál estás procesando
                 </div>
-                <div className="mt-1 text-sm text-blue-900">
-                  Tilda cada bulto a medida que lo ubicas (bolsas y cajas suelen estar en zonas distintas).
-                  Confirma los <strong>{bagsCount}</strong> antes de {showLoadFlow ? 'cargar al vehículo' : 'clasificar'}.
+                <div className="mt-1 text-sm text-amber-900">
+                  Este albarán no trae el número de bulto en el QR (albarán viejo o QR sin <code>?bag</code>).
+                  Lee el rótulo físico ("BULTO X DE {bagsCount}") y toca el que corresponde.
                 </div>
-                <div className="mt-2 space-y-1.5">
-                  {Array.from({ length: bagsCount }, (_, idx) => idx + 1).map((n) => {
-                    const checked = confirmedBags.has(n);
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  {Array.from({ length: bagsCount }, (_, i) => i + 1).map((n) => {
+                    const already = doneBags.has(n);
                     return (
-                      <label
+                      <button
                         key={n}
+                        type="button"
+                        disabled={already}
+                        onClick={() => setManualBag(n)}
                         className={clsx(
-                          'flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 ring-1 transition',
-                          checked
-                            ? 'bg-emerald-50 ring-emerald-300'
-                            : 'bg-white ring-blue-300 hover:bg-blue-100/40',
+                          'rounded-lg px-3 py-3 text-base font-bold ring-2 transition',
+                          already
+                            ? 'bg-emerald-100 text-emerald-800 ring-emerald-300 cursor-not-allowed opacity-70'
+                            : 'bg-white text-amber-900 ring-amber-400 hover:bg-amber-100',
                         )}
                       >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => toggleBag(n)}
-                          className="h-5 w-5 accent-blue-600"
-                        />
-                        <span className={clsx('text-sm font-medium', checked ? 'text-emerald-900' : 'text-blue-900')}>
-                          Bulto <strong>{n} de {bagsCount}</strong>
-                          {checked && ' ✓'}
-                        </span>
-                      </label>
+                        Bulto <strong>{n} de {bagsCount}</strong>
+                        {already && <span className="ml-1 text-emerald-700">✓</span>}
+                      </button>
                     );
                   })}
                 </div>
-                <div className="mt-2 flex items-center justify-between text-xs">
-                  <span className="text-blue-800">
-                    {confirmedBags.size}/{bagsCount} confirmados
-                  </span>
-                  {confirmedBags.size < bagsCount && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmedBags(new Set(Array.from({ length: bagsCount }, (_, idx) => idx + 1)))}
-                      className="text-blue-700 underline hover:text-blue-900"
-                    >
-                      Marcar todos
-                    </button>
-                  )}
-                  {confirmedBags.size > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirmedBags(new Set())}
-                      className="text-slate-500 underline hover:text-slate-700"
-                    >
-                      Limpiar
-                    </button>
-                  )}
-                </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {isMultiBag && activeBag != null && (
+          <div className={clsx(
+            'rounded-lg px-3 py-3 ring-2',
+            doneBags.has(activeBag)
+              ? 'bg-emerald-50 ring-emerald-300'
+              : 'bg-blue-50 ring-blue-400',
+          )}>
+            <div className="flex items-start gap-2">
+              <Package className={clsx('shrink-0', doneBags.has(activeBag) ? 'text-emerald-700' : 'text-blue-700')} size={22} />
+              <div className="flex-1">
+                <div className={clsx('text-base font-bold uppercase', doneBags.has(activeBag) ? 'text-emerald-900' : 'text-blue-900')}>
+                  Bulto {activeBag} de {bagsCount}
+                  {doneBags.has(activeBag) && ' · registrado ✓'}
+                </div>
+                <div className={clsx('mt-1 text-sm', doneBags.has(activeBag) ? 'text-emerald-900' : 'text-blue-900')}>
+                  Progreso {showLoadFlow ? 'de carga' : 'de clasificación'}:{' '}
+                  <strong>{bagsForEvent.length}/{bagsCount}</strong>
+                  {bagsForEvent.length > 0 && ' — bultos ya registrados: '}
+                  {bagsForEvent.map((b, idx) => (
+                    <span key={b.bag} className="font-medium">
+                      #{b.bag}{idx < bagsForEvent.length - 1 ? ', ' : ''}
+                    </span>
+                  ))}
+                  {remainingBags.length > 0 && (
+                    <>
+                      {' · '}Faltan: {remainingBags.map((n, idx) => (
+                        <span key={n} className="font-medium">
+                          #{n}{idx < remainingBags.length - 1 ? ', ' : ''}
+                        </span>
+                      ))}
+                    </>
+                  )}
+                </div>
+                {manualBag != null && bagFromQuery == null && (
+                  <button
+                    type="button"
+                    onClick={() => setManualBag(null)}
+                    className="mt-2 text-xs text-slate-600 underline hover:text-slate-900"
+                  >
+                    Cambiar bulto
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Card "Deshacer" con countdown 30s tras el último registro. Solo el
+            mismo actor puede deshacer dentro de la ventana (validado server). */}
+        {canUndo && lastRegisteredBag && (
+          <div className="rounded-lg bg-slate-100 px-3 py-2 ring-1 ring-slate-300 flex items-center justify-between gap-2">
+            <div className="text-xs text-slate-700">
+              Registraste <strong>Bulto {lastRegisteredBag.bag} de {bagsCount}</strong> como {lastRegisteredBag.event === 'classified' ? 'clasificado' : 'cargado'}.
+              Podés deshacer por <strong>{Math.ceil(undoRemainingMs / 1000)}s</strong> más.
+            </div>
+            <button
+              type="button"
+              onClick={() => undoBag.mutate({ bag: lastRegisteredBag.bag, event: lastRegisteredBag.event })}
+              disabled={undoBag.isPending}
+              className="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-slate-800 ring-1 ring-slate-400 hover:bg-slate-50 disabled:opacity-60"
+            >
+              <X size={12} className="inline" /> Deshacer
+            </button>
           </div>
         )}
 
@@ -365,12 +466,16 @@ export function Scan() {
               <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div>
             )}
             <button
-              onClick={() => classify.mutate()}
-              disabled={classify.isPending || !order.route || !allBagsConfirmed}
+              onClick={() => classify.mutate(isMultiBag ? activeBag ?? undefined : undefined)}
+              disabled={!canFire}
               className="btn-primary w-full"
             >
               <CheckCircle2 size={18} />
-              {classify.isPending ? 'Clasificando…' : 'Confirmar clasificación'}
+              {classify.isPending
+                ? 'Clasificando…'
+                : isMultiBag && activeBag != null
+                  ? `Confirmar clasificación del bulto ${activeBag}`
+                  : 'Confirmar clasificación'}
             </button>
           </div>
         )}
@@ -395,12 +500,16 @@ export function Scan() {
               <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}</div>
             )}
             <button
-              onClick={() => markLoaded.mutate()}
-              disabled={markLoaded.isPending || !order.route || !allBagsConfirmed}
+              onClick={() => markLoaded.mutate(isMultiBag ? activeBag ?? undefined : undefined)}
+              disabled={!canFire}
               className="btn-primary w-full"
             >
               <Truck size={18} />
-              {markLoaded.isPending ? 'Marcando…' : 'Confirmar carga al vehículo'}
+              {markLoaded.isPending
+                ? 'Marcando…'
+                : isMultiBag && activeBag != null
+                  ? `Confirmar carga del bulto ${activeBag}`
+                  : 'Confirmar carga al vehículo'}
             </button>
           </div>
         )}
@@ -411,17 +520,19 @@ export function Scan() {
             sigue existiendo por si se aprueba por otro medio (queda como
             pieza opcional para preservar el badge y la sección del albarán). */}
 
-        {/* ─────────── Éxito clasificación / carga ─────────── */}
+        {/* ─────────── Éxito clasificación / carga ───────────
+            Diferenciamos el mensaje según el pedido esté completo (todos los
+            bultos) vs solo se registró uno más de multi-bulto. */}
         {justClassified && (
           <SuccessCard
-            title="✓ Pedido clasificado"
-            description={`Pedido #${order.number} agrupado en la ruma de ${order.route || 'su ruta'}.`}
+            title="✓ Pedido clasificado (completo)"
+            description={`Pedido #${order.number} agrupado en la ruma de ${order.route || 'su ruta'} — todos los ${bagsCount} bulto${bagsCount === 1 ? '' : 's'} confirmados.`}
           />
         )}
         {justLoaded && (
           <SuccessCard
-            title="✓ Cargado al vehículo"
-            description={`Pedido #${order.number} subido a la camioneta de ${order.route || 'su ruta'}.`}
+            title="✓ Cargado al vehículo (completo)"
+            description={`Pedido #${order.number} subido a la camioneta de ${order.route || 'su ruta'} — todos los ${bagsCount} bulto${bagsCount === 1 ? '' : 's'} confirmados.`}
           />
         )}
 

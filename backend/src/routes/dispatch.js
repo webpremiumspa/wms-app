@@ -7,6 +7,7 @@ import { prisma } from '../db/prisma.js';
 import { parseQrPayload } from '../services/qr.js';
 import { getOrderLoadability } from '../services/order-actions.js';
 import { maybeAutoCloseProcess } from '../services/processes.js';
+import { registerBagEvent, undoBagEvent } from '../services/bag-events.js';
 
 const router = Router();
 router.use(requireAuth);
@@ -64,85 +65,119 @@ router.post('/scan', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, 
   }
 });
 
+// Schema de body para classify/loaded — bag opcional (multi-bulto).
+const bagBodySchema = z.object({
+  bag: z.number().int().min(1).max(20).optional(),
+});
+
 // Clasificación: separación física por ruta de los pedidos empacados. El
-// operador escanea el QR y confirma. Transición packed → classified. Requiere
-// solo que el B1 esté empacado y haya ruta asignada — el flujo B2 es
-// independiente y NO bloquea clasificar (antes sí lo hacía, pero la operación
-// necesita poder clasificar un pedido con B1 listo aunque B2 todavía esté en
-// preparación). El bloqueo de B2 incompleto se mantiene en /loaded.
+// operador escanea el QR y confirma. Transición packed → classified.
+//
+// Multi-bulto: si el pedido tiene bagsExpected > 1, el body debe traer
+// { bag: N }. Cada scan registra ese bulto en OrderBagEvent. El pedido
+// pasa a classified solo cuando se registraron los N bultos. Ver
+// services/bag-events.js para la lógica exacta.
+//
+// Single-bulto (bagsExpected = 1): funciona como siempre — un scan
+// clasifica el pedido completo.
 router.post('/:orderId/classify', requireCap(WMS_CAPS.LOAD), async (req, res, next) => {
   try {
     const id = Number(req.params.orderId);
+    const parsed = bagBodySchema.safeParse(req.body || {});
+    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
+
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) throw new HttpError(404, 'Order not found');
-    if (order.status === 'classified' || order.status === 'loaded' || order.status === 'delivered') {
-      return res.json({ ok: true, alreadyClassified: true });
+
+    // Idempotencia: si ya está clasificado o más adelante, no hacer nada.
+    if (['classified', 'loaded', 'delivered'].includes(order.status)) {
+      return res.json({ ok: true, alreadyClassified: true, complete: true });
     }
     if (order.status !== 'packed') {
       throw new HttpError(409, `Cannot classify order in status "${order.status}". Must be packed first.`);
     }
     if (!order.route) throw new HttpError(409, 'Order has no route assigned yet');
 
-    await prisma.$transaction([
-      prisma.order.update({
-        where: { id },
-        data: { status: 'classified', classifiedAt: new Date() },
-      }),
-      prisma.event.create({
-        data: { type: 'dispatch.classified', actorId: req.user.wpUserId, orderId: id },
-      }),
-    ]);
+    const bagsExpected = Math.max(1, order.bagsExpected ?? 1);
+    const bag = parsed.data.bag ?? (bagsExpected === 1 ? 1 : null);
+    if (bag == null) {
+      throw new HttpError(400, `Pedido multi-bulto: especifica el bulto a clasificar (bag=1..${bagsExpected}).`, {
+        multiBag: true, bagsExpected,
+      });
+    }
 
-    res.json({ ok: true });
+    const result = await registerBagEvent({
+      orderId: id,
+      bagNumber: bag,
+      event: 'classified',
+      actorId: req.user.wpUserId,
+    });
+
+    res.json({ ok: true, ...result });
   } catch (err) {
     next(err);
   }
 });
 
-// Confirma carga al vehículo. NO bloquea aunque el pedido tenga items B2
-// pendientes: el operador de carga es el responsable de decidir si el pedido
-// sale con o sin todos los items. La sección "faltan estos items del B2" del
-// albarán sigue disponible si el supervisor aprueba entrega parcial vía el
-// endpoint POST /orders/:id/partial-delivery, pero ya NO es un requisito para
-// cargar.
+// Confirma carga al vehículo. Mismo modelo multi-bulto que /classify: cada
+// scan registra UN bulto; el pedido pasa a loaded solo cuando los N están
+// registrados. Sigue sin bloquear por B2 incompleto (v0.19.0).
 router.post('/:orderId/loaded', requireCap(WMS_CAPS.LOAD), async (req, res, next) => {
   try {
     const id = Number(req.params.orderId);
+    const parsed = bagBodySchema.safeParse(req.body || {});
+    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
+
     const order = await prisma.order.findUnique({ where: { id } });
     if (!order) throw new HttpError(404, 'Order not found');
     if (!order.route) throw new HttpError(409, 'Order has no route assigned yet');
-    if (order.status === 'loaded' || order.status === 'delivered') {
-      return res.json({ ok: true, alreadyLoaded: true });
+    if (['loaded', 'delivered'].includes(order.status)) {
+      return res.json({ ok: true, alreadyLoaded: true, complete: true });
     }
     if (order.status !== 'classified') {
       throw new HttpError(409, `Cannot load order in status "${order.status}". Must be classified first.`);
     }
 
-    await prisma.$transaction([
-      prisma.order.update({
-        where: { id },
-        data: { status: 'loaded', loadedAt: new Date() },
-      }),
-      prisma.event.create({
-        data: { type: 'dispatch.loaded', actorId: req.user.wpUserId, orderId: id },
-      }),
-    ]);
-
-    // Auto-cierre del proceso si este era el último pedido pendiente.
-    // Busca el processId de la secuencia del pedido (cualquiera; debería
-    // ser único porque solo hay 1 proceso abierto a la vez).
-    const seqLink = await prisma.sequenceOrder.findFirst({
-      where: { orderId: id },
-      select: { sequence: { select: { processId: true } } },
-    });
-    if (seqLink?.sequence?.processId) {
-      await maybeAutoCloseProcess({
-        processId: seqLink.sequence.processId,
-        actorId: req.user.wpUserId,
+    const bagsExpected = Math.max(1, order.bagsExpected ?? 1);
+    const bag = parsed.data.bag ?? (bagsExpected === 1 ? 1 : null);
+    if (bag == null) {
+      throw new HttpError(400, `Pedido multi-bulto: especifica el bulto a cargar (bag=1..${bagsExpected}).`, {
+        multiBag: true, bagsExpected,
       });
     }
 
-    res.json({ ok: true });
+    const result = await registerBagEvent({
+      orderId: id,
+      bagNumber: bag,
+      event: 'loaded',
+      actorId: req.user.wpUserId,
+    });
+
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Deshacer un bulto registrado. Ventana 30s desde el registro, solo el mismo
+// actor puede deshacerlo (protegido en el servicio). Si el pedido ya había
+// transicionado a classified/loaded por completar los N, este undo también
+// revierte el status. Deja evento auditable 'bag.unclassified'/'bag.unloaded'.
+const undoQuerySchema = z.object({ event: z.enum(['classified', 'loaded']) });
+router.post('/:orderId/bag/:bag/undo', requireCap(WMS_CAPS.LOAD), async (req, res, next) => {
+  try {
+    const id = Number(req.params.orderId);
+    const bag = Number(req.params.bag);
+    const parsed = undoQuerySchema.safeParse(req.query);
+    if (!parsed.success) throw new HttpError(400, 'Missing or invalid ?event=classified|loaded');
+
+    const result = await undoBagEvent({
+      orderId: id,
+      bagNumber: bag,
+      event: parsed.data.event,
+      actorId: req.user.wpUserId,
+    });
+    res.json({ ok: true, ...result });
   } catch (err) {
     next(err);
   }

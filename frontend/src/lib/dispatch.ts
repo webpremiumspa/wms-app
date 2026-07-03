@@ -120,14 +120,33 @@ export const pickingB1Api = {
     })).data,
 };
 
+// Multi-bulto: cuando el endpoint clasifica/carga UN bulto, devuelve el
+// progreso actual (done/total) y si el pedido se completó con este scan.
+export type BagActionResult = {
+  ok: boolean;
+  complete: boolean;
+  progress: { done: number; total: number };
+  transitionedNow?: boolean;
+  alreadyClassified?: boolean;
+  alreadyLoaded?: boolean;
+};
+
 export const dispatchApi = {
   scan: async (qr: string): Promise<DispatchOrder> => (await api.post('/dispatch/scan', { qr })).data.order,
-  classify: async (orderId: number): Promise<void> => {
-    await api.post(`/dispatch/${orderId}/classify`);
-  },
-  loaded: async (orderId: number): Promise<void> => {
-    await api.post(`/dispatch/${orderId}/loaded`);
-  },
+  // bag opcional: si es multi-bulto (bagsExpected>1) hay que pasarlo. En
+  // single-bulto se puede omitir (el backend asume bag=1).
+  classify: async (orderId: number, bag?: number): Promise<BagActionResult> =>
+    (await api.post(`/dispatch/${orderId}/classify`, bag != null ? { bag } : {})).data,
+  loaded: async (orderId: number, bag?: number): Promise<BagActionResult> =>
+    (await api.post(`/dispatch/${orderId}/loaded`, bag != null ? { bag } : {})).data,
+  // Deshacer bulto — solo dentro de la ventana 30s desde el registro y por el
+  // mismo actor. Devuelve el progreso actualizado.
+  undoBag: async (
+    orderId: number,
+    bag: number,
+    event: 'classified' | 'loaded',
+  ): Promise<{ ok: boolean; progress: { done: number; total: number }; revertedStatus: boolean }> =>
+    (await api.post(`/dispatch/${orderId}/bag/${bag}/undo`, null, { params: { event } })).data,
   today: async (): Promise<RouteSummary[]> => (await api.get('/dispatch/today')).data.routes,
 };
 

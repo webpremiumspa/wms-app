@@ -180,6 +180,15 @@ exports.Prisma.OrderScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.OrderBagEventScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  bagNumber: 'bagNumber',
+  event: 'event',
+  actorId: 'actorId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.OrderItemScalarFieldEnum = {
   id: 'id',
   orderId: 'orderId',
@@ -282,6 +291,7 @@ exports.Prisma.ModelName = {
   UserMeta: 'UserMeta',
   ProductMeta: 'ProductMeta',
   Order: 'Order',
+  OrderBagEvent: 'OrderBagEvent',
   OrderItem: 'OrderItem',
   DeliveryProcess: 'DeliveryProcess',
   Sequence: 'Sequence',

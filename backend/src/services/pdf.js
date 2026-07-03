@@ -6,8 +6,18 @@ import { config } from '../config.js';
 // QR encodea una URL navegable. Al escanear desde la cámara del móvil abre el
 // navegador en `/scan/<wpOrderId>` directamente. El parser del backend acepta
 // también el formato legacy `WMS:<id>` para albaranes ya impresos.
-function buildQrPayload(order) {
+//
+// Multi-bulto: cuando totalBags > 1, cada página del albarán trae un QR con
+// `?bag=X` distinto. Así el conductor sabe qué bulto está confirmando al
+// escanear cualquier bolsa/caja sin tenerlas todas a la vista al mismo
+// tiempo. Single-bulto (totalBags=1) mantiene el QR simple sin query, para
+// no romper albaranes ya impresos.
+function buildQrPayload(order, opts = {}) {
   const base = (config.frontendOrigin || 'https://wms.chimuelo.cl').replace(/\/$/, '');
+  const { bagNumber, totalBags } = opts;
+  if (totalBags && totalBags > 1 && bagNumber) {
+    return `${base}/scan/${order.wpOrderId}?bag=${bagNumber}`;
+  }
   return `${base}/scan/${order.wpOrderId}`;
 }
 
@@ -49,12 +59,12 @@ async function fetchImageBuffer(url) {
 // Útil para reusarlo tanto en el endpoint single como en el batch.
 // opts.bagNumber / opts.totalBags pintan la franja "BULTO X DE N" arriba.
 async function drawAlbaran(doc, order, opts = {}) {
-  // QR
-  const qrPng = await QRCode.toBuffer(buildQrPayload(order), {
-    errorCorrectionLevel: 'M',
-    margin: 1,
-    width: 220,
-  });
+  // QR — para multi-bulto incluye ?bag=X para que el scan identifique al
+  // toque qué bulto se está registrando. En single-bulto es un QR simple.
+  const qrPng = await QRCode.toBuffer(
+    buildQrPayload(order, { bagNumber: opts.bagNumber, totalBags: opts.totalBags }),
+    { errorCorrectionLevel: 'M', margin: 1, width: 220 },
+  );
 
   // Pre-fetch thumbnails (delegado al caller en el batch para no duplicar).
   let itemImages = opts.itemImages;

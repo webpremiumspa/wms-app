@@ -87,6 +87,9 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD,
                     // pinte los pills B1/B2 en cada card.
                     packedAt: true,
                     b2ClosedAt: true,
+                    // Multi-bulto: bagsExpected para saber cuántos hay en
+                    // total y computar el progreso más abajo.
+                    bagsExpected: true,
                   },
                 },
               },
@@ -101,6 +104,25 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD,
     const orders = process.sequences.flatMap((s) =>
       s.orders.map((so) => ({ ...so.order, sequenceId: s.id })),
     );
+
+    // Multi-bulto: progreso de clasificación/carga por pedido. Un solo
+    // groupBy evita el N+1 sobre order_bag_events.
+    const orderIds = orders.map((o) => o.id);
+    let bagCounts = new Map(); // key: `${orderId}:${event}`, value: count
+    if (orderIds.length > 0) {
+      const grouped = await prisma.orderBagEvent.groupBy({
+        by: ['orderId', 'event'],
+        where: { orderId: { in: orderIds } },
+        _count: { _all: true },
+      });
+      for (const g of grouped) {
+        bagCounts.set(`${g.orderId}:${g.event}`, g._count._all);
+      }
+    }
+    for (const o of orders) {
+      o.bagsClassifiedCount = bagCounts.get(`${o.id}:classified`) || 0;
+      o.bagsLoadedCount = bagCounts.get(`${o.id}:loaded`) || 0;
+    }
 
     // KPI agregado por status.
     const byStatus = {

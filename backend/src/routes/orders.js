@@ -7,6 +7,7 @@ import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { renderAlbaranPdf } from '../services/pdf.js';
 import { updateOrderMetaFromWc } from '../services/orders-sync.js';
+import { getBagEventsFor } from '../services/bag-events.js';
 import { wcGetProduct, wcGetOrder, getMeta } from '../services/woocommerce.js';
 import {
   approvePartialDelivery,
@@ -339,7 +340,17 @@ router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE, WM
       },
     });
     if (!order) throw new HttpError(404, `Pedido ${wpOrderId} no encontrado en el WMS`);
-    res.json({ order });
+
+    // Enriquece con el progreso multi-bulto — para vistas autenticadas del
+    // scan (mismo consumo que /public/orders/:wpOrderId).
+    const bagProgress = await getBagEventsFor(order.id);
+    res.json({
+      order: {
+        ...order,
+        bagsClassified: bagProgress.classified,
+        bagsLoaded: bagProgress.loaded,
+      },
+    });
   } catch (err) {
     next(err);
   }

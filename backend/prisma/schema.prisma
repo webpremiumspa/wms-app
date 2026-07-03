@@ -29,6 +29,7 @@ model UserMeta {
   pickedOrders     Order[]    @relation("OrderPicker")
   b2ClosedOrders   Order[]    @relation("OrderB2Closer")
   events           Event[]
+  bagEvents        OrderBagEvent[] @relation("BagEventActor")
 
   @@map("users_meta")
 }
@@ -108,10 +109,32 @@ model Order {
   items           OrderItem[]
   sequenceLinks   SequenceOrder[]
   events          Event[]
+  bagEvents       OrderBagEvent[]
 
   @@index([status])
   @@index([route])
   @@map("orders")
+}
+
+// Registro por bulto para clasificación y carga. Un pedido de N bultos genera
+// hasta N eventos por cada `event` ('classified' | 'loaded'). El pedido pasa
+// a status='classified'/'loaded' solo cuando se registraron los N. Permite
+// que los bultos se escaneen en momentos distintos y desde ubicaciones
+// distintas del depósito sin perder la garantía de completitud.
+model OrderBagEvent {
+  id         Int      @id @default(autoincrement())
+  orderId    Int      @map("order_id")
+  bagNumber  Int      @map("bag_number")
+  event      String   @db.VarChar(20) // 'classified' | 'loaded'
+  actorId    Int?     @map("actor_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  actor      UserMeta? @relation("BagEventActor", fields: [actorId], references: [wpUserId])
+
+  @@unique([orderId, bagNumber, event], name: "uq_order_bag_event")
+  @@index([orderId])
+  @@map("order_bag_events")
 }
 
 model OrderItem {

@@ -41,6 +41,12 @@ export type ProcessOrderCard = {
   // cada card. Null = ese lado todavía no está cerrado.
   packedAt: string | null;
   b2ClosedAt: string | null;
+  // Multi-bulto: cuántos bultos ya se registraron como classified/loaded
+  // (0..bagsExpected). Se usa para pintar el badge "2/3 bultos" en la card
+  // del kanban cuando el pedido está a medio camino.
+  bagsExpected?: number;
+  bagsClassifiedCount?: number;
+  bagsLoadedCount?: number;
   sequenceId: number;
 };
 

@@ -379,6 +379,7 @@ function KanbanCard({ order: o }: { order: ProcessOrderCard }) {
       <div className="mt-1 flex flex-wrap items-center gap-1">
         <FlowPill label="B1" done={b1Done} />
         {showB2 && <FlowPill label="B2" done={b2Done} />}
+        <BagProgressPill order={o} />
       </div>
       <div className="mt-1 truncate text-[10px] text-slate-500">
         {o.customerName || '—'} · Sec #{o.sequenceId}
@@ -402,6 +403,48 @@ function FlowPill({ label, done }: { label: 'B1' | 'B2'; done: boolean }) {
       title={done ? `${label} cerrado` : `${label} pendiente`}
     >
       {label} {done ? '✓' : '…'}
+    </span>
+  );
+}
+
+// Progreso multi-bulto: solo aparece si el pedido tiene bagsExpected>1 y
+// está a medio camino en clasificar o cargar. Muestra el conteo relevante
+// según el status (o el paso al que está apuntando) para ayudar al supervisor
+// a detectar de un vistazo qué pedidos quedaron parcialmente escaneados.
+function BagProgressPill({ order }: { order: ProcessOrderCard }) {
+  const total = order.bagsExpected ?? 1;
+  if (total <= 1) return null;
+  const classified = order.bagsClassifiedCount ?? 0;
+  const loaded = order.bagsLoadedCount ?? 0;
+  // Elegimos el conteo a mostrar según en qué fase está el pedido:
+  //   packed → los que se han clasificado hasta ahora (target N/N)
+  //   classified → los que se han cargado (target N/N)
+  //   loaded/delivered → no mostramos (ya está completo)
+  let done: number;
+  let label: string;
+  if (order.status === 'packed') {
+    done = classified;
+    label = 'clasif.';
+  } else if (order.status === 'classified') {
+    done = loaded;
+    label = 'carga';
+  } else {
+    return null;
+  }
+  const complete = done >= total;
+  return (
+    <span
+      className={clsx(
+        'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ring-1',
+        complete
+          ? 'bg-emerald-100 text-emerald-800 ring-emerald-200'
+          : done > 0
+            ? 'bg-amber-100 text-amber-800 ring-amber-200'
+            : 'bg-slate-100 text-slate-500 ring-slate-200',
+      )}
+      title={`${done} de ${total} bultos ${label}`}
+    >
+      {done}/{total} bultos
     </span>
   );
 }
