@@ -60,6 +60,12 @@ export async function removeOrderFromSequence({
 
   const previousStatus = link.order.status;
 
+  // Contamos los bag events del pedido para dejarlos en el payload de
+  // auditoría antes de borrarlos. Sin este borrado, si el pedido vuelve a
+  // entrar a otra secuencia, los eventos viejos arruinan el conteo de la
+  // nueva ronda (el UNIQUE los hace idempotentes pero contaminan el done).
+  const bagEventsCount = await prisma.orderBagEvent.count({ where: { orderId } });
+
   await prisma.$transaction([
     prisma.orderItem.updateMany({
       where: { orderId },
@@ -82,6 +88,9 @@ export async function removeOrderFromSequence({
         partialDeliveryNote: null,
       },
     }),
+    // Borrar bag events: el pedido vuelve a 'received' y quedaría inconsistente
+    // que aún tenga bultos "clasificados" o "cargados" en la tabla.
+    prisma.orderBagEvent.deleteMany({ where: { orderId } }),
     prisma.sequenceOrder.delete({
       where: { sequenceId_orderId: { sequenceId, orderId } },
     }),
@@ -100,12 +109,13 @@ export async function removeOrderFromSequence({
           reasonCode,
           reasonText: reasonText || null,
           previousStatus,
+          bagEventsCleared: bagEventsCount,
         },
       },
     }),
   ]);
 
-  return { ok: true };
+  return { ok: true, bagEventsCleared: bagEventsCount };
 }
 
 // Desempacar: revierte un pedido empacado (o ya clasificado) al estado
@@ -141,12 +151,18 @@ export async function unpackOrder({ orderId, actorId }) {
     });
   }
 
+  // Bag events del pedido — se borran junto con la reversión. Sin esto, si
+  // el pedido se vuelve a empacar (nueva cuenta de bultos) y clasificar,
+  // los eventos viejos podrían sumarse al progreso y saltear scans reales.
+  const bagEventsCount = await prisma.orderBagEvent.count({ where: { orderId } });
+
   const prevSnapshot = {
     status: order.status,
     bagsExpected: order.bagsExpected,
     packedAt: order.packedAt,
     packedById: order.packedById,
     classifiedAt: order.classifiedAt,
+    bagEventsCleared: bagEventsCount,
   };
 
   await prisma.$transaction([
@@ -166,6 +182,7 @@ export async function unpackOrder({ orderId, actorId }) {
         bagsExpected: 1,
       },
     }),
+    prisma.orderBagEvent.deleteMany({ where: { orderId } }),
     prisma.event.create({
       data: {
         type: 'order.unpacked',
@@ -176,7 +193,7 @@ export async function unpackOrder({ orderId, actorId }) {
     }),
   ]);
 
-  return { ok: true };
+  return { ok: true, bagEventsCleared: bagEventsCount };
 }
 
 // Reabrir el cierre B2 de un pedido: limpia b2ClosedAt/By y resetea los

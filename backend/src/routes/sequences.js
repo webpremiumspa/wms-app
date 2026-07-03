@@ -79,6 +79,15 @@ router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (r
       .map((so) => so.orderId);
     const skippedDelivered = seq.orders.filter((so) => so.order.status === 'delivered').length;
 
+    // Contar los bag events que se van a borrar para el evento de auditoría.
+    // Sin este borrado, si los pedidos vuelven a entrar a una secuencia y se
+    // clasifican/cargan, los eventos viejos arruinarían el conteo (el UNIQUE
+    // hace que registrar el mismo bag sea idempotente, así que el 'done' no
+    // llega al total real).
+    const bagEventsCleared = orderIds.length > 0
+      ? await prisma.orderBagEvent.count({ where: { orderId: { in: orderIds } } })
+      : 0;
+
     await prisma.$transaction([
       // Revertir items: limpiar pickedAt y packedAt para los pedidos a resetear
       prisma.orderItem.updateMany({
@@ -100,6 +109,9 @@ router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (r
           loadedAt: null,
         },
       }),
+      // Bag events: se borran junto con la reversión de status. Ver comentario
+      // arriba.
+      prisma.orderBagEvent.deleteMany({ where: { orderId: { in: orderIds } } }),
       // Borrar la secuencia (cascadea SequenceOrder)
       prisma.sequence.delete({ where: { id } }),
       prisma.event.create({
@@ -110,12 +122,13 @@ router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (r
             sequenceId: id,
             ordersReverted: orderIds.length,
             skippedDelivered,
+            bagEventsCleared,
           },
         },
       }),
     ]);
 
-    res.json({ ok: true, ordersReverted: orderIds.length, skippedDelivered });
+    res.json({ ok: true, ordersReverted: orderIds.length, skippedDelivered, bagEventsCleared });
   } catch (err) {
     next(err);
   }
