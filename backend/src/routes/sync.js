@@ -56,6 +56,16 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
 
     slog(`statuses=${statuses.join(',')} after=${after || '-'} before=${before || '-'}`);
 
+    // Reset previo a la sincronización: borramos todos los pedidos que estén
+    // actualmente en estado 'received' (pendientes de secuenciar) para que
+    // la lista arranque de cero en cada sync. Sin este reset, quedaban
+    // pedidos viejos que ya cambiaron de estado en WC (cancelados,
+    // completados, en ruta) arrastrándose en la vista de Generar Secuencia.
+    // Los pedidos que ya están en una secuencia (sequenced/packed/...) NO
+    // se tocan: solo eliminamos los que están fuera del flujo activo.
+    const cleared = await prisma.order.deleteMany({ where: { status: 'received' } });
+    slog(`reset: cleared ${cleared.count} pending orders (status=received)`);
+
     // Paginación: WC permite hasta 100 por página. Tope de seguridad: 10 páginas (1000 pedidos).
     const wcOrders = [];
     let page = 1;
@@ -200,6 +210,9 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
       takenBySequences,
       range: { after, before: before || null },
       statuses,
+      // Cuántos pedidos pendientes viejos se borraron al inicio del sync.
+      // El frontend lo puede mostrar para transparencia ("borré 12, traje 30").
+      clearedPendingBefore: cleared.count,
     });
   } catch (err) {
     slog(`=== SYNC ERROR after ${Date.now() - t0}ms: ${err.message} ===`);

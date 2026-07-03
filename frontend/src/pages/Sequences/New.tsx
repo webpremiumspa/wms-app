@@ -374,6 +374,11 @@ export function SequenceNew() {
             <div className="flex items-start gap-2">
               <CheckCircle2 size={16} className="mt-0.5 shrink-0" />
               <div>
+                {syncResult.clearedPendingBefore != null && syncResult.clearedPendingBefore > 0 && (
+                  <div className="mb-1 text-xs text-slate-600">
+                    Se borraron <strong>{syncResult.clearedPendingBefore}</strong> pedido{syncResult.clearedPendingBefore === 1 ? '' : 's'} pendiente{syncResult.clearedPendingBefore === 1 ? '' : 's'} de sincronizaciones anteriores para partir de cero.
+                  </div>
+                )}
                 <div>
                   WC tenía <strong>{syncResult.total}</strong> pedido{syncResult.total === 1 ? '' : 's'} en preparación.
                 </div>
@@ -624,6 +629,11 @@ export function SequenceNew() {
                       #<HighlightedNumber text={o.number} match={search} />
                     </span>
                     {o.route && <Badge variant="blue">{o.route}</Badge>}
+                    {/* Chips de bodega para identificar el tipo del pedido:
+                        Solo B1 → un chip azul; Solo B2 → un chip ámbar;
+                        Mixto → los dos juntos. hasB1Items y hasB2Pending vienen
+                        del backend /orders/pending. */}
+                    {(o.hasB1Items ?? true) && <Badge variant="blue">{warehouseLabel('B1')}</Badge>}
                     {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={o.shippingMethod} />
                     <WcStatusBadge slug={o.wcStatus} />

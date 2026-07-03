@@ -17,6 +17,9 @@ export type SyncResult = {
   }>;
   range: { after: string; before: string | null };
   statuses: string[];
+  // Cuántos pedidos pendientes (status='received') se borraron al inicio del
+  // sync como parte del reset. Ver backend/src/routes/sync.js.
+  clearedPendingBefore?: number;
 };
 
 export type SyncParams = {
