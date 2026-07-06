@@ -78,9 +78,10 @@ export function PackingOrder() {
       return next;
     });
   }
-  // Chips-unidad (v0.24.3): cada unidad del item es un chip que muestra su
-  // bulto. Un tap cicla al siguiente bulto (Bn → B1). Convertimos entre el
-  // formato interno Map<bag, qty> y el array de chips.
+  // Split por unidad (v0.24.4): cada unidad del item es una fila con pills
+  // de bulto (segmented control). Tap directo elige el bulto de esa unidad.
+  // Sin cycling, sin adivinanza. Representación interna: array donde
+  // chips[i] = bulto de la unidad i (0 = sin asignar).
   function mapToChips(inner: Map<number, number> | undefined, totalQty: number, defaultBag: number): number[] {
     const chips: number[] = [];
     if (inner && inner.size > 0) {
@@ -89,39 +90,52 @@ export function PackingOrder() {
         for (let i = 0; i < q; i += 1) chips.push(bag);
       }
     }
-    // Rellena las unidades que falten con el bulto default.
+    // Rellena unidades faltantes con el bulto default (0 = sin asignar).
     while (chips.length < totalQty) chips.push(defaultBag);
     return chips.slice(0, totalQty);
   }
   function chipsToMap(chips: number[]): Map<number, number> {
     const m = new Map<number, number>();
-    for (const b of chips) m.set(b, (m.get(b) ?? 0) + 1);
+    for (const b of chips) {
+      if (b > 0) m.set(b, (m.get(b) ?? 0) + 1);
+    }
     return m;
   }
-  // Cicla la unidad `chipIndex` de un item al siguiente bulto disponible
-  // (Bn → B1). El default cuando aún no había asignación es 1.
-  function cycleChip(itemId: number, chipIndex: number, itemQty: number) {
+  // Setea directamente el bulto de una unidad del item.
+  function setChipBag(itemId: number, chipIndex: number, bag: number, itemQty: number) {
     setAssignments((prev) => {
       const next = new Map(prev);
-      const chips = mapToChips(prev.get(itemId), itemQty, 1);
-      const current = chips[chipIndex] ?? 1;
-      const nextBag = current >= bagsCount ? 1 : current + 1;
-      chips[chipIndex] = nextBag;
+      const chips = mapToChips(prev.get(itemId), itemQty, 0);
+      chips[chipIndex] = bag;
+      const m = chipsToMap(chips);
+      if (m.size === 0) next.delete(itemId);
+      else next.set(itemId, m);
+      return next;
+    });
+  }
+  // Preset "1 en cada bulto" — solo tiene sentido cuando qty == bagsCount:
+  // asigna U1→B1, U2→B2, ..., UN→BN en un tap.
+  function presetOnePerBag(itemId: number, itemQty: number) {
+    setAssignments((prev) => {
+      const next = new Map(prev);
+      const chips = Array.from({ length: itemQty }, (_, i) => i + 1);
       next.set(itemId, chipsToMap(chips));
       return next;
     });
   }
-  // Abre el split de un item, materializando los chips en el bulto principal
-  // (o en 1 si aún no había elección). Al cerrar, borra la asignación.
+  // Abre/cierra el split de un item.
+  // Al abrir: si había un bulto elegido en el dropdown (defaultBag>0),
+  // pre-marca todas las unidades en ese bulto. Sino, las deja sin marcar
+  // para que el picker elija cada una.
+  // Al cerrar: si el split había repartido en varios bultos, borra la
+  // asignación (obliga a re-elegir con el dropdown). Si todo quedó en el
+  // mismo bulto, mantiene la asignación.
   function toggleSplit(itemId: number, itemQty: number, defaultBag: number) {
     setSplitOpen((s) => {
       const isOpen = s.has(itemId);
       const nextOpen = new Set(s);
       if (isOpen) {
         nextOpen.delete(itemId);
-        // Al colapsar: si el split había repartido en varios bultos, borramos
-        // la asignación para que el picker vuelva a elegir en el dropdown.
-        // Si todo está en un solo bulto, dejamos la asignación intacta.
         setAssignments((prev) => {
           const inner = prev.get(itemId);
           if (!inner || inner.size <= 1) return prev;
@@ -131,14 +145,14 @@ export function PackingOrder() {
         });
       } else {
         nextOpen.add(itemId);
-        // Al abrir: materializa qty chips en el bulto default (para que el
-        // picker vea todos los chips desde el primer tap).
-        setAssignments((prev) => {
-          const next = new Map(prev);
-          const chips = mapToChips(prev.get(itemId), itemQty, defaultBag);
-          next.set(itemId, chipsToMap(chips));
-          return next;
-        });
+        if (defaultBag > 0) {
+          setAssignments((prev) => {
+            const next = new Map(prev);
+            const chips = mapToChips(prev.get(itemId), itemQty, defaultBag);
+            next.set(itemId, chipsToMap(chips));
+            return next;
+          });
+        }
       }
       return nextOpen;
     });
@@ -659,47 +673,75 @@ export function PackingOrder() {
                   )}
                 </div>
                 {/* Split expandible: solo para items con qty>1. Cada unidad
-                    es un chip. Tap cicla al siguiente bulto (Bn→B1). */}
+                    tiene una fila con pills de bulto — tap directo elige. */}
                 {it.qty > 1 && (
                   <div>
                     {!isSplit ? (
                       <button
                         type="button"
-                        onClick={() => toggleSplit(it.id, it.qty, singleBag ?? 1)}
+                        onClick={() => toggleSplit(it.id, it.qty, singleBag ?? 0)}
                         className="text-xs text-brand-700 hover:underline"
                       >
                         + Dividir en varios bultos
                       </button>
                     ) : (() => {
-                      const chips = mapToChips(inner, it.qty, 1);
+                      const chips = mapToChips(inner, it.qty, 0);
+                      const bagList = Array.from({ length: bagsCount }, (_, i) => i + 1);
+                      const canOnePerBag = it.qty === bagsCount;
                       return (
                         <div className="rounded-md bg-slate-50 p-2 ring-1 ring-slate-200">
-                          <div className="mb-2 flex items-center justify-between text-xs">
+                          <div className="mb-2 flex items-center justify-between gap-2 text-xs">
                             <span className="text-slate-700">
-                              <strong>Dividir ×{it.qty}</strong> · toca cada unidad para cambiar de bulto
+                              <strong>Dividir ×{it.qty}</strong> · elige el bulto de cada unidad
                             </span>
-                            <button
-                              type="button"
-                              onClick={() => toggleSplit(it.id, it.qty, singleBag ?? 1)}
-                              className="text-slate-500 hover:underline"
-                            >
-                              Cancelar split
-                            </button>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {chips.map((bag, idx) => (
+                            <div className="flex items-center gap-3">
+                              {canOnePerBag && (
+                                <button
+                                  type="button"
+                                  onClick={() => presetOnePerBag(it.id, it.qty)}
+                                  className="text-brand-700 hover:underline"
+                                >
+                                  1 en cada bulto
+                                </button>
+                              )}
                               <button
-                                key={idx}
                                 type="button"
-                                onClick={() => cycleChip(it.id, idx, it.qty)}
-                                className="min-w-[52px] rounded-full bg-brand-600 px-3 py-1.5 text-sm font-bold text-white shadow-sm hover:bg-brand-700 active:scale-95"
+                                onClick={() => toggleSplit(it.id, it.qty, singleBag ?? 0)}
+                                className="text-slate-500 hover:underline"
                               >
-                                B{bag}
+                                Cancelar split
                               </button>
+                            </div>
+                          </div>
+                          <div className="space-y-1.5">
+                            {chips.map((selectedBag, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <span className="w-16 shrink-0 text-xs text-slate-600">Unidad {idx + 1}:</span>
+                                <div className="flex flex-wrap gap-1">
+                                  {bagList.map((bag) => {
+                                    const selected = selectedBag === bag;
+                                    return (
+                                      <button
+                                        key={bag}
+                                        type="button"
+                                        onClick={() => setChipBag(it.id, idx, bag, it.qty)}
+                                        className={clsx(
+                                          'min-w-[48px] rounded-full px-3 py-1.5 text-sm font-semibold transition-colors active:scale-95',
+                                          selected
+                                            ? 'bg-brand-600 text-white shadow-sm'
+                                            : 'bg-white text-slate-700 ring-1 ring-slate-300 hover:bg-slate-100',
+                                        )}
+                                      >
+                                        B{bag}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
                             ))}
-                            <span className="ml-2 text-xs text-slate-600">
-                              {total === it.qty ? '✓ ' : ''}{total}/{it.qty}
-                            </span>
+                          </div>
+                          <div className="mt-2 text-xs text-slate-600">
+                            {total === it.qty ? '✓ ' : ''}Asignadas {total}/{it.qty}
                           </div>
                         </div>
                       );
