@@ -57,18 +57,44 @@ export function PackingOrder() {
   const [bagsCount, setBagsCount] = useState(1);
   const [bagsError, setBagsError] = useState<string | null>(null);
 
-  // ─── Multi-bulto v0.24.0 ─────────────────────────────────────────────
-  // assignments: qué bulto asigna el picker a cada item durante la
-  // declaración del plan. Persistido en BD al presionar "Imprimir albaranes".
-  const [assignments, setAssignments] = useState<Map<number, number>>(new Map());
-  // Bulto activo elegido por el picker en modo ejecución (cuál va a cerrar).
+  // ─── Multi-bulto v0.24.0/v0.24.2 ──────────────────────────────────────
+  // assignments: distribución del picker por item. Cada item puede tener
+  // qty>1 y dividirse en varios bultos. Estructura:
+  //   Map<orderItemId, Map<bagNumber, qty>>
+  // Ejemplo: item X con qty=2, 1 en bulto 1 y 1 en bulto 2:
+  //   assignments.get(X) === Map { 1 => 1, 2 => 1 }
+  const [assignments, setAssignments] = useState<Map<number, Map<number, number>>>(new Map());
+  // splitOpen: qué items tienen abierto el widget de split (qty>1).
+  const [splitOpen, setSplitOpen] = useState<Set<number>>(new Set());
   const [activeBag, setActiveBag] = useState<number | null>(null);
   const [planError, setPlanError] = useState<string | null>(null);
-  function setBagFor(itemId: number, bag: number | null) {
+
+  // Setea "todo el item al bulto N" (caso más común, sin split).
+  function setBagFor(itemId: number, bag: number | null, itemQty: number) {
     setAssignments((prev) => {
       const next = new Map(prev);
       if (bag == null) next.delete(itemId);
-      else next.set(itemId, bag);
+      else next.set(itemId, new Map([[bag, itemQty]]));
+      return next;
+    });
+  }
+  // Setea qty específica de un item en un bulto (usado en modo split).
+  function setSplitQty(itemId: number, bag: number, qty: number) {
+    setAssignments((prev) => {
+      const next = new Map(prev);
+      const inner = new Map(next.get(itemId) ?? []);
+      if (qty <= 0) inner.delete(bag);
+      else inner.set(bag, qty);
+      if (inner.size === 0) next.delete(itemId);
+      else next.set(itemId, inner);
+      return next;
+    });
+  }
+  function toggleSplit(itemId: number) {
+    setSplitOpen((s) => {
+      const next = new Set(s);
+      if (next.has(itemId)) next.delete(itemId);
+      else next.add(itemId);
       return next;
     });
   }
@@ -229,10 +255,14 @@ export function PackingOrder() {
     setBagsCount(Math.max(1, order.bagsExpected ?? 1));
     // Multi-bulto: si el pedido ya tiene plan guardado (assignments), lo
     // cargamos en el state para modo ejecución. Sino, empezamos vacío para
-    // que el picker declare desde cero.
+    // que el picker declare desde cero. v0.24.2: assignments trae qty.
     if (order.packPlan?.assignments?.length) {
-      const m = new Map<number, number>();
-      for (const a of order.packPlan.assignments) m.set(a.orderItemId, a.bagNumber);
+      const m = new Map<number, Map<number, number>>();
+      for (const a of order.packPlan.assignments) {
+        let inner = m.get(a.orderItemId);
+        if (!inner) { inner = new Map(); m.set(a.orderItemId, inner); }
+        inner.set(a.bagNumber, a.qty);
+      }
       setAssignments(m);
       // Auto-abrir el bulto que vino en ?bag=N (viene del QR del albarán
       // impreso). Solo si ese bulto existe en el plan y aún no está cerrado
@@ -243,10 +273,11 @@ export function PackingOrder() {
         const bagsInPlan = new Set(order.packPlan.assignments.map((a) => a.bagNumber));
         if (bagsInPlan.has(bagFromUrl) && !bagsPackedSet.has(bagFromUrl)) {
           setActiveBag(bagFromUrl);
-          // Pre-tildar items ya pickeados (re-entrada).
+          // Pre-tildar items ya pickeados (re-entrada). Un item con qty>0 en
+          // el bulto solicitado y ya empacado se muestra tildado.
           const preChecked = new Set<number>();
-          for (const [itemId, bag] of m.entries()) {
-            if (bag === bagFromUrl) {
+          for (const [itemId, inner] of m.entries()) {
+            if ((inner.get(bagFromUrl) ?? 0) > 0) {
               const it = order.items.find((x) => x.id === itemId);
               if (it?.packedAt) preChecked.add(itemId);
             }
@@ -259,11 +290,17 @@ export function PackingOrder() {
     }
   }, [order, bagFromUrl]);
 
-  // Mutations multi-bulto (v0.24.0)
+  // Mutations multi-bulto (v0.24.0/v0.24.2)
   const createPlan = useMutation({
     mutationFn: async () => {
       setPlanError(null);
-      const arr = Array.from(assignments.entries()).map(([orderItemId, bagNumber]) => ({ orderItemId, bagNumber }));
+      // Aplana el Map<itemId, Map<bag, qty>> → array de assignments con qty.
+      const arr: Array<{ orderItemId: number; bagNumber: number; qty: number }> = [];
+      for (const [itemId, inner] of assignments.entries()) {
+        for (const [bag, qty] of inner.entries()) {
+          if (qty > 0) arr.push({ orderItemId: itemId, bagNumber: bag, qty });
+        }
+      }
       await ordersApi.createPackPlan(ordId, bagsCount, arr);
       // Inmediatamente abrir el PDF de albaranes con la distribución nueva.
       await ordersApi.openAlbaran(ordId, { bags: bagsCount });
@@ -365,20 +402,37 @@ export function PackingOrder() {
   const isDeclaring = !isPacked && bagsCount > 1 && !hasPlan && !onlyB2;
   // Modo ejecución: plan guardado; cada bulto se cierra por separado.
   const isExecuting = hasPlan && !isPacked;
-  // Validación del plan a declarar: todos los items B1 asignados Y todos los
-  // bultos [1..bagsCount] tienen al menos un item.
+  // Validación del plan a declarar. Cada item B1 debe estar cubierto por
+  // completo (suma de qty por bulto == item.qty) Y cada bulto [1..N] debe
+  // tener al menos una asignación.
   const declaredBagUsage = (() => {
     const usage = new Map<number, number>();
-    for (const [, bag] of assignments) usage.set(bag, (usage.get(bag) || 0) + 1);
+    for (const inner of assignments.values()) {
+      for (const [bag, qty] of inner.entries()) {
+        if (qty > 0) usage.set(bag, (usage.get(bag) || 0) + 1);
+      }
+    }
     return usage;
   })();
-  const allItemsAssigned = b1Items.length > 0 && b1Items.every((it) => assignments.has(it.id));
+  // Helper: suma de qty asignada a un item.
+  function assignedTotal(itemId: number) {
+    const inner = assignments.get(itemId);
+    if (!inner) return 0;
+    let s = 0;
+    for (const q of inner.values()) s += q;
+    return s;
+  }
+  const allItemsAssigned = b1Items.length > 0
+    && b1Items.every((it) => assignedTotal(it.id) === it.qty);
   const allBagsUsed = Array.from({ length: bagsCount }, (_, i) => i + 1).every((n) => (declaredBagUsage.get(n) || 0) > 0);
   const canCreatePlan = isDeclaring && allItemsAssigned && allBagsUsed;
-  // En modo ejecución con activeBag elegido: items del bulto activo y flag
-  // de si están todos tildados.
+  // En modo ejecución con activeBag elegido: items presentes en ese bulto
+  // (los que tienen qty>0 asignada a activeBag) y flag de si están todos
+  // tildados. La qty visible en la UI es la del bulto, no la total.
   const activeBagItems = activeBag != null
-    ? b1Items.filter((it) => assignments.get(it.id) === activeBag)
+    ? b1Items
+        .filter((it) => (assignments.get(it.id)?.get(activeBag) ?? 0) > 0)
+        .map((it) => ({ ...it, bagQty: assignments.get(it.id)!.get(activeBag)! }))
     : [];
   const activeBagAllChecked = activeBagItems.length > 0
     && activeBagItems.every((it) => checked.has(it.id));
@@ -521,38 +575,115 @@ export function PackingOrder() {
             Asigna cada producto al bulto donde irá. Al presionar <strong>Imprimir</strong>, se generan {bagsCount} albaranes,
             cada uno con solo los items de su bulto.
           </div>
-          {b1Items.map((it) => (
-            <div key={it.id} className="card flex items-center gap-3 p-3">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
-                {it.product.thumbnailUrl ? (
-                  <img src={it.product.thumbnailUrl} alt={it.product.name} className="h-full w-full object-cover" />
-                ) : (
-                  <ImageIcon size={20} className="text-slate-400" />
+          {b1Items.map((it) => {
+            const inner = assignments.get(it.id);
+            const total = assignedTotal(it.id);
+            const isSplit = splitOpen.has(it.id) || (inner && inner.size > 1);
+            // Cuando NO está en split, extraemos el único bulto asignado (si hay).
+            const singleBag = !isSplit && inner && inner.size === 1
+              ? [...inner.keys()][0] : null;
+            return (
+              <div key={it.id} className="card p-3 space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                    {it.product.thumbnailUrl ? (
+                      <img src={it.product.thumbnailUrl} alt={it.product.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon size={20} className="text-slate-400" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium break-words">{it.lineName || it.product.name}</div>
+                    <div className="text-xs text-slate-500">{it.product.sku || '—'}</div>
+                  </div>
+                  <div className="text-lg font-bold text-brand-700">×{it.qty}</div>
+                  {!isSplit && (
+                    <select
+                      value={singleBag ?? ''}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        setBagFor(it.id, v === '' ? null : Number(v), it.qty);
+                      }}
+                      className="ml-2 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-medium"
+                    >
+                      <option value="">Bulto…</option>
+                      {Array.from({ length: bagsCount }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>Bulto {n}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                {/* Split expandible: solo para items con qty>1. */}
+                {it.qty > 1 && (
+                  <div>
+                    {!isSplit ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleSplit(it.id)}
+                        className="text-xs text-brand-700 hover:underline"
+                      >
+                        + Dividir en varios bultos
+                      </button>
+                    ) : (
+                      <div className="rounded-md bg-slate-50 p-2 ring-1 ring-slate-200">
+                        <div className="mb-1 flex items-center justify-between text-xs">
+                          <span className="text-slate-700">
+                            <strong>Dividir ×{it.qty}</strong> · asignado {total}/{it.qty}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // Al colapsar el split, borramos la asignación
+                              // (queda "sin asignar" hasta que el picker use
+                              // el dropdown). Es más limpio que intentar
+                              // reducir a 1 sola.
+                              setAssignments((prev) => {
+                                const next = new Map(prev);
+                                next.delete(it.id);
+                                return next;
+                              });
+                              toggleSplit(it.id);
+                            }}
+                            className="text-slate-500 hover:underline"
+                          >
+                            Cancelar split
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                          {Array.from({ length: bagsCount }, (_, i) => i + 1).map((n) => {
+                            const q = inner?.get(n) ?? 0;
+                            return (
+                              <label key={n} className="flex items-center gap-1 rounded bg-white px-2 py-1 text-xs ring-1 ring-slate-200">
+                                <span className="text-slate-600">B{n}:</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  max={it.qty}
+                                  value={q}
+                                  onChange={(e) => setSplitQty(it.id, n, Math.max(0, Math.min(it.qty, Number(e.target.value) || 0)))}
+                                  className="w-14 rounded border border-slate-300 px-1 py-0.5 text-center"
+                                />
+                              </label>
+                            );
+                          })}
+                        </div>
+                        {total !== it.qty && (
+                          <div className="mt-1 text-[11px] text-amber-700">
+                            {total < it.qty
+                              ? `Falta asignar ${it.qty - total} unidad${it.qty - total === 1 ? '' : 'es'}.`
+                              : `Excedes en ${total - it.qty} unidad${total - it.qty === 1 ? '' : 'es'}.`}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-medium break-words">{it.lineName || it.product.name}</div>
-                <div className="text-xs text-slate-500">{it.product.sku || '—'}</div>
-              </div>
-              <div className="text-lg font-bold text-brand-700">×{it.qty}</div>
-              <select
-                value={assignments.get(it.id) ?? ''}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setBagFor(it.id, v === '' ? null : Number(v));
-                }}
-                className="ml-2 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-medium"
-              >
-                <option value="">Bulto…</option>
-                {Array.from({ length: bagsCount }, (_, i) => i + 1).map((n) => (
-                  <option key={n} value={n}>Bulto {n}</option>
-                ))}
-              </select>
-            </div>
-          ))}
+            );
+          })}
           {!allItemsAssigned && (
             <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Falta asignar {b1Items.length - assignments.size} item{b1Items.length - assignments.size === 1 ? '' : 's'} a un bulto.
+              Todavía hay items sin asignar por completo. Cada item debe cubrir toda su cantidad.
             </div>
           )}
           {allItemsAssigned && !allBagsUsed && (
@@ -581,7 +712,9 @@ export function PackingOrder() {
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
             {Array.from({ length: bagsCount }, (_, i) => i + 1).map((n) => {
               const closed = bagsPackedSet.has(n);
-              const itemsCount = b1Items.filter((it) => assignments.get(it.id) === n).length;
+              // Items con qty > 0 en este bulto. Si un item se dividió, ambos
+              // bultos lo cuentan (con qty parcial cada uno).
+              const itemsCount = b1Items.filter((it) => (assignments.get(it.id)?.get(n) ?? 0) > 0).length;
               const info = order.packPlan?.bagsPacked?.find((b) => b.bag === n);
               return (
                 <button
@@ -594,7 +727,7 @@ export function PackingOrder() {
                     // pickeados/empacados si los hay (re-entrada).
                     const preChecked = new Set<number>();
                     for (const it of b1Items) {
-                      if (assignments.get(it.id) === n && it.packedAt) preChecked.add(it.id);
+                      if ((assignments.get(it.id)?.get(n) ?? 0) > 0 && it.packedAt) preChecked.add(it.id);
                     }
                     setChecked(preChecked);
                   }}
@@ -682,8 +815,13 @@ export function PackingOrder() {
               <div className="min-w-0 flex-1">
                 <div className="font-medium break-words">{it.lineName || it.product.name}</div>
                 <div className="text-xs text-slate-500">{it.product.sku || '—'}</div>
+                {it.bagQty !== it.qty && (
+                  <div className="mt-0.5 text-[11px] text-slate-500 italic">
+                    {it.bagQty} de {it.qty} unidades — el resto va en otro bulto
+                  </div>
+                )}
               </div>
-              <div className="text-lg font-bold text-brand-700">×{it.qty}</div>
+              <div className="text-lg font-bold text-brand-700">×{it.bagQty}</div>
               <input
                 type="checkbox"
                 checked={checked.has(it.id)}

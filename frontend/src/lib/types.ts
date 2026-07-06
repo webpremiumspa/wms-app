@@ -157,10 +157,12 @@ export type OrderDetail = {
   // bulto activo verde/gris y mostrar "1/3 clasificados".
   bagsClassified?: Array<{ bag: number; at: string; actorName: string | null }>;
   bagsLoaded?: Array<{ bag: number; at: string; actorName: string | null }>;
-  // Pack plan (v0.24.0): distribución de items por bulto declarada por el
-  // picker antes de imprimir. Null en pedidos single-bulto o pre-plan.
+  // Pack plan (v0.24.0/v0.24.2): distribución de items por bulto declarada
+  // por el picker antes de imprimir. Un item con qty>1 puede estar dividido
+  // en varias asignaciones (misma orderItemId con bagNumber distinto y qty
+  // parcial). Null en pedidos single-bulto o pre-plan.
   packPlan?: {
-    assignments: Array<{ orderItemId: number; bagNumber: number }>;
+    assignments: Array<{ orderItemId: number; bagNumber: number; qty: number }>;
     bagsPacked: Array<{ bag: number; at: string; actorName: string | null }>;
   } | null;
   createdAt?: string; // fecha de WC (cuándo se hizo el pedido)

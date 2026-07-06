@@ -138,25 +138,30 @@ model OrderBagEvent {
   @@map("order_bag_events")
 }
 
-// Asignación de un item de pedido a un bulto especifico. v0.24.0: cuando
-// el pedido es multi-bulto (bagsExpected > 1), el picker declara aqui el
-// plan de distribucion antes de imprimir. Un item vive en UN solo bulto
-// (uq_order_item). El PDF filtra el albaran por bulto y el cierre por
-// bulto usa esta asignacion para validar que se marquen los items
-// correctos. Ver services/pack-plan.js.
+// Asignación de un item de pedido a un bulto especifico. v0.24.0: plan de
+// distribución multi-bulto que declara qué items van en qué bulto antes
+// de imprimir. v0.24.2: un item con qty>1 puede dividirse entre bultos
+// (varias filas por orderItemId, cada una con su qty). La suma de qty por
+// item debe igualar la qty total del item. Ver services/pack-plan.js.
 model OrderItemBagAssignment {
   id           Int      @id @default(autoincrement())
   orderId      Int      @map("order_id")
-  // 1:1 con OrderItem — cada item vive en un solo bulto. El @unique aquí
-  // habilita la relación inversa opcional en OrderItem.
-  orderItemId  Int      @unique(map: "uq_order_item") @map("order_item_id")
+  // 1:N con OrderItem (un item puede tener hasta N filas, una por bulto
+  // en el que aparece). El uniqueness real vive en @@unique más abajo.
+  orderItemId  Int      @map("order_item_id")
   bagNumber    Int      @map("bag_number")
+  // Cantidad de unidades del item que van en este bulto. Debe ser >0 y la
+  // suma por item.orderItemId debe = item.qty.
+  qty          Int
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 
+  // Un item aparece a lo sumo una vez por bulto. Si va en 2 bultos son 2
+  // filas con bag_number distintos.
+  @@unique([orderItemId, bagNumber], name: "uq_order_item_bag")
   @@index([orderId, bagNumber], name: "ix_order_bag")
   @@map("order_item_bag_assignment")
 }
@@ -174,9 +179,9 @@ model OrderItem {
   pickedAt      DateTime? @map("picked_at")
   packedAt      DateTime? @map("packed_at")
 
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product       ProductMeta @relation(fields: [productId], references: [wpProductId])
-  bagAssignment OrderItemBagAssignment?
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        ProductMeta @relation(fields: [productId], references: [wpProductId])
+  bagAssignments OrderItemBagAssignment[]
 
   @@index([orderId])
   @@index([productId])

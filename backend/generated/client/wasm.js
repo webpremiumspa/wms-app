@@ -194,6 +194,7 @@ exports.Prisma.OrderItemBagAssignmentScalarFieldEnum = {
   orderId: 'orderId',
   orderItemId: 'orderItemId',
   bagNumber: 'bagNumber',
+  qty: 'qty',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

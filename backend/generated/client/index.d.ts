@@ -1815,6 +1815,37 @@ export namespace Prisma {
 
 
   /**
+   * Count Type OrderItemCountOutputType
+   */
+
+  export type OrderItemCountOutputType = {
+    bagAssignments: number
+  }
+
+  export type OrderItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    bagAssignments?: boolean | OrderItemCountOutputTypeCountBagAssignmentsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * OrderItemCountOutputType without action
+   */
+  export type OrderItemCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OrderItemCountOutputType
+     */
+    select?: OrderItemCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * OrderItemCountOutputType without action
+   */
+  export type OrderItemCountOutputTypeCountBagAssignmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: OrderItemBagAssignmentWhereInput
+  }
+
+
+  /**
    * Count Type DeliveryProcessCountOutputType
    */
 
@@ -6352,6 +6383,7 @@ export namespace Prisma {
     orderId: number | null
     orderItemId: number | null
     bagNumber: number | null
+    qty: number | null
   }
 
   export type OrderItemBagAssignmentSumAggregateOutputType = {
@@ -6359,6 +6391,7 @@ export namespace Prisma {
     orderId: number | null
     orderItemId: number | null
     bagNumber: number | null
+    qty: number | null
   }
 
   export type OrderItemBagAssignmentMinAggregateOutputType = {
@@ -6366,6 +6399,7 @@ export namespace Prisma {
     orderId: number | null
     orderItemId: number | null
     bagNumber: number | null
+    qty: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -6375,6 +6409,7 @@ export namespace Prisma {
     orderId: number | null
     orderItemId: number | null
     bagNumber: number | null
+    qty: number | null
     createdAt: Date | null
     updatedAt: Date | null
   }
@@ -6384,6 +6419,7 @@ export namespace Prisma {
     orderId: number
     orderItemId: number
     bagNumber: number
+    qty: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -6395,6 +6431,7 @@ export namespace Prisma {
     orderId?: true
     orderItemId?: true
     bagNumber?: true
+    qty?: true
   }
 
   export type OrderItemBagAssignmentSumAggregateInputType = {
@@ -6402,6 +6439,7 @@ export namespace Prisma {
     orderId?: true
     orderItemId?: true
     bagNumber?: true
+    qty?: true
   }
 
   export type OrderItemBagAssignmentMinAggregateInputType = {
@@ -6409,6 +6447,7 @@ export namespace Prisma {
     orderId?: true
     orderItemId?: true
     bagNumber?: true
+    qty?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -6418,6 +6457,7 @@ export namespace Prisma {
     orderId?: true
     orderItemId?: true
     bagNumber?: true
+    qty?: true
     createdAt?: true
     updatedAt?: true
   }
@@ -6427,6 +6467,7 @@ export namespace Prisma {
     orderId?: true
     orderItemId?: true
     bagNumber?: true
+    qty?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -6523,6 +6564,7 @@ export namespace Prisma {
     orderId: number
     orderItemId: number
     bagNumber: number
+    qty: number
     createdAt: Date
     updatedAt: Date
     _count: OrderItemBagAssignmentCountAggregateOutputType | null
@@ -6551,6 +6593,7 @@ export namespace Prisma {
     orderId?: boolean
     orderItemId?: boolean
     bagNumber?: boolean
+    qty?: boolean
     createdAt?: boolean
     updatedAt?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
@@ -6563,6 +6606,7 @@ export namespace Prisma {
     orderId?: boolean
     orderItemId?: boolean
     bagNumber?: boolean
+    qty?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
@@ -6583,6 +6627,7 @@ export namespace Prisma {
       orderId: number
       orderItemId: number
       bagNumber: number
+      qty: number
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["orderItemBagAssignment"]>
@@ -6960,6 +7005,7 @@ export namespace Prisma {
     readonly orderId: FieldRef<"OrderItemBagAssignment", 'Int'>
     readonly orderItemId: FieldRef<"OrderItemBagAssignment", 'Int'>
     readonly bagNumber: FieldRef<"OrderItemBagAssignment", 'Int'>
+    readonly qty: FieldRef<"OrderItemBagAssignment", 'Int'>
     readonly createdAt: FieldRef<"OrderItemBagAssignment", 'DateTime'>
     readonly updatedAt: FieldRef<"OrderItemBagAssignment", 'DateTime'>
   }
@@ -7511,7 +7557,8 @@ export namespace Prisma {
     packedAt?: boolean
     order?: boolean | OrderDefaultArgs<ExtArgs>
     product?: boolean | ProductMetaDefaultArgs<ExtArgs>
-    bagAssignment?: boolean | OrderItem$bagAssignmentArgs<ExtArgs>
+    bagAssignments?: boolean | OrderItem$bagAssignmentsArgs<ExtArgs>
+    _count?: boolean | OrderItemCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["orderItem"]>
 
 
@@ -7529,7 +7576,8 @@ export namespace Prisma {
   export type OrderItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     order?: boolean | OrderDefaultArgs<ExtArgs>
     product?: boolean | ProductMetaDefaultArgs<ExtArgs>
-    bagAssignment?: boolean | OrderItem$bagAssignmentArgs<ExtArgs>
+    bagAssignments?: boolean | OrderItem$bagAssignmentsArgs<ExtArgs>
+    _count?: boolean | OrderItemCountOutputTypeDefaultArgs<ExtArgs>
   }
 
   export type $OrderItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7537,7 +7585,7 @@ export namespace Prisma {
     objects: {
       order: Prisma.$OrderPayload<ExtArgs>
       product: Prisma.$ProductMetaPayload<ExtArgs>
-      bagAssignment: Prisma.$OrderItemBagAssignmentPayload<ExtArgs> | null
+      bagAssignments: Prisma.$OrderItemBagAssignmentPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -7890,7 +7938,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     order<T extends OrderDefaultArgs<ExtArgs> = {}>(args?: Subset<T, OrderDefaultArgs<ExtArgs>>): Prisma__OrderClient<$Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     product<T extends ProductMetaDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ProductMetaDefaultArgs<ExtArgs>>): Prisma__ProductMetaClient<$Result.GetResult<Prisma.$ProductMetaPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
-    bagAssignment<T extends OrderItem$bagAssignmentArgs<ExtArgs> = {}>(args?: Subset<T, OrderItem$bagAssignmentArgs<ExtArgs>>): Prisma__OrderItemBagAssignmentClient<$Result.GetResult<Prisma.$OrderItemBagAssignmentPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
+    bagAssignments<T extends OrderItem$bagAssignmentsArgs<ExtArgs> = {}>(args?: Subset<T, OrderItem$bagAssignmentsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$OrderItemBagAssignmentPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8227,9 +8275,9 @@ export namespace Prisma {
   }
 
   /**
-   * OrderItem.bagAssignment
+   * OrderItem.bagAssignments
    */
-  export type OrderItem$bagAssignmentArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type OrderItem$bagAssignmentsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
      * Select specific fields to fetch from the OrderItemBagAssignment
      */
@@ -8239,6 +8287,11 @@ export namespace Prisma {
      */
     include?: OrderItemBagAssignmentInclude<ExtArgs> | null
     where?: OrderItemBagAssignmentWhereInput
+    orderBy?: OrderItemBagAssignmentOrderByWithRelationInput | OrderItemBagAssignmentOrderByWithRelationInput[]
+    cursor?: OrderItemBagAssignmentWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: OrderItemBagAssignmentScalarFieldEnum | OrderItemBagAssignmentScalarFieldEnum[]
   }
 
   /**
@@ -12183,6 +12236,7 @@ export namespace Prisma {
     orderId: 'orderId',
     orderItemId: 'orderItemId',
     bagNumber: 'bagNumber',
+    qty: 'qty',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -12825,6 +12879,7 @@ export namespace Prisma {
     orderId?: IntFilter<"OrderItemBagAssignment"> | number
     orderItemId?: IntFilter<"OrderItemBagAssignment"> | number
     bagNumber?: IntFilter<"OrderItemBagAssignment"> | number
+    qty?: IntFilter<"OrderItemBagAssignment"> | number
     createdAt?: DateTimeFilter<"OrderItemBagAssignment"> | Date | string
     updatedAt?: DateTimeFilter<"OrderItemBagAssignment"> | Date | string
     order?: XOR<OrderRelationFilter, OrderWhereInput>
@@ -12836,6 +12891,7 @@ export namespace Prisma {
     orderId?: SortOrder
     orderItemId?: SortOrder
     bagNumber?: SortOrder
+    qty?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     order?: OrderOrderByWithRelationInput
@@ -12844,23 +12900,26 @@ export namespace Prisma {
 
   export type OrderItemBagAssignmentWhereUniqueInput = Prisma.AtLeast<{
     id?: number
-    orderItemId?: number
+    uq_order_item_bag?: OrderItemBagAssignmentUq_order_item_bagCompoundUniqueInput
     AND?: OrderItemBagAssignmentWhereInput | OrderItemBagAssignmentWhereInput[]
     OR?: OrderItemBagAssignmentWhereInput[]
     NOT?: OrderItemBagAssignmentWhereInput | OrderItemBagAssignmentWhereInput[]
     orderId?: IntFilter<"OrderItemBagAssignment"> | number
+    orderItemId?: IntFilter<"OrderItemBagAssignment"> | number
     bagNumber?: IntFilter<"OrderItemBagAssignment"> | number
+    qty?: IntFilter<"OrderItemBagAssignment"> | number
     createdAt?: DateTimeFilter<"OrderItemBagAssignment"> | Date | string
     updatedAt?: DateTimeFilter<"OrderItemBagAssignment"> | Date | string
     order?: XOR<OrderRelationFilter, OrderWhereInput>
     orderItem?: XOR<OrderItemRelationFilter, OrderItemWhereInput>
-  }, "id" | "orderItemId">
+  }, "id" | "uq_order_item_bag">
 
   export type OrderItemBagAssignmentOrderByWithAggregationInput = {
     id?: SortOrder
     orderId?: SortOrder
     orderItemId?: SortOrder
     bagNumber?: SortOrder
+    qty?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: OrderItemBagAssignmentCountOrderByAggregateInput
@@ -12878,6 +12937,7 @@ export namespace Prisma {
     orderId?: IntWithAggregatesFilter<"OrderItemBagAssignment"> | number
     orderItemId?: IntWithAggregatesFilter<"OrderItemBagAssignment"> | number
     bagNumber?: IntWithAggregatesFilter<"OrderItemBagAssignment"> | number
+    qty?: IntWithAggregatesFilter<"OrderItemBagAssignment"> | number
     createdAt?: DateTimeWithAggregatesFilter<"OrderItemBagAssignment"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"OrderItemBagAssignment"> | Date | string
   }
@@ -12896,7 +12956,7 @@ export namespace Prisma {
     packedAt?: DateTimeNullableFilter<"OrderItem"> | Date | string | null
     order?: XOR<OrderRelationFilter, OrderWhereInput>
     product?: XOR<ProductMetaRelationFilter, ProductMetaWhereInput>
-    bagAssignment?: XOR<OrderItemBagAssignmentNullableRelationFilter, OrderItemBagAssignmentWhereInput> | null
+    bagAssignments?: OrderItemBagAssignmentListRelationFilter
   }
 
   export type OrderItemOrderByWithRelationInput = {
@@ -12910,7 +12970,7 @@ export namespace Prisma {
     packedAt?: SortOrderInput | SortOrder
     order?: OrderOrderByWithRelationInput
     product?: ProductMetaOrderByWithRelationInput
-    bagAssignment?: OrderItemBagAssignmentOrderByWithRelationInput
+    bagAssignments?: OrderItemBagAssignmentOrderByRelationAggregateInput
   }
 
   export type OrderItemWhereUniqueInput = Prisma.AtLeast<{
@@ -12927,7 +12987,7 @@ export namespace Prisma {
     packedAt?: DateTimeNullableFilter<"OrderItem"> | Date | string | null
     order?: XOR<OrderRelationFilter, OrderWhereInput>
     product?: XOR<ProductMetaRelationFilter, ProductMetaWhereInput>
-    bagAssignment?: XOR<OrderItemBagAssignmentNullableRelationFilter, OrderItemBagAssignmentWhereInput> | null
+    bagAssignments?: OrderItemBagAssignmentListRelationFilter
   }, "id">
 
   export type OrderItemOrderByWithAggregationInput = {
@@ -13741,10 +13801,11 @@ export namespace Prisma {
 
   export type OrderItemBagAssignmentCreateInput = {
     bagNumber: number
+    qty: number
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutBagAssignmentsInput
-    orderItem: OrderItemCreateNestedOneWithoutBagAssignmentInput
+    orderItem: OrderItemCreateNestedOneWithoutBagAssignmentsInput
   }
 
   export type OrderItemBagAssignmentUncheckedCreateInput = {
@@ -13752,16 +13813,18 @@ export namespace Prisma {
     orderId: number
     orderItemId: number
     bagNumber: number
+    qty: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
   export type OrderItemBagAssignmentUpdateInput = {
     bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     order?: OrderUpdateOneRequiredWithoutBagAssignmentsNestedInput
-    orderItem?: OrderItemUpdateOneRequiredWithoutBagAssignmentNestedInput
+    orderItem?: OrderItemUpdateOneRequiredWithoutBagAssignmentsNestedInput
   }
 
   export type OrderItemBagAssignmentUncheckedUpdateInput = {
@@ -13769,6 +13832,7 @@ export namespace Prisma {
     orderId?: IntFieldUpdateOperationsInput | number
     orderItemId?: IntFieldUpdateOperationsInput | number
     bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -13778,12 +13842,14 @@ export namespace Prisma {
     orderId: number
     orderItemId: number
     bagNumber: number
+    qty: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
 
   export type OrderItemBagAssignmentUpdateManyMutationInput = {
     bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -13793,6 +13859,7 @@ export namespace Prisma {
     orderId?: IntFieldUpdateOperationsInput | number
     orderItemId?: IntFieldUpdateOperationsInput | number
     bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -13805,7 +13872,7 @@ export namespace Prisma {
     packedAt?: Date | string | null
     order: OrderCreateNestedOneWithoutItemsInput
     product: ProductMetaCreateNestedOneWithoutOrderItemsInput
-    bagAssignment?: OrderItemBagAssignmentCreateNestedOneWithoutOrderItemInput
+    bagAssignments?: OrderItemBagAssignmentCreateNestedManyWithoutOrderItemInput
   }
 
   export type OrderItemUncheckedCreateInput = {
@@ -13817,7 +13884,7 @@ export namespace Prisma {
     lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
-    bagAssignment?: OrderItemBagAssignmentUncheckedCreateNestedOneWithoutOrderItemInput
+    bagAssignments?: OrderItemBagAssignmentUncheckedCreateNestedManyWithoutOrderItemInput
   }
 
   export type OrderItemUpdateInput = {
@@ -13828,7 +13895,7 @@ export namespace Prisma {
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order?: OrderUpdateOneRequiredWithoutItemsNestedInput
     product?: ProductMetaUpdateOneRequiredWithoutOrderItemsNestedInput
-    bagAssignment?: OrderItemBagAssignmentUpdateOneWithoutOrderItemNestedInput
+    bagAssignments?: OrderItemBagAssignmentUpdateManyWithoutOrderItemNestedInput
   }
 
   export type OrderItemUncheckedUpdateInput = {
@@ -13840,7 +13907,7 @@ export namespace Prisma {
     lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    bagAssignment?: OrderItemBagAssignmentUncheckedUpdateOneWithoutOrderItemNestedInput
+    bagAssignments?: OrderItemBagAssignmentUncheckedUpdateManyWithoutOrderItemNestedInput
   }
 
   export type OrderItemCreateManyInput = {
@@ -14742,11 +14809,17 @@ export namespace Prisma {
     isNot?: OrderItemWhereInput
   }
 
+  export type OrderItemBagAssignmentUq_order_item_bagCompoundUniqueInput = {
+    orderItemId: number
+    bagNumber: number
+  }
+
   export type OrderItemBagAssignmentCountOrderByAggregateInput = {
     id?: SortOrder
     orderId?: SortOrder
     orderItemId?: SortOrder
     bagNumber?: SortOrder
+    qty?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -14756,6 +14829,7 @@ export namespace Prisma {
     orderId?: SortOrder
     orderItemId?: SortOrder
     bagNumber?: SortOrder
+    qty?: SortOrder
   }
 
   export type OrderItemBagAssignmentMaxOrderByAggregateInput = {
@@ -14763,6 +14837,7 @@ export namespace Prisma {
     orderId?: SortOrder
     orderItemId?: SortOrder
     bagNumber?: SortOrder
+    qty?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -14772,6 +14847,7 @@ export namespace Prisma {
     orderId?: SortOrder
     orderItemId?: SortOrder
     bagNumber?: SortOrder
+    qty?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -14781,6 +14857,7 @@ export namespace Prisma {
     orderId?: SortOrder
     orderItemId?: SortOrder
     bagNumber?: SortOrder
+    qty?: SortOrder
   }
 
   export type EnumWarehouseFilter<$PrismaModel = never> = {
@@ -14793,11 +14870,6 @@ export namespace Prisma {
   export type ProductMetaRelationFilter = {
     is?: ProductMetaWhereInput
     isNot?: ProductMetaWhereInput
-  }
-
-  export type OrderItemBagAssignmentNullableRelationFilter = {
-    is?: OrderItemBagAssignmentWhereInput | null
-    isNot?: OrderItemBagAssignmentWhereInput | null
   }
 
   export type OrderItemCountOrderByAggregateInput = {
@@ -15794,9 +15866,9 @@ export namespace Prisma {
     connect?: OrderWhereUniqueInput
   }
 
-  export type OrderItemCreateNestedOneWithoutBagAssignmentInput = {
-    create?: XOR<OrderItemCreateWithoutBagAssignmentInput, OrderItemUncheckedCreateWithoutBagAssignmentInput>
-    connectOrCreate?: OrderItemCreateOrConnectWithoutBagAssignmentInput
+  export type OrderItemCreateNestedOneWithoutBagAssignmentsInput = {
+    create?: XOR<OrderItemCreateWithoutBagAssignmentsInput, OrderItemUncheckedCreateWithoutBagAssignmentsInput>
+    connectOrCreate?: OrderItemCreateOrConnectWithoutBagAssignmentsInput
     connect?: OrderItemWhereUniqueInput
   }
 
@@ -15808,12 +15880,12 @@ export namespace Prisma {
     update?: XOR<XOR<OrderUpdateToOneWithWhereWithoutBagAssignmentsInput, OrderUpdateWithoutBagAssignmentsInput>, OrderUncheckedUpdateWithoutBagAssignmentsInput>
   }
 
-  export type OrderItemUpdateOneRequiredWithoutBagAssignmentNestedInput = {
-    create?: XOR<OrderItemCreateWithoutBagAssignmentInput, OrderItemUncheckedCreateWithoutBagAssignmentInput>
-    connectOrCreate?: OrderItemCreateOrConnectWithoutBagAssignmentInput
-    upsert?: OrderItemUpsertWithoutBagAssignmentInput
+  export type OrderItemUpdateOneRequiredWithoutBagAssignmentsNestedInput = {
+    create?: XOR<OrderItemCreateWithoutBagAssignmentsInput, OrderItemUncheckedCreateWithoutBagAssignmentsInput>
+    connectOrCreate?: OrderItemCreateOrConnectWithoutBagAssignmentsInput
+    upsert?: OrderItemUpsertWithoutBagAssignmentsInput
     connect?: OrderItemWhereUniqueInput
-    update?: XOR<XOR<OrderItemUpdateToOneWithWhereWithoutBagAssignmentInput, OrderItemUpdateWithoutBagAssignmentInput>, OrderItemUncheckedUpdateWithoutBagAssignmentInput>
+    update?: XOR<XOR<OrderItemUpdateToOneWithWhereWithoutBagAssignmentsInput, OrderItemUpdateWithoutBagAssignmentsInput>, OrderItemUncheckedUpdateWithoutBagAssignmentsInput>
   }
 
   export type OrderCreateNestedOneWithoutItemsInput = {
@@ -15828,16 +15900,18 @@ export namespace Prisma {
     connect?: ProductMetaWhereUniqueInput
   }
 
-  export type OrderItemBagAssignmentCreateNestedOneWithoutOrderItemInput = {
-    create?: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput>
-    connectOrCreate?: OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput
-    connect?: OrderItemBagAssignmentWhereUniqueInput
+  export type OrderItemBagAssignmentCreateNestedManyWithoutOrderItemInput = {
+    create?: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput> | OrderItemBagAssignmentCreateWithoutOrderItemInput[] | OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput[]
+    connectOrCreate?: OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput | OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput[]
+    createMany?: OrderItemBagAssignmentCreateManyOrderItemInputEnvelope
+    connect?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
   }
 
-  export type OrderItemBagAssignmentUncheckedCreateNestedOneWithoutOrderItemInput = {
-    create?: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput>
-    connectOrCreate?: OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput
-    connect?: OrderItemBagAssignmentWhereUniqueInput
+  export type OrderItemBagAssignmentUncheckedCreateNestedManyWithoutOrderItemInput = {
+    create?: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput> | OrderItemBagAssignmentCreateWithoutOrderItemInput[] | OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput[]
+    connectOrCreate?: OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput | OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput[]
+    createMany?: OrderItemBagAssignmentCreateManyOrderItemInputEnvelope
+    connect?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
   }
 
   export type EnumWarehouseFieldUpdateOperationsInput = {
@@ -15860,24 +15934,32 @@ export namespace Prisma {
     update?: XOR<XOR<ProductMetaUpdateToOneWithWhereWithoutOrderItemsInput, ProductMetaUpdateWithoutOrderItemsInput>, ProductMetaUncheckedUpdateWithoutOrderItemsInput>
   }
 
-  export type OrderItemBagAssignmentUpdateOneWithoutOrderItemNestedInput = {
-    create?: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput>
-    connectOrCreate?: OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput
-    upsert?: OrderItemBagAssignmentUpsertWithoutOrderItemInput
-    disconnect?: OrderItemBagAssignmentWhereInput | boolean
-    delete?: OrderItemBagAssignmentWhereInput | boolean
-    connect?: OrderItemBagAssignmentWhereUniqueInput
-    update?: XOR<XOR<OrderItemBagAssignmentUpdateToOneWithWhereWithoutOrderItemInput, OrderItemBagAssignmentUpdateWithoutOrderItemInput>, OrderItemBagAssignmentUncheckedUpdateWithoutOrderItemInput>
+  export type OrderItemBagAssignmentUpdateManyWithoutOrderItemNestedInput = {
+    create?: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput> | OrderItemBagAssignmentCreateWithoutOrderItemInput[] | OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput[]
+    connectOrCreate?: OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput | OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput[]
+    upsert?: OrderItemBagAssignmentUpsertWithWhereUniqueWithoutOrderItemInput | OrderItemBagAssignmentUpsertWithWhereUniqueWithoutOrderItemInput[]
+    createMany?: OrderItemBagAssignmentCreateManyOrderItemInputEnvelope
+    set?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
+    disconnect?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
+    delete?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
+    connect?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
+    update?: OrderItemBagAssignmentUpdateWithWhereUniqueWithoutOrderItemInput | OrderItemBagAssignmentUpdateWithWhereUniqueWithoutOrderItemInput[]
+    updateMany?: OrderItemBagAssignmentUpdateManyWithWhereWithoutOrderItemInput | OrderItemBagAssignmentUpdateManyWithWhereWithoutOrderItemInput[]
+    deleteMany?: OrderItemBagAssignmentScalarWhereInput | OrderItemBagAssignmentScalarWhereInput[]
   }
 
-  export type OrderItemBagAssignmentUncheckedUpdateOneWithoutOrderItemNestedInput = {
-    create?: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput>
-    connectOrCreate?: OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput
-    upsert?: OrderItemBagAssignmentUpsertWithoutOrderItemInput
-    disconnect?: OrderItemBagAssignmentWhereInput | boolean
-    delete?: OrderItemBagAssignmentWhereInput | boolean
-    connect?: OrderItemBagAssignmentWhereUniqueInput
-    update?: XOR<XOR<OrderItemBagAssignmentUpdateToOneWithWhereWithoutOrderItemInput, OrderItemBagAssignmentUpdateWithoutOrderItemInput>, OrderItemBagAssignmentUncheckedUpdateWithoutOrderItemInput>
+  export type OrderItemBagAssignmentUncheckedUpdateManyWithoutOrderItemNestedInput = {
+    create?: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput> | OrderItemBagAssignmentCreateWithoutOrderItemInput[] | OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput[]
+    connectOrCreate?: OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput | OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput[]
+    upsert?: OrderItemBagAssignmentUpsertWithWhereUniqueWithoutOrderItemInput | OrderItemBagAssignmentUpsertWithWhereUniqueWithoutOrderItemInput[]
+    createMany?: OrderItemBagAssignmentCreateManyOrderItemInputEnvelope
+    set?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
+    disconnect?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
+    delete?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
+    connect?: OrderItemBagAssignmentWhereUniqueInput | OrderItemBagAssignmentWhereUniqueInput[]
+    update?: OrderItemBagAssignmentUpdateWithWhereUniqueWithoutOrderItemInput | OrderItemBagAssignmentUpdateWithWhereUniqueWithoutOrderItemInput[]
+    updateMany?: OrderItemBagAssignmentUpdateManyWithWhereWithoutOrderItemInput | OrderItemBagAssignmentUpdateManyWithWhereWithoutOrderItemInput[]
+    deleteMany?: OrderItemBagAssignmentScalarWhereInput | OrderItemBagAssignmentScalarWhereInput[]
   }
 
   export type UserMetaCreateNestedOneWithoutProcessesCreatedInput = {
@@ -17003,7 +17085,7 @@ export namespace Prisma {
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
     order: OrderCreateNestedOneWithoutItemsInput
-    bagAssignment?: OrderItemBagAssignmentCreateNestedOneWithoutOrderItemInput
+    bagAssignments?: OrderItemBagAssignmentCreateNestedManyWithoutOrderItemInput
   }
 
   export type OrderItemUncheckedCreateWithoutProductInput = {
@@ -17014,7 +17096,7 @@ export namespace Prisma {
     lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
-    bagAssignment?: OrderItemBagAssignmentUncheckedCreateNestedOneWithoutOrderItemInput
+    bagAssignments?: OrderItemBagAssignmentUncheckedCreateNestedManyWithoutOrderItemInput
   }
 
   export type OrderItemCreateOrConnectWithoutProductInput = {
@@ -17187,7 +17269,7 @@ export namespace Prisma {
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
     product: ProductMetaCreateNestedOneWithoutOrderItemsInput
-    bagAssignment?: OrderItemBagAssignmentCreateNestedOneWithoutOrderItemInput
+    bagAssignments?: OrderItemBagAssignmentCreateNestedManyWithoutOrderItemInput
   }
 
   export type OrderItemUncheckedCreateWithoutOrderInput = {
@@ -17198,7 +17280,7 @@ export namespace Prisma {
     lineName?: string | null
     pickedAt?: Date | string | null
     packedAt?: Date | string | null
-    bagAssignment?: OrderItemBagAssignmentUncheckedCreateNestedOneWithoutOrderItemInput
+    bagAssignments?: OrderItemBagAssignmentUncheckedCreateNestedManyWithoutOrderItemInput
   }
 
   export type OrderItemCreateOrConnectWithoutOrderInput = {
@@ -17281,15 +17363,17 @@ export namespace Prisma {
 
   export type OrderItemBagAssignmentCreateWithoutOrderInput = {
     bagNumber: number
+    qty: number
     createdAt?: Date | string
     updatedAt?: Date | string
-    orderItem: OrderItemCreateNestedOneWithoutBagAssignmentInput
+    orderItem: OrderItemCreateNestedOneWithoutBagAssignmentsInput
   }
 
   export type OrderItemBagAssignmentUncheckedCreateWithoutOrderInput = {
     id?: number
     orderItemId: number
     bagNumber: number
+    qty: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -17541,6 +17625,7 @@ export namespace Prisma {
     orderId?: IntFilter<"OrderItemBagAssignment"> | number
     orderItemId?: IntFilter<"OrderItemBagAssignment"> | number
     bagNumber?: IntFilter<"OrderItemBagAssignment"> | number
+    qty?: IntFilter<"OrderItemBagAssignment"> | number
     createdAt?: DateTimeFilter<"OrderItemBagAssignment"> | Date | string
     updatedAt?: DateTimeFilter<"OrderItemBagAssignment"> | Date | string
   }
@@ -17897,7 +17982,7 @@ export namespace Prisma {
     create: XOR<OrderCreateWithoutBagAssignmentsInput, OrderUncheckedCreateWithoutBagAssignmentsInput>
   }
 
-  export type OrderItemCreateWithoutBagAssignmentInput = {
+  export type OrderItemCreateWithoutBagAssignmentsInput = {
     qty: number
     warehouse: $Enums.Warehouse
     lineName?: string | null
@@ -17907,7 +17992,7 @@ export namespace Prisma {
     product: ProductMetaCreateNestedOneWithoutOrderItemsInput
   }
 
-  export type OrderItemUncheckedCreateWithoutBagAssignmentInput = {
+  export type OrderItemUncheckedCreateWithoutBagAssignmentsInput = {
     id?: number
     orderId: number
     productId: number
@@ -17918,9 +18003,9 @@ export namespace Prisma {
     packedAt?: Date | string | null
   }
 
-  export type OrderItemCreateOrConnectWithoutBagAssignmentInput = {
+  export type OrderItemCreateOrConnectWithoutBagAssignmentsInput = {
     where: OrderItemWhereUniqueInput
-    create: XOR<OrderItemCreateWithoutBagAssignmentInput, OrderItemUncheckedCreateWithoutBagAssignmentInput>
+    create: XOR<OrderItemCreateWithoutBagAssignmentsInput, OrderItemUncheckedCreateWithoutBagAssignmentsInput>
   }
 
   export type OrderUpsertWithoutBagAssignmentsInput = {
@@ -18015,18 +18100,18 @@ export namespace Prisma {
     bagEvents?: OrderBagEventUncheckedUpdateManyWithoutOrderNestedInput
   }
 
-  export type OrderItemUpsertWithoutBagAssignmentInput = {
-    update: XOR<OrderItemUpdateWithoutBagAssignmentInput, OrderItemUncheckedUpdateWithoutBagAssignmentInput>
-    create: XOR<OrderItemCreateWithoutBagAssignmentInput, OrderItemUncheckedCreateWithoutBagAssignmentInput>
+  export type OrderItemUpsertWithoutBagAssignmentsInput = {
+    update: XOR<OrderItemUpdateWithoutBagAssignmentsInput, OrderItemUncheckedUpdateWithoutBagAssignmentsInput>
+    create: XOR<OrderItemCreateWithoutBagAssignmentsInput, OrderItemUncheckedCreateWithoutBagAssignmentsInput>
     where?: OrderItemWhereInput
   }
 
-  export type OrderItemUpdateToOneWithWhereWithoutBagAssignmentInput = {
+  export type OrderItemUpdateToOneWithWhereWithoutBagAssignmentsInput = {
     where?: OrderItemWhereInput
-    data: XOR<OrderItemUpdateWithoutBagAssignmentInput, OrderItemUncheckedUpdateWithoutBagAssignmentInput>
+    data: XOR<OrderItemUpdateWithoutBagAssignmentsInput, OrderItemUncheckedUpdateWithoutBagAssignmentsInput>
   }
 
-  export type OrderItemUpdateWithoutBagAssignmentInput = {
+  export type OrderItemUpdateWithoutBagAssignmentsInput = {
     qty?: IntFieldUpdateOperationsInput | number
     warehouse?: EnumWarehouseFieldUpdateOperationsInput | $Enums.Warehouse
     lineName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -18036,7 +18121,7 @@ export namespace Prisma {
     product?: ProductMetaUpdateOneRequiredWithoutOrderItemsNestedInput
   }
 
-  export type OrderItemUncheckedUpdateWithoutBagAssignmentInput = {
+  export type OrderItemUncheckedUpdateWithoutBagAssignmentsInput = {
     id?: IntFieldUpdateOperationsInput | number
     orderId?: IntFieldUpdateOperationsInput | number
     productId?: IntFieldUpdateOperationsInput | number
@@ -18158,6 +18243,7 @@ export namespace Prisma {
 
   export type OrderItemBagAssignmentCreateWithoutOrderItemInput = {
     bagNumber: number
+    qty: number
     createdAt?: Date | string
     updatedAt?: Date | string
     order: OrderCreateNestedOneWithoutBagAssignmentsInput
@@ -18167,6 +18253,7 @@ export namespace Prisma {
     id?: number
     orderId: number
     bagNumber: number
+    qty: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -18174,6 +18261,11 @@ export namespace Prisma {
   export type OrderItemBagAssignmentCreateOrConnectWithoutOrderItemInput = {
     where: OrderItemBagAssignmentWhereUniqueInput
     create: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput>
+  }
+
+  export type OrderItemBagAssignmentCreateManyOrderItemInputEnvelope = {
+    data: OrderItemBagAssignmentCreateManyOrderItemInput | OrderItemBagAssignmentCreateManyOrderItemInput[]
+    skipDuplicates?: boolean
   }
 
   export type OrderUpsertWithoutItemsInput = {
@@ -18297,30 +18389,20 @@ export namespace Prisma {
     syncedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
 
-  export type OrderItemBagAssignmentUpsertWithoutOrderItemInput = {
+  export type OrderItemBagAssignmentUpsertWithWhereUniqueWithoutOrderItemInput = {
+    where: OrderItemBagAssignmentWhereUniqueInput
     update: XOR<OrderItemBagAssignmentUpdateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedUpdateWithoutOrderItemInput>
     create: XOR<OrderItemBagAssignmentCreateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedCreateWithoutOrderItemInput>
-    where?: OrderItemBagAssignmentWhereInput
   }
 
-  export type OrderItemBagAssignmentUpdateToOneWithWhereWithoutOrderItemInput = {
-    where?: OrderItemBagAssignmentWhereInput
+  export type OrderItemBagAssignmentUpdateWithWhereUniqueWithoutOrderItemInput = {
+    where: OrderItemBagAssignmentWhereUniqueInput
     data: XOR<OrderItemBagAssignmentUpdateWithoutOrderItemInput, OrderItemBagAssignmentUncheckedUpdateWithoutOrderItemInput>
   }
 
-  export type OrderItemBagAssignmentUpdateWithoutOrderItemInput = {
-    bagNumber?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    order?: OrderUpdateOneRequiredWithoutBagAssignmentsNestedInput
-  }
-
-  export type OrderItemBagAssignmentUncheckedUpdateWithoutOrderItemInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    orderId?: IntFieldUpdateOperationsInput | number
-    bagNumber?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  export type OrderItemBagAssignmentUpdateManyWithWhereWithoutOrderItemInput = {
+    where: OrderItemBagAssignmentScalarWhereInput
+    data: XOR<OrderItemBagAssignmentUpdateManyMutationInput, OrderItemBagAssignmentUncheckedUpdateManyWithoutOrderItemInput>
   }
 
   export type UserMetaCreateWithoutProcessesCreatedInput = {
@@ -19772,7 +19854,7 @@ export namespace Prisma {
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     order?: OrderUpdateOneRequiredWithoutItemsNestedInput
-    bagAssignment?: OrderItemBagAssignmentUpdateOneWithoutOrderItemNestedInput
+    bagAssignments?: OrderItemBagAssignmentUpdateManyWithoutOrderItemNestedInput
   }
 
   export type OrderItemUncheckedUpdateWithoutProductInput = {
@@ -19783,7 +19865,7 @@ export namespace Prisma {
     lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    bagAssignment?: OrderItemBagAssignmentUncheckedUpdateOneWithoutOrderItemNestedInput
+    bagAssignments?: OrderItemBagAssignmentUncheckedUpdateManyWithoutOrderItemNestedInput
   }
 
   export type OrderItemUncheckedUpdateManyWithoutProductInput = {
@@ -19830,6 +19912,7 @@ export namespace Prisma {
     id?: number
     orderItemId: number
     bagNumber: number
+    qty: number
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -19841,7 +19924,7 @@ export namespace Prisma {
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     product?: ProductMetaUpdateOneRequiredWithoutOrderItemsNestedInput
-    bagAssignment?: OrderItemBagAssignmentUpdateOneWithoutOrderItemNestedInput
+    bagAssignments?: OrderItemBagAssignmentUpdateManyWithoutOrderItemNestedInput
   }
 
   export type OrderItemUncheckedUpdateWithoutOrderInput = {
@@ -19852,7 +19935,7 @@ export namespace Prisma {
     lineName?: NullableStringFieldUpdateOperationsInput | string | null
     pickedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     packedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-    bagAssignment?: OrderItemBagAssignmentUncheckedUpdateOneWithoutOrderItemNestedInput
+    bagAssignments?: OrderItemBagAssignmentUncheckedUpdateManyWithoutOrderItemNestedInput
   }
 
   export type OrderItemUncheckedUpdateManyWithoutOrderInput = {
@@ -19925,15 +20008,17 @@ export namespace Prisma {
 
   export type OrderItemBagAssignmentUpdateWithoutOrderInput = {
     bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    orderItem?: OrderItemUpdateOneRequiredWithoutBagAssignmentNestedInput
+    orderItem?: OrderItemUpdateOneRequiredWithoutBagAssignmentsNestedInput
   }
 
   export type OrderItemBagAssignmentUncheckedUpdateWithoutOrderInput = {
     id?: IntFieldUpdateOperationsInput | number
     orderItemId?: IntFieldUpdateOperationsInput | number
     bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -19942,6 +20027,42 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     orderItemId?: IntFieldUpdateOperationsInput | number
     bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderItemBagAssignmentCreateManyOrderItemInput = {
+    id?: number
+    orderId: number
+    bagNumber: number
+    qty: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+  }
+
+  export type OrderItemBagAssignmentUpdateWithoutOrderItemInput = {
+    bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    order?: OrderUpdateOneRequiredWithoutBagAssignmentsNestedInput
+  }
+
+  export type OrderItemBagAssignmentUncheckedUpdateWithoutOrderItemInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    orderId?: IntFieldUpdateOperationsInput | number
+    bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+  }
+
+  export type OrderItemBagAssignmentUncheckedUpdateManyWithoutOrderItemInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    orderId?: IntFieldUpdateOperationsInput | number
+    bagNumber?: IntFieldUpdateOperationsInput | number
+    qty?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -20028,6 +20149,10 @@ export namespace Prisma {
      * @deprecated Use OrderCountOutputTypeDefaultArgs instead
      */
     export type OrderCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = OrderCountOutputTypeDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use OrderItemCountOutputTypeDefaultArgs instead
+     */
+    export type OrderItemCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = OrderItemCountOutputTypeDefaultArgs<ExtArgs>
     /**
      * @deprecated Use DeliveryProcessCountOutputTypeDefaultArgs instead
      */

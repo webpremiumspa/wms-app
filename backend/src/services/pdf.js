@@ -4,15 +4,23 @@ import axios from 'axios';
 import { config } from '../config.js';
 import { prisma } from '../db/prisma.js';
 
-// Multi-bulto v0.24.0: carga el pack plan del pedido y devuelve un Map
-// { orderItemId → bagNumber } listo para pasar al drawAlbaran. Devuelve un
-// Map vacío si no hay plan (single-bulto o pedido pre-v0.24.0).
+// Multi-bulto v0.24.0/v0.24.2: carga el pack plan del pedido y devuelve un
+// mapa por (orderItemId, bagNumber) → qty. Un item con qty>1 puede aparecer
+// en varios bultos. La UI del albarán usa esto para mostrar la qty
+// correspondiente a cada bulto (no la qty total del item).
 async function loadPlanByItem(orderId) {
   const assignments = await prisma.orderItemBagAssignment.findMany({
     where: { orderId },
-    select: { orderItemId: true, bagNumber: true },
+    select: { orderItemId: true, bagNumber: true, qty: true },
   });
-  return new Map(assignments.map((a) => [a.orderItemId, a.bagNumber]));
+  // Map<orderItemId, Map<bagNumber, qty>>
+  const byItem = new Map();
+  for (const a of assignments) {
+    let inner = byItem.get(a.orderItemId);
+    if (!inner) { inner = new Map(); byItem.set(a.orderItemId, inner); }
+    inner.set(a.bagNumber, a.qty);
+  }
+  return byItem;
 }
 
 // QR encodea una URL navegable. Al escanear desde la cámara del móvil abre el
@@ -217,10 +225,12 @@ async function drawAlbaran(doc, order, opts = {}) {
     cursorY += 60;
   }
 
-  // Multi-bulto con pack plan (v0.24.0): si se pasó bagNumber Y el pedido
-  // tiene un plan, filtramos los items B1 al bulto correspondiente. Los B2
-  // van completos abajo en todas las páginas (siguen siendo a granel).
-  const planByItem = opts.planByItem; // Map<orderItemId, bagNumber> | undefined
+  // Multi-bulto con pack plan (v0.24.0/v0.24.2): si se pasó bagNumber Y el
+  // pedido tiene un plan, filtramos los items B1 al bulto correspondiente
+  // y ajustamos la qty a lo que corresponde a ESE bulto (un item con qty>1
+  // puede estar dividido entre bultos). Los B2 van completos en todas las
+  // páginas (siguen siendo a granel).
+  const planByItem = opts.planByItem; // Map<orderItemId, Map<bagNumber, qty>> | undefined
 
   const b1Header = planByItem && bagNumber && totalBags > 1
     ? `Contenido del bulto ${bagNumber}`
@@ -229,9 +239,16 @@ async function drawAlbaran(doc, order, opts = {}) {
   cursorY += 20;
 
   const allB1 = order.items.filter((i) => i.warehouse === 'B1');
-  const b1Items = planByItem && bagNumber
-    ? allB1.filter((it) => planByItem.get(it.id) === bagNumber)
-    : allB1;
+  let b1Items;
+  if (planByItem && bagNumber) {
+    // Sólo items que tengan asignación para este bulto. Reemplazamos qty
+    // por la del bulto (no mostrar la qty total si el item está dividido).
+    b1Items = allB1
+      .filter((it) => planByItem.get(it.id)?.has(bagNumber))
+      .map((it) => ({ ...it, qty: planByItem.get(it.id).get(bagNumber) }));
+  } else {
+    b1Items = allB1;
+  }
   drawTable(doc, b1Items, cursorY, itemImages);
   cursorY = doc.y + 10;
 

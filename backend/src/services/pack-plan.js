@@ -8,12 +8,19 @@ const MAX_BAGS = 6;
 // cada bulto se cierra por separado con un scan por bulto (mismo modelo
 // que classified/loaded de v0.23.0).
 
-// Crea o reemplaza el plan de empaque de un pedido. Fallo si:
-//   - N está fuera de [2, MAX_BAGS] (los pedidos single-bulto no usan plan)
-//   - assignments no cubren TODOS los items B1 del pedido, o traen items ajenos
-//   - algún bagNumber está fuera de [1, N]
+// Crea o reemplaza el plan de empaque de un pedido. v0.24.2: cada assignment
+// incluye qty — un item con qty>1 puede dividirse entre varios bultos y aparece
+// N veces (una por bulto donde va).
+//
+// Falla si:
+//   - N está fuera de [2, MAX_BAGS]
+//   - la suma de qty por item != item.qty (no cubre todas las unidades, o
+//     cubre de más)
+//   - algún assignment.qty <= 0
+//   - algún bagNumber fuera de [1, N]
+//   - hay items B1 no asignados
+//   - hay bultos sin items
 //   - ya hay bag events tipo 'packed' registrados (=algún bulto ya se cerró)
-//     → hay que borrar el plan primero via deletePackPlan
 export async function createPackPlan({ orderId, bagsExpected, assignments, actorId }) {
   if (!Number.isInteger(bagsExpected) || bagsExpected < 2 || bagsExpected > MAX_BAGS) {
     throw new HttpError(400, `bagsExpected debe estar entre 2 y ${MAX_BAGS}. Para single-bulto usa el pack directo.`, {
@@ -26,7 +33,7 @@ export async function createPackPlan({ orderId, bagsExpected, assignments, actor
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    include: { items: { select: { id: true, warehouse: true } } },
+    include: { items: { select: { id: true, warehouse: true, qty: true } } },
   });
   if (!order) throw new HttpError(404, 'Order not found');
   if (order.status !== 'sequenced') {
@@ -41,28 +48,42 @@ export async function createPackPlan({ orderId, bagsExpected, assignments, actor
   }
 
   const b1Items = order.items.filter((it) => it.warehouse === 'B1');
-  const b1ItemIds = new Set(b1Items.map((it) => it.id));
+  const b1ItemById = new Map(b1Items.map((it) => [it.id, it]));
 
-  // Validar que assignments cubran exactamente los items B1 (ni menos ni más).
-  const assignedIds = new Set();
+  // Suma de qty por item (para validar contra item.qty) y por (item, bag)
+  // para detectar duplicados de la misma pareja.
+  const qtyByItem = new Map(); // orderItemId → suma de qty en el plan
+  const seenItemBag = new Set(); // "itemId:bag" para detectar duplicados
+
   for (const a of assignments) {
-    if (!Number.isInteger(a.orderItemId) || !b1ItemIds.has(a.orderItemId)) {
+    if (!Number.isInteger(a.orderItemId) || !b1ItemById.has(a.orderItemId)) {
       throw new HttpError(400, `Item ${a.orderItemId} no pertenece al pedido o no es B1`);
     }
-    if (assignedIds.has(a.orderItemId)) {
-      throw new HttpError(400, `Item ${a.orderItemId} asignado más de una vez`);
-    }
-    assignedIds.add(a.orderItemId);
     if (!Number.isInteger(a.bagNumber) || a.bagNumber < 1 || a.bagNumber > bagsExpected) {
       throw new HttpError(400, `Bulto ${a.bagNumber} fuera de rango [1..${bagsExpected}] en item ${a.orderItemId}`);
     }
-  }
-  if (assignedIds.size !== b1Items.length) {
-    throw new HttpError(400, `Faltan items B1 por asignar (asignados: ${assignedIds.size}, esperados: ${b1Items.length}).`);
+    if (!Number.isInteger(a.qty) || a.qty <= 0) {
+      throw new HttpError(400, `qty inválida (${a.qty}) para item ${a.orderItemId} en bulto ${a.bagNumber}`);
+    }
+    const key = `${a.orderItemId}:${a.bagNumber}`;
+    if (seenItemBag.has(key)) {
+      throw new HttpError(400, `Item ${a.orderItemId} tiene más de una asignación en el bulto ${a.bagNumber} — combina las qtys.`);
+    }
+    seenItemBag.add(key);
+    qtyByItem.set(a.orderItemId, (qtyByItem.get(a.orderItemId) || 0) + a.qty);
   }
 
-  // Comprobar que todos los bultos [1..N] tienen al menos un item — un bulto
-  // vacío no tiene sentido (el picker declaró 3 bultos pero solo usó 2).
+  // Validar que cada item B1 esté completamente cubierto (ni menos ni más).
+  for (const it of b1Items) {
+    const sum = qtyByItem.get(it.id) || 0;
+    if (sum !== it.qty) {
+      throw new HttpError(400, `Item ${it.id}: la suma de unidades asignadas (${sum}) debe igualar la qty total (${it.qty}).`, {
+        orderItemId: it.id, expectedQty: it.qty, assignedQty: sum,
+      });
+    }
+  }
+
+  // Cada bulto debe tener al menos una asignación (no permitimos bultos vacíos).
   const bagsUsed = new Set(assignments.map((a) => a.bagNumber));
   const missingBags = [];
   for (let i = 1; i <= bagsExpected; i += 1) if (!bagsUsed.has(i)) missingBags.push(i);
@@ -70,8 +91,7 @@ export async function createPackPlan({ orderId, bagsExpected, assignments, actor
     throw new HttpError(400, `Bulto(s) sin items asignados: ${missingBags.join(', ')}. Cada bulto debe tener al menos un item.`);
   }
 
-  // Reemplazamos el plan: borrar cualquier asignación previa y crear las nuevas
-  // en una transacción. También sincronizamos bagsExpected en Order.
+  // Reemplazamos el plan.
   await prisma.$transaction([
     prisma.orderItemBagAssignment.deleteMany({ where: { orderId } }),
     prisma.orderItemBagAssignment.createMany({
@@ -79,6 +99,7 @@ export async function createPackPlan({ orderId, bagsExpected, assignments, actor
         orderId,
         orderItemId: a.orderItemId,
         bagNumber: a.bagNumber,
+        qty: a.qty,
       })),
     }),
     prisma.order.update({
@@ -130,17 +151,19 @@ export async function deletePackPlan({ orderId, actorId }) {
 }
 
 // Cierra UN bulto del pedido. El picker marcó los items del bulto (itemIds)
-// y presiona cerrar. Validamos que los itemIds coincidan exactamente con
-// los items asignados a ese bulto, actualizamos pickedAt/packedAt en los
-// items y registramos el bag event `packed`.
+// y presiona cerrar. Validamos que los itemIds coincidan con los items
+// asignados a ese bulto (independiente de cuántas unidades tenga cada uno).
+// Registramos el bag event `packed`; si con este cierre se completan los N
+// bag events → transición a status='packed' + packedAt=now.
 //
-// Si con este cierre se completan los N bag events → transiciona el pedido
-// a status='packed' + packedAt=now.
+// Nota v0.24.2: los items pueden estar divididos entre bultos (mismo
+// orderItemId con qty distinta en distintos bultos). El picker confirma
+// los items presentes en el bulto — no la qty (esa la sabe el plan).
 export async function closePackBag({ orderId, bagNumber, itemIds, actorId }) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
-      bagAssignments: { where: { bagNumber }, select: { orderItemId: true } },
+      bagAssignments: { where: { bagNumber }, select: { orderItemId: true, qty: true } },
     },
   });
   if (!order) throw new HttpError(404, 'Order not found');
@@ -152,7 +175,6 @@ export async function closePackBag({ orderId, bagNumber, itemIds, actorId }) {
   if (bagNumber < 1 || bagNumber > bagsExpected) {
     throw new HttpError(400, `Bulto ${bagNumber} fuera de rango [1..${bagsExpected}]`);
   }
-  // El plan debe existir (los assignments cubren todos los bultos).
   if (order.bagAssignments.length === 0) {
     throw new HttpError(409, `No hay plan de empaque para el bulto ${bagNumber}. Debe crearse el plan primero.`);
   }
@@ -232,14 +254,14 @@ export async function closePackBag({ orderId, bagNumber, itemIds, actorId }) {
   return { ok: true, complete, progress: { done, total: bagsExpected }, transitionedNow };
 }
 
-// Devuelve el plan de empaque para un pedido: qué items van en qué bulto,
-// qué bultos ya están cerrados. La UI usa esto para renderizar el modo
-// ejecución.
+// Devuelve el plan de empaque para un pedido: qué items van en qué bulto y
+// con qué qty, y qué bultos ya están cerrados. La UI usa esto para
+// renderizar el modo ejecución (con qty por bulto v0.24.2).
 export async function getPackPlanFor(orderId) {
   const assignments = await prisma.orderItemBagAssignment.findMany({
     where: { orderId },
     orderBy: [{ bagNumber: 'asc' }, { orderItemId: 'asc' }],
-    select: { orderItemId: true, bagNumber: true },
+    select: { orderItemId: true, bagNumber: true, qty: true },
   });
   if (assignments.length === 0) return null;
   const packedEvents = await prisma.orderBagEvent.findMany({

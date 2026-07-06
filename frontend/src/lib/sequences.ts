@@ -131,7 +131,9 @@ export const ordersApi = {
   createPackPlan: async (
     id: number,
     bagsExpected: number,
-    assignments: Array<{ orderItemId: number; bagNumber: number }>,
+    // v0.24.2: cada assignment incluye qty. Un item con qty>1 puede
+    // aparecer en varias asignaciones si se divide entre bultos.
+    assignments: Array<{ orderItemId: number; bagNumber: number; qty: number }>,
   ): Promise<{ ok: boolean; bagsExpected: number; assignmentCount: number }> =>
     (await api.post(`/orders/${id}/pack-plan`, { bagsExpected, assignments })).data,
   deletePackPlan: async (id: number): Promise<{ ok: boolean; deleted: number }> =>
