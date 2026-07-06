@@ -112,6 +112,9 @@ router.delete('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (r
       // Bag events: se borran junto con la reversión de status. Ver comentario
       // arriba.
       prisma.orderBagEvent.deleteMany({ where: { orderId: { in: orderIds } } }),
+      // Plan de empaque multi-bulto (v0.24.0): al eliminar la secuencia,
+      // los pedidos vuelven a 'received' y no deben conservar plan.
+      prisma.orderItemBagAssignment.deleteMany({ where: { orderId: { in: orderIds } } }),
       // Borrar la secuencia (cascadea SequenceOrder)
       prisma.sequence.delete({ where: { id } }),
       prisma.event.create({

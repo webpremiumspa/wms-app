@@ -2,6 +2,18 @@ import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
 import axios from 'axios';
 import { config } from '../config.js';
+import { prisma } from '../db/prisma.js';
+
+// Multi-bulto v0.24.0: carga el pack plan del pedido y devuelve un Map
+// { orderItemId → bagNumber } listo para pasar al drawAlbaran. Devuelve un
+// Map vacío si no hay plan (single-bulto o pedido pre-v0.24.0).
+async function loadPlanByItem(orderId) {
+  const assignments = await prisma.orderItemBagAssignment.findMany({
+    where: { orderId },
+    select: { orderItemId: true, bagNumber: true },
+  });
+  return new Map(assignments.map((a) => [a.orderItemId, a.bagNumber]));
+}
 
 // QR encodea una URL navegable. Al escanear desde la cámara del móvil abre el
 // navegador en `/scan/<wpOrderId>` directamente. El parser del backend acepta
@@ -205,10 +217,21 @@ async function drawAlbaran(doc, order, opts = {}) {
     cursorY += 60;
   }
 
-  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text('Contenido de la bolsa', 40, cursorY);
+  // Multi-bulto con pack plan (v0.24.0): si se pasó bagNumber Y el pedido
+  // tiene un plan, filtramos los items B1 al bulto correspondiente. Los B2
+  // van completos abajo en todas las páginas (siguen siendo a granel).
+  const planByItem = opts.planByItem; // Map<orderItemId, bagNumber> | undefined
+
+  const b1Header = planByItem && bagNumber && totalBags > 1
+    ? `Contenido del bulto ${bagNumber}`
+    : 'Contenido de la bolsa';
+  doc.fillColor('#0f172a').font('Helvetica-Bold').fontSize(12).text(b1Header, 40, cursorY);
   cursorY += 20;
 
-  const b1Items = order.items.filter((i) => i.warehouse === 'B1');
+  const allB1 = order.items.filter((i) => i.warehouse === 'B1');
+  const b1Items = planByItem && bagNumber
+    ? allB1.filter((it) => planByItem.get(it.id) === bagNumber)
+    : allB1;
   drawTable(doc, b1Items, cursorY, itemImages);
   cursorY = doc.y + 10;
 
@@ -245,9 +268,13 @@ export async function renderSequenceAlbaranesPdf(orders, stream) {
 
   for (const order of orders) {
     const totalBags = Math.max(1, order.bagsExpected ?? 1);
+    const planByItem = totalBags > 1 ? await loadPlanByItem(order.id) : new Map();
     for (let i = 1; i <= totalBags; i += 1) {
       doc.addPage();
-      await drawAlbaran(doc, order, { itemImages, bagNumber: i, totalBags });
+      await drawAlbaran(doc, order, {
+        itemImages, bagNumber: i, totalBags,
+        planByItem: planByItem.size > 0 ? planByItem : undefined,
+      });
     }
   }
 
@@ -270,9 +297,15 @@ export async function renderAlbaranPdf(order, stream, opts = {}) {
     if (buffers[idx]) itemImages.set(url, buffers[idx]);
   });
 
+  // Multi-bulto con plan: filtramos items por bulto para que cada página
+  // muestre solo lo que va en ese bulto.
+  const planByItem = totalBags > 1 ? await loadPlanByItem(order.id) : new Map();
   for (let i = 1; i <= totalBags; i += 1) {
     doc.addPage();
-    await drawAlbaran(doc, order, { itemImages, bagNumber: i, totalBags });
+    await drawAlbaran(doc, order, {
+      itemImages, bagNumber: i, totalBags,
+      planByItem: planByItem.size > 0 ? planByItem : undefined,
+    });
   }
 
   doc.end();

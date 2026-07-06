@@ -94,6 +94,10 @@ export async function removeOrderFromSequence({
     prisma.sequenceOrder.delete({
       where: { sequenceId_orderId: { sequenceId, orderId } },
     }),
+    // Plan de empaque multi-bulto (v0.24.0): al revertir a 'received' se
+    // borra también el plan. Sino, el pedido conservaría asignaciones a
+    // bultos que ya no aplican.
+    prisma.orderItemBagAssignment.deleteMany({ where: { orderId } }),
     prisma.sequence.update({
       where: { id: sequenceId },
       data: { expectedBags: { decrement: 1 } },
@@ -183,6 +187,9 @@ export async function unpackOrder({ orderId, actorId }) {
       },
     }),
     prisma.orderBagEvent.deleteMany({ where: { orderId } }),
+    // Plan de empaque multi-bulto (v0.24.0): unpack revierte a 'sequenced'
+    // y borra el plan para que el picker pueda declarar uno nuevo.
+    prisma.orderItemBagAssignment.deleteMany({ where: { orderId } }),
     prisma.event.create({
       data: {
         type: 'order.unpacked',

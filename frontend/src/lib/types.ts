@@ -157,6 +157,12 @@ export type OrderDetail = {
   // bulto activo verde/gris y mostrar "1/3 clasificados".
   bagsClassified?: Array<{ bag: number; at: string; actorName: string | null }>;
   bagsLoaded?: Array<{ bag: number; at: string; actorName: string | null }>;
+  // Pack plan (v0.24.0): distribución de items por bulto declarada por el
+  // picker antes de imprimir. Null en pedidos single-bulto o pre-plan.
+  packPlan?: {
+    assignments: Array<{ orderItemId: number; bagNumber: number }>;
+    bagsPacked: Array<{ bag: number; at: string; actorName: string | null }>;
+  } | null;
   createdAt?: string; // fecha de WC (cuándo se hizo el pedido)
   packedAt: string | null;
   packedBy: Picker | null;

@@ -8,6 +8,7 @@ import { prisma } from '../db/prisma.js';
 import { renderAlbaranPdf } from '../services/pdf.js';
 import { updateOrderMetaFromWc } from '../services/orders-sync.js';
 import { getBagEventsFor } from '../services/bag-events.js';
+import { createPackPlan, deletePackPlan, closePackBag, getPackPlanFor } from '../services/pack-plan.js';
 import { wcGetProduct, wcGetOrder, getMeta } from '../services/woocommerce.js';
 import {
   approvePartialDelivery,
@@ -342,13 +343,16 @@ router.get('/by-wp/:wpOrderId', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE, WM
     if (!order) throw new HttpError(404, `Pedido ${wpOrderId} no encontrado en el WMS`);
 
     // Enriquece con el progreso multi-bulto — para vistas autenticadas del
-    // scan (mismo consumo que /public/orders/:wpOrderId).
+    // scan (mismo consumo que /public/orders/:wpOrderId). Incluye también
+    // el pack plan si el pedido es multi-bulto con plan asignado.
     const bagProgress = await getBagEventsFor(order.id);
+    const packPlan = await getPackPlanFor(order.id);
     res.json({
       order: {
         ...order,
         bagsClassified: bagProgress.classified,
         bagsLoaded: bagProgress.loaded,
+        packPlan,
       },
     });
   } catch (err) {
@@ -372,7 +376,17 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE, WMS_CAPS.LOA
       },
     });
     if (!order) throw new HttpError(404, 'Order not found');
-    res.json({ order });
+    // Enriquece con progreso multi-bulto + pack plan (v0.24.0).
+    const bagProgress = await getBagEventsFor(order.id);
+    const packPlan = await getPackPlanFor(order.id);
+    res.json({
+      order: {
+        ...order,
+        bagsClassified: bagProgress.classified,
+        bagsLoaded: bagProgress.loaded,
+        packPlan,
+      },
+    });
   } catch (err) {
     next(err);
   }
@@ -521,8 +535,70 @@ router.post('/:id/reopen-b2', requireCap(WMS_CAPS.PACK_B2, WMS_CAPS.SUPERVISE), 
   }
 });
 
-// Packing: el operador confirma los items B1 introducidos en la bolsa.
-// El sistema bloquea si quedan items B1 sin marcar (optimización #8).
+// ─── Multi-bulto (v0.24.0): pack plan y cierre por bulto ────────────────
+// Ver services/pack-plan.js para la lógica completa. El plan permite que
+// varios pickers preparen distintos bultos del mismo pedido en paralelo.
+
+const packPlanSchema = z.object({
+  bagsExpected: z.number().int().min(2).max(6),
+  assignments: z.array(z.object({
+    orderItemId: z.number().int().positive(),
+    bagNumber: z.number().int().min(1).max(6),
+  })).min(1),
+});
+
+router.post('/:id/pack-plan', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const parsed = packPlanSchema.safeParse(req.body || {});
+    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
+    const result = await createPackPlan({
+      orderId: id,
+      bagsExpected: parsed.data.bagsExpected,
+      assignments: parsed.data.assignments,
+      actorId: req.user.wpUserId,
+    });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete('/:id/pack-plan', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await deletePackPlan({ orderId: id, actorId: req.user.wpUserId });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+const packBagSchema = z.object({
+  itemIds: z.array(z.number().int().positive()).min(1),
+});
+
+router.post('/:id/pack/:bag/close', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const bag = Number(req.params.bag);
+    const parsed = packBagSchema.safeParse(req.body || {});
+    if (!parsed.success) throw new HttpError(400, 'Invalid payload', parsed.error.flatten());
+    const result = await closePackBag({
+      orderId: id,
+      bagNumber: bag,
+      itemIds: parsed.data.itemIds,
+      actorId: req.user.wpUserId,
+    });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Packing single-bulto (legacy): el operador confirma los items B1
+// introducidos en la bolsa. Solo aplica cuando bagsExpected=1 (o no hay
+// plan). Con plan → tira 409 pidiendo usar /pack/:bag/close.
 router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
@@ -531,10 +607,17 @@ router.post('/:id/pack', requireCap(WMS_CAPS.PACK_B1), async (req, res, next) =>
 
     const order = await prisma.order.findUnique({
       where: { id },
-      include: { items: true },
+      include: { items: true, bagAssignments: { select: { id: true }, take: 1 } },
     });
     if (!order) throw new HttpError(404, 'Order not found');
     if (order.status === 'packed') throw new HttpError(409, 'Order already packed');
+
+    // Multi-bulto con plan: el pack directo no aplica; hay que usar /pack/:bag/close.
+    if (order.bagAssignments.length > 0) {
+      throw new HttpError(409, 'Este pedido tiene un plan de empaque multi-bulto activo. Usa POST /orders/:id/pack/:bag/close para cerrar bulto a bulto.', {
+        multiBagPlan: true,
+      });
+    }
 
     // Validación de claim: solo el último picker que escaneó puede cerrar.
     // Si otro picker escaneó después, este usuario debe recargar — el pedido

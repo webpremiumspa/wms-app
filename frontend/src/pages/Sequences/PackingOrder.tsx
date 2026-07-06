@@ -47,6 +47,22 @@ export function PackingOrder() {
   // sincroniza con order.bagsExpected y permite editar para reimprimir.
   const [bagsCount, setBagsCount] = useState(1);
   const [bagsError, setBagsError] = useState<string | null>(null);
+
+  // ─── Multi-bulto v0.24.0 ─────────────────────────────────────────────
+  // assignments: qué bulto asigna el picker a cada item durante la
+  // declaración del plan. Persistido en BD al presionar "Imprimir albaranes".
+  const [assignments, setAssignments] = useState<Map<number, number>>(new Map());
+  // Bulto activo elegido por el picker en modo ejecución (cuál va a cerrar).
+  const [activeBag, setActiveBag] = useState<number | null>(null);
+  const [planError, setPlanError] = useState<string | null>(null);
+  function setBagFor(itemId: number, bag: number | null) {
+    setAssignments((prev) => {
+      const next = new Map(prev);
+      if (bag == null) next.delete(itemId);
+      else next.set(itemId, bag);
+      return next;
+    });
+  }
   // Modales de confirmación de bultos (evita errores por tap accidental).
   // - confirmPackBags: antes de cerrar el pedido con N>1.
   // - confirmReprintBags: antes de actualizar y reimprimir con N distinto al guardado.
@@ -202,7 +218,56 @@ export function PackingOrder() {
     // empacó). Esto permite que tras empaque el stepper muestre el valor
     // actual y se pueda ajustar para reimprimir.
     setBagsCount(Math.max(1, order.bagsExpected ?? 1));
+    // Multi-bulto: si el pedido ya tiene plan guardado (assignments), lo
+    // cargamos en el state para modo ejecución. Sino, empezamos vacío para
+    // que el picker declare desde cero.
+    if (order.packPlan?.assignments?.length) {
+      const m = new Map<number, number>();
+      for (const a of order.packPlan.assignments) m.set(a.orderItemId, a.bagNumber);
+      setAssignments(m);
+    } else {
+      setAssignments(new Map());
+    }
   }, [order]);
+
+  // Mutations multi-bulto (v0.24.0)
+  const createPlan = useMutation({
+    mutationFn: async () => {
+      setPlanError(null);
+      const arr = Array.from(assignments.entries()).map(([orderItemId, bagNumber]) => ({ orderItemId, bagNumber }));
+      await ordersApi.createPackPlan(ordId, bagsCount, arr);
+      // Inmediatamente abrir el PDF de albaranes con la distribución nueva.
+      await ordersApi.openAlbaran(ordId, { bags: bagsCount });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['order', ordId] }),
+    onError: (err: any) => setPlanError(err.response?.data?.message || 'No se pudo crear el plan'),
+  });
+
+  const deletePlan = useMutation({
+    mutationFn: () => ordersApi.deletePackPlan(ordId),
+    onSuccess: () => {
+      setActiveBag(null);
+      setAssignments(new Map());
+      queryClient.invalidateQueries({ queryKey: ['order', ordId] });
+    },
+    onError: (err: any) => setPlanError(err.response?.data?.message || 'No se pudo descartar el plan'),
+  });
+
+  const closeBag = useMutation({
+    mutationFn: (args: { bag: number; itemIds: number[] }) =>
+      ordersApi.closePackBag(ordId, args.bag, args.itemIds),
+    onSuccess: (data) => {
+      setActiveBag(null);
+      setChecked(new Set());
+      queryClient.invalidateQueries({ queryKey: ['order', ordId] });
+      queryClient.invalidateQueries({ queryKey: ['sequence', seqId, 'pending-packing'] });
+      // Si con este cierre se completó el pedido, volver a la lista.
+      if (data.complete) {
+        navigate(`/sequences/${seqId}/packing`);
+      }
+    },
+    onError: (err: any) => setPackError(err.response?.data?.message || 'No se pudo cerrar el bulto'),
+  });
 
   const pack = useMutation({
     mutationFn: () => ordersApi.pack(ordId, [...checked], confirmedOldSeq || undefined, bagsCount),
@@ -263,6 +328,31 @@ export function PackingOrder() {
   const allChecked = b1Items.length === 0 || b1Items.every((i) => checked.has(i.id));
   const onlyB2 = b1Items.length === 0;
   const isPacked = order.status === 'packed' || order.status === 'classified' || order.status === 'loaded' || order.status === 'delivered';
+
+  // ─── Multi-bulto v0.24.0 derivadas ────────────────────────────────────
+  const hasPlan = !!order.packPlan?.assignments?.length;
+  const bagsPackedSet = new Set(order.packPlan?.bagsPacked?.map((b) => b.bag) ?? []);
+  // Modo declaración: bagsCount>1, sin plan, y el pedido aún es sequenced.
+  const isDeclaring = !isPacked && bagsCount > 1 && !hasPlan && !onlyB2;
+  // Modo ejecución: plan guardado; cada bulto se cierra por separado.
+  const isExecuting = hasPlan && !isPacked;
+  // Validación del plan a declarar: todos los items B1 asignados Y todos los
+  // bultos [1..bagsCount] tienen al menos un item.
+  const declaredBagUsage = (() => {
+    const usage = new Map<number, number>();
+    for (const [, bag] of assignments) usage.set(bag, (usage.get(bag) || 0) + 1);
+    return usage;
+  })();
+  const allItemsAssigned = b1Items.length > 0 && b1Items.every((it) => assignments.has(it.id));
+  const allBagsUsed = Array.from({ length: bagsCount }, (_, i) => i + 1).every((n) => (declaredBagUsage.get(n) || 0) > 0);
+  const canCreatePlan = isDeclaring && allItemsAssigned && allBagsUsed;
+  // En modo ejecución con activeBag elegido: items del bulto activo y flag
+  // de si están todos tildados.
+  const activeBagItems = activeBag != null
+    ? b1Items.filter((it) => assignments.get(it.id) === activeBag)
+    : [];
+  const activeBagAllChecked = activeBagItems.length > 0
+    && activeBagItems.every((it) => checked.has(it.id));
 
   function toggle(itemId: number) {
     setChecked((s) => {
@@ -390,7 +480,194 @@ export function PackingOrder() {
         </div>
       ) : null}
 
-      <div className={onlyB2 ? 'hidden' : 'space-y-2'}>
+      {/* ─── MODO DECLARACIÓN (multi-bulto v0.24.0) ───
+          bagsCount>1 y sin plan: el picker asigna cada item a un bulto y
+          después presiona "Imprimir albaranes" para congelar la distribución. */}
+      {isDeclaring && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-slate-700">
+            Distribución por bulto ({b1Items.length} items en {bagsCount} bultos)
+          </h3>
+          <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-900 ring-1 ring-blue-200">
+            Asigna cada producto al bulto donde irá. Al presionar <strong>Imprimir</strong>, se generan {bagsCount} albaranes,
+            cada uno con solo los items de su bulto.
+          </div>
+          {b1Items.map((it) => (
+            <div key={it.id} className="card flex items-center gap-3 p-3">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                {it.product.thumbnailUrl ? (
+                  <img src={it.product.thumbnailUrl} alt={it.product.name} className="h-full w-full object-cover" />
+                ) : (
+                  <ImageIcon size={20} className="text-slate-400" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium break-words">{it.lineName || it.product.name}</div>
+                <div className="text-xs text-slate-500">{it.product.sku || '—'}</div>
+              </div>
+              <div className="text-lg font-bold text-brand-700">×{it.qty}</div>
+              <select
+                value={assignments.get(it.id) ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setBagFor(it.id, v === '' ? null : Number(v));
+                }}
+                className="ml-2 rounded-md border border-slate-300 bg-white px-2 py-1 text-sm font-medium"
+              >
+                <option value="">Bulto…</option>
+                {Array.from({ length: bagsCount }, (_, i) => i + 1).map((n) => (
+                  <option key={n} value={n}>Bulto {n}</option>
+                ))}
+              </select>
+            </div>
+          ))}
+          {!allItemsAssigned && (
+            <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Falta asignar {b1Items.length - assignments.size} item{b1Items.length - assignments.size === 1 ? '' : 's'} a un bulto.
+            </div>
+          )}
+          {allItemsAssigned && !allBagsUsed && (
+            <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Cada bulto debe tener al menos un item. Faltan bultos vacíos: {' '}
+              {Array.from({ length: bagsCount }, (_, i) => i + 1).filter((n) => !declaredBagUsage.get(n)).join(', ')}.
+            </div>
+          )}
+          {planError && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{planError}</div>
+          )}
+        </div>
+      )}
+
+      {/* ─── MODO EJECUCIÓN (multi-bulto v0.24.0) ───
+          Plan guardado en BD. Aparecen cards por bulto: cada picker toca la
+          suya y confirma los items de ese bulto antes de cerrarlo. */}
+      {isExecuting && activeBag == null && (
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold text-slate-700">
+            Bultos del pedido ({(order.packPlan?.bagsPacked?.length ?? 0)}/{bagsCount} cerrados)
+          </h3>
+          <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-900 ring-1 ring-blue-200">
+            Elige el bulto que estás preparando. Al cerrar todos los bultos, el pedido queda completo automáticamente.
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+            {Array.from({ length: bagsCount }, (_, i) => i + 1).map((n) => {
+              const closed = bagsPackedSet.has(n);
+              const itemsCount = b1Items.filter((it) => assignments.get(it.id) === n).length;
+              const info = order.packPlan?.bagsPacked?.find((b) => b.bag === n);
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => {
+                    if (closed) return;
+                    setActiveBag(n);
+                    // Al abrir un bulto, precargamos checked con los items ya
+                    // pickeados/empacados si los hay (re-entrada).
+                    const preChecked = new Set<number>();
+                    for (const it of b1Items) {
+                      if (assignments.get(it.id) === n && it.packedAt) preChecked.add(it.id);
+                    }
+                    setChecked(preChecked);
+                  }}
+                  disabled={closed}
+                  className={clsx(
+                    'card flex items-center justify-between gap-3 p-3 text-left transition',
+                    closed
+                      ? 'bg-emerald-50 ring-1 ring-emerald-200 cursor-not-allowed'
+                      : 'hover:ring-2 hover:ring-brand-500',
+                  )}
+                >
+                  <div>
+                    <div className={clsx('text-base font-bold', closed ? 'text-emerald-800' : 'text-slate-800')}>
+                      Bulto {n} de {bagsCount}
+                    </div>
+                    <div className="text-xs text-slate-600">
+                      {itemsCount} item{itemsCount === 1 ? '' : 's'}
+                    </div>
+                    {closed && info && (
+                      <div className="mt-0.5 text-[11px] text-emerald-700">
+                        ✓ Cerrado {info.actorName ? `por ${info.actorName}` : ''} · {new Date(info.at).toLocaleTimeString('es-CL')}
+                      </div>
+                    )}
+                  </div>
+                  {closed ? (
+                    <CheckCircle2 className="text-emerald-600" size={24} />
+                  ) : (
+                    <div className="text-xs text-brand-700">Abrir →</div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {(order.packPlan?.bagsPacked?.length ?? 0) === 0 && canManage && (
+            <button
+              type="button"
+              onClick={() => {
+                if (confirm('¿Descartar el plan actual y volver a la declaración? Nadie ha cerrado bultos aún.')) {
+                  deletePlan.mutate();
+                }
+              }}
+              disabled={deletePlan.isPending}
+              className="w-full text-xs text-slate-600 hover:underline"
+            >
+              Descartar plan y reasignar
+            </button>
+          )}
+        </div>
+      )}
+
+      {isExecuting && activeBag != null && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-slate-700">
+              Bulto {activeBag} de {bagsCount} · {activeBagItems.length} items
+            </h3>
+            <button
+              type="button"
+              onClick={() => { setActiveBag(null); setChecked(new Set()); }}
+              className="text-xs text-slate-600 hover:underline"
+            >
+              Volver a bultos
+            </button>
+          </div>
+          <ProgressBar
+            value={activeBagItems.filter((it) => checked.has(it.id)).length}
+            total={activeBagItems.length}
+            label="Items del bulto confirmados"
+          />
+          {activeBagItems.map((it) => (
+            <label
+              key={it.id}
+              className={clsx(
+                'card flex items-center gap-3 p-3',
+                checked.has(it.id) && 'bg-emerald-50/60 ring-1 ring-emerald-200',
+              )}
+            >
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-slate-100">
+                {it.product.thumbnailUrl ? (
+                  <img src={it.product.thumbnailUrl} alt={it.product.name} className="h-full w-full object-cover" />
+                ) : (
+                  <ImageIcon size={20} className="text-slate-400" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium break-words">{it.lineName || it.product.name}</div>
+                <div className="text-xs text-slate-500">{it.product.sku || '—'}</div>
+              </div>
+              <div className="text-lg font-bold text-brand-700">×{it.qty}</div>
+              <input
+                type="checkbox"
+                checked={checked.has(it.id)}
+                onChange={() => toggle(it.id)}
+                className="ml-2 h-6 w-6 accent-brand-600"
+              />
+            </label>
+          ))}
+        </div>
+      )}
+
+      {/* ─── MODO SINGLE-BULTO (o pedido ya cerrado) ─── */}
+      <div className={clsx((isDeclaring || isExecuting || onlyB2) ? 'hidden' : 'space-y-2')}>
         <h3 className="text-sm font-semibold text-slate-700">Items a empacar ({warehouseLabel('B1')})</h3>
         <ProgressBar value={[...checked].filter((id) => b1Items.some((i) => i.id === id)).length} total={b1Items.length} label="Items confirmados" />
         {b1Items.map((it) => (
@@ -448,45 +725,80 @@ export function PackingOrder() {
 
       {!isPacked && (
         <div className="sticky bottom-20 z-10 bg-slate-100 pt-2 md:bottom-0">
-          {!onlyB2 && !allChecked && (
-            <div className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Falta marcar items {warehouseLabel('B1')}. No se puede cerrar el pedido hasta confirmar todos.
-            </div>
-          )}
-          {/* Stepper de bultos: el picker declara cuántas bolsas físicas
-              generó al empacar. Si N>1, al cerrar se imprimen N albaranes
-              pre-numerados (1 de N, 2 de N, …). */}
-          {!onlyB2 && (
+          {/* Stepper de bultos: solo aparece cuando no hay plan multi-bulto
+              en juego (single-bulto o antes de declarar plan). Con plan, la
+              cantidad ya está fija y no se puede cambiar sin descartar. */}
+          {!onlyB2 && !isExecuting && (
             <div className="mb-2 flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
               <div className="text-xs text-slate-600">
                 ¿Cuántos bultos generaste?
                 <div className="text-[10px] text-slate-400">
-                  Si {'>'}1, el albarán saldrá numerado por bulto.
+                  Si {'>'}1, cada bulto se empaca y cierra por separado (posible en paralelo entre pickers).
                 </div>
               </div>
-              <BagsStepper value={bagsCount} onChange={setBagsCount} disabled={pack.isPending} />
+              <BagsStepper value={bagsCount} onChange={setBagsCount} max={6} disabled={pack.isPending || createPlan.isPending} />
             </div>
           )}
+
+          {/* Aviso de items sin marcar según modo */}
+          {!onlyB2 && !isDeclaring && !isExecuting && !allChecked && (
+            <div className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Falta marcar items {warehouseLabel('B1')}. No se puede cerrar el pedido hasta confirmar todos.
+            </div>
+          )}
+          {isExecuting && activeBag != null && !activeBagAllChecked && (
+            <div className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
+              Falta marcar items del bulto {activeBag}. No se puede cerrar hasta confirmar todos.
+            </div>
+          )}
+
           {packError && (
             <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 ring-1 ring-red-200">
               {packError}
             </div>
           )}
-          <button
-            onClick={() => {
-              setPackError(null);
-              // Confirmar SIEMPRE — incluso con N=1. El default "1" es el caso
-              // peligroso: si el picker olvida ajustar el stepper, un pedido
-              // multi-bulto sale con un solo albarán y bolsas huérfanas. El
-              // tap extra vale la pena vs un bulto perdido.
-              setConfirmPackBags(true);
-            }}
-            disabled={!allChecked || pack.isPending}
-            className="btn-primary w-full"
-          >
-            <CheckCircle2 size={18} />
-            {pack.isPending ? 'Cerrando…' : 'Cerrar pedido'}
-          </button>
+
+          {/* Botón principal según el modo */}
+          {isDeclaring && (
+            <button
+              onClick={() => { setPackError(null); setPlanError(null); createPlan.mutate(); }}
+              disabled={!canCreatePlan || createPlan.isPending}
+              className="btn-primary w-full"
+            >
+              <Printer size={18} />
+              {createPlan.isPending ? 'Guardando plan e imprimiendo…' : `Imprimir ${bagsCount} albaranes`}
+            </button>
+          )}
+          {isExecuting && activeBag != null && (
+            <button
+              onClick={() => {
+                setPackError(null);
+                const itemIds = activeBagItems.map((it) => it.id);
+                closeBag.mutate({ bag: activeBag, itemIds });
+              }}
+              disabled={!activeBagAllChecked || closeBag.isPending}
+              className="btn-primary w-full"
+            >
+              <CheckCircle2 size={18} />
+              {closeBag.isPending ? 'Cerrando…' : `Cerrar bulto ${activeBag}`}
+            </button>
+          )}
+          {!isDeclaring && !isExecuting && (
+            <button
+              onClick={() => {
+                setPackError(null);
+                // Confirmar SIEMPRE — incluso con N=1. El default "1" es el caso
+                // peligroso si el picker olvida ajustar. Un tap extra vale
+                // vs un bulto perdido.
+                setConfirmPackBags(true);
+              }}
+              disabled={!allChecked || pack.isPending}
+              className="btn-primary w-full"
+            >
+              <CheckCircle2 size={18} />
+              {pack.isPending ? 'Cerrando…' : 'Cerrar pedido'}
+            </button>
+          )}
         </div>
       )}
 

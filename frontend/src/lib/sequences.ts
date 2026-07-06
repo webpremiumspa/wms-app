@@ -127,6 +127,21 @@ export const ordersApi = {
   ): Promise<void> => {
     await api.post(`/orders/${id}/pack`, { itemIds, confirmedOldSequence, bagsExpected });
   },
+  // Multi-bulto pack plan (v0.24.0)
+  createPackPlan: async (
+    id: number,
+    bagsExpected: number,
+    assignments: Array<{ orderItemId: number; bagNumber: number }>,
+  ): Promise<{ ok: boolean; bagsExpected: number; assignmentCount: number }> =>
+    (await api.post(`/orders/${id}/pack-plan`, { bagsExpected, assignments })).data,
+  deletePackPlan: async (id: number): Promise<{ ok: boolean; deleted: number }> =>
+    (await api.delete(`/orders/${id}/pack-plan`)).data,
+  closePackBag: async (
+    id: number,
+    bag: number,
+    itemIds: number[],
+  ): Promise<{ ok: boolean; complete: boolean; progress: { done: number; total: number }; transitionedNow: boolean }> =>
+    (await api.post(`/orders/${id}/pack/${bag}/close`, { itemIds })).data,
   updateBags: async (
     id: number,
     bagsExpected: number,

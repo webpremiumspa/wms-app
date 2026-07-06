@@ -110,6 +110,7 @@ model Order {
   sequenceLinks   SequenceOrder[]
   events          Event[]
   bagEvents       OrderBagEvent[]
+  bagAssignments  OrderItemBagAssignment[]
 
   @@index([status])
   @@index([route])
@@ -137,6 +138,29 @@ model OrderBagEvent {
   @@map("order_bag_events")
 }
 
+// Asignación de un item de pedido a un bulto especifico. v0.24.0: cuando
+// el pedido es multi-bulto (bagsExpected > 1), el picker declara aqui el
+// plan de distribucion antes de imprimir. Un item vive en UN solo bulto
+// (uq_order_item). El PDF filtra el albaran por bulto y el cierre por
+// bulto usa esta asignacion para validar que se marquen los items
+// correctos. Ver services/pack-plan.js.
+model OrderItemBagAssignment {
+  id           Int      @id @default(autoincrement())
+  orderId      Int      @map("order_id")
+  // 1:1 con OrderItem — cada item vive en un solo bulto. El @unique aquí
+  // habilita la relación inversa opcional en OrderItem.
+  orderItemId  Int      @unique(map: "uq_order_item") @map("order_item_id")
+  bagNumber    Int      @map("bag_number")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  order        Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem    OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, bagNumber], name: "ix_order_bag")
+  @@map("order_item_bag_assignment")
+}
+
 model OrderItem {
   id            Int      @id @default(autoincrement())
   orderId       Int      @map("order_id")
@@ -152,6 +176,7 @@ model OrderItem {
 
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product       ProductMeta @relation(fields: [productId], references: [wpProductId])
+  bagAssignment OrderItemBagAssignment?
 
   @@index([orderId])
   @@index([productId])
