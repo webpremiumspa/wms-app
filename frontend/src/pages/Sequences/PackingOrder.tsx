@@ -78,24 +78,69 @@ export function PackingOrder() {
       return next;
     });
   }
-  // Setea qty específica de un item en un bulto (usado en modo split).
-  function setSplitQty(itemId: number, bag: number, qty: number) {
+  // Chips-unidad (v0.24.3): cada unidad del item es un chip que muestra su
+  // bulto. Un tap cicla al siguiente bulto (Bn → B1). Convertimos entre el
+  // formato interno Map<bag, qty> y el array de chips.
+  function mapToChips(inner: Map<number, number> | undefined, totalQty: number, defaultBag: number): number[] {
+    const chips: number[] = [];
+    if (inner && inner.size > 0) {
+      const sorted = [...inner.entries()].sort((a, b) => a[0] - b[0]);
+      for (const [bag, q] of sorted) {
+        for (let i = 0; i < q; i += 1) chips.push(bag);
+      }
+    }
+    // Rellena las unidades que falten con el bulto default.
+    while (chips.length < totalQty) chips.push(defaultBag);
+    return chips.slice(0, totalQty);
+  }
+  function chipsToMap(chips: number[]): Map<number, number> {
+    const m = new Map<number, number>();
+    for (const b of chips) m.set(b, (m.get(b) ?? 0) + 1);
+    return m;
+  }
+  // Cicla la unidad `chipIndex` de un item al siguiente bulto disponible
+  // (Bn → B1). El default cuando aún no había asignación es 1.
+  function cycleChip(itemId: number, chipIndex: number, itemQty: number) {
     setAssignments((prev) => {
       const next = new Map(prev);
-      const inner = new Map(next.get(itemId) ?? []);
-      if (qty <= 0) inner.delete(bag);
-      else inner.set(bag, qty);
-      if (inner.size === 0) next.delete(itemId);
-      else next.set(itemId, inner);
+      const chips = mapToChips(prev.get(itemId), itemQty, 1);
+      const current = chips[chipIndex] ?? 1;
+      const nextBag = current >= bagsCount ? 1 : current + 1;
+      chips[chipIndex] = nextBag;
+      next.set(itemId, chipsToMap(chips));
       return next;
     });
   }
-  function toggleSplit(itemId: number) {
+  // Abre el split de un item, materializando los chips en el bulto principal
+  // (o en 1 si aún no había elección). Al cerrar, borra la asignación.
+  function toggleSplit(itemId: number, itemQty: number, defaultBag: number) {
     setSplitOpen((s) => {
-      const next = new Set(s);
-      if (next.has(itemId)) next.delete(itemId);
-      else next.add(itemId);
-      return next;
+      const isOpen = s.has(itemId);
+      const nextOpen = new Set(s);
+      if (isOpen) {
+        nextOpen.delete(itemId);
+        // Al colapsar: si el split había repartido en varios bultos, borramos
+        // la asignación para que el picker vuelva a elegir en el dropdown.
+        // Si todo está en un solo bulto, dejamos la asignación intacta.
+        setAssignments((prev) => {
+          const inner = prev.get(itemId);
+          if (!inner || inner.size <= 1) return prev;
+          const next = new Map(prev);
+          next.delete(itemId);
+          return next;
+        });
+      } else {
+        nextOpen.add(itemId);
+        // Al abrir: materializa qty chips en el bulto default (para que el
+        // picker vea todos los chips desde el primer tap).
+        setAssignments((prev) => {
+          const next = new Map(prev);
+          const chips = mapToChips(prev.get(itemId), itemQty, defaultBag);
+          next.set(itemId, chipsToMap(chips));
+          return next;
+        });
+      }
+      return nextOpen;
     });
   }
   // Modales de confirmación de bultos (evita errores por tap accidental).
@@ -613,69 +658,52 @@ export function PackingOrder() {
                     </select>
                   )}
                 </div>
-                {/* Split expandible: solo para items con qty>1. */}
+                {/* Split expandible: solo para items con qty>1. Cada unidad
+                    es un chip. Tap cicla al siguiente bulto (Bn→B1). */}
                 {it.qty > 1 && (
                   <div>
                     {!isSplit ? (
                       <button
                         type="button"
-                        onClick={() => toggleSplit(it.id)}
+                        onClick={() => toggleSplit(it.id, it.qty, singleBag ?? 1)}
                         className="text-xs text-brand-700 hover:underline"
                       >
                         + Dividir en varios bultos
                       </button>
-                    ) : (
-                      <div className="rounded-md bg-slate-50 p-2 ring-1 ring-slate-200">
-                        <div className="mb-1 flex items-center justify-between text-xs">
-                          <span className="text-slate-700">
-                            <strong>Dividir ×{it.qty}</strong> · asignado {total}/{it.qty}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // Al colapsar el split, borramos la asignación
-                              // (queda "sin asignar" hasta que el picker use
-                              // el dropdown). Es más limpio que intentar
-                              // reducir a 1 sola.
-                              setAssignments((prev) => {
-                                const next = new Map(prev);
-                                next.delete(it.id);
-                                return next;
-                              });
-                              toggleSplit(it.id);
-                            }}
-                            className="text-slate-500 hover:underline"
-                          >
-                            Cancelar split
-                          </button>
-                        </div>
-                        <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                          {Array.from({ length: bagsCount }, (_, i) => i + 1).map((n) => {
-                            const q = inner?.get(n) ?? 0;
-                            return (
-                              <label key={n} className="flex items-center gap-1 rounded bg-white px-2 py-1 text-xs ring-1 ring-slate-200">
-                                <span className="text-slate-600">B{n}:</span>
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max={it.qty}
-                                  value={q}
-                                  onChange={(e) => setSplitQty(it.id, n, Math.max(0, Math.min(it.qty, Number(e.target.value) || 0)))}
-                                  className="w-14 rounded border border-slate-300 px-1 py-0.5 text-center"
-                                />
-                              </label>
-                            );
-                          })}
-                        </div>
-                        {total !== it.qty && (
-                          <div className="mt-1 text-[11px] text-amber-700">
-                            {total < it.qty
-                              ? `Falta asignar ${it.qty - total} unidad${it.qty - total === 1 ? '' : 'es'}.`
-                              : `Excedes en ${total - it.qty} unidad${total - it.qty === 1 ? '' : 'es'}.`}
+                    ) : (() => {
+                      const chips = mapToChips(inner, it.qty, 1);
+                      return (
+                        <div className="rounded-md bg-slate-50 p-2 ring-1 ring-slate-200">
+                          <div className="mb-2 flex items-center justify-between text-xs">
+                            <span className="text-slate-700">
+                              <strong>Dividir ×{it.qty}</strong> · toca cada unidad para cambiar de bulto
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => toggleSplit(it.id, it.qty, singleBag ?? 1)}
+                              className="text-slate-500 hover:underline"
+                            >
+                              Cancelar split
+                            </button>
                           </div>
-                        )}
-                      </div>
-                    )}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {chips.map((bag, idx) => (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => cycleChip(it.id, idx, it.qty)}
+                                className="min-w-[52px] rounded-full bg-brand-600 px-3 py-1.5 text-sm font-bold text-white shadow-sm hover:bg-brand-700 active:scale-95"
+                              >
+                                B{bag}
+                              </button>
+                            ))}
+                            <span className="ml-2 text-xs text-slate-600">
+                              {total === it.qty ? '✓ ' : ''}{total}/{it.qty}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
