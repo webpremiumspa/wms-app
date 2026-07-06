@@ -191,7 +191,7 @@ export function Scan() {
   useEffect(() => {
     if (!user || !order) return;
     if (navAction === 'pack') {
-      navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`, { replace: true });
+      navigate(`/sequences/${order.openSequenceId}/packing/${order.id}${bagFromQuery ? `?bag=${bagFromQuery}` : ''}`, { replace: true });
     } else if (navAction === 'pickB2') {
       navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`, { replace: true });
     } else if (showSelectorNow) {
@@ -204,7 +204,7 @@ export function Scan() {
     setShowSelector(false);
     if (!order) return;
     if (kind === 'pack' && order.openSequenceId) {
-      navigate(`/sequences/${order.openSequenceId}/packing/${order.id}`);
+      navigate(`/sequences/${order.openSequenceId}/packing/${order.id}${bagFromQuery ? `?bag=${bagFromQuery}` : ''}`);
     } else if (kind === 'pickB2' && order.openSequenceId) {
       navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`);
     }

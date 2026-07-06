@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, Image as ImageIcon, Printer, AlertOctagon, UserX, CheckCircle2, RotateCcw, User } from 'lucide-react';
 import clsx from 'clsx';
@@ -27,6 +27,15 @@ export function PackingOrder() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const canManage = hasCap(user, CAPS.PACK_B1) || hasCap(user, CAPS.SUPERVISE);
+  // ?bag=N viene del QR de un albarán multi-bulto — auto-abrimos ese
+  // bulto en modo ejecución sin exigir que el picker lo elija a mano.
+  const [searchParams] = useSearchParams();
+  const bagFromUrl = (() => {
+    const raw = searchParams.get('bag');
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
 
   const { data: order, isLoading } = useQuery({
     queryKey: ['order', ordId],
@@ -225,10 +234,30 @@ export function PackingOrder() {
       const m = new Map<number, number>();
       for (const a of order.packPlan.assignments) m.set(a.orderItemId, a.bagNumber);
       setAssignments(m);
+      // Auto-abrir el bulto que vino en ?bag=N (viene del QR del albarán
+      // impreso). Solo si ese bulto existe en el plan y aún no está cerrado
+      // — sino, dejamos la vista de selección para que el picker vea el
+      // estado y elija otro bulto.
+      if (bagFromUrl != null) {
+        const bagsPackedSet = new Set(order.packPlan.bagsPacked?.map((b) => b.bag) ?? []);
+        const bagsInPlan = new Set(order.packPlan.assignments.map((a) => a.bagNumber));
+        if (bagsInPlan.has(bagFromUrl) && !bagsPackedSet.has(bagFromUrl)) {
+          setActiveBag(bagFromUrl);
+          // Pre-tildar items ya pickeados (re-entrada).
+          const preChecked = new Set<number>();
+          for (const [itemId, bag] of m.entries()) {
+            if (bag === bagFromUrl) {
+              const it = order.items.find((x) => x.id === itemId);
+              if (it?.packedAt) preChecked.add(itemId);
+            }
+          }
+          setChecked(preChecked);
+        }
+      }
     } else {
       setAssignments(new Map());
     }
-  }, [order]);
+  }, [order, bagFromUrl]);
 
   // Mutations multi-bulto (v0.24.0)
   const createPlan = useMutation({
