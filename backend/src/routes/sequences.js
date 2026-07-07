@@ -163,10 +163,16 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.SUPER
     sequence.b2 = { total: b2.length, pending: b2.filter((i) => !i.pickedAt).length };
 
     // Limpiamos los items inflados para no enviar payload gigante (la UI
-    // detalle pide items por pedido aparte).
+    // detalle pide items por pedido aparte). Antes de tirar los items,
+    // extraemos hasB1Items para que la lista muestre el badge azul B1
+    // (distingue Solo B1 / Solo B2 / Mixto en la vista de secuencia).
     sequence.orders = sequence.orders.map((so) => ({
       orderId: so.orderId,
-      order: { ...so.order, items: undefined },
+      order: {
+        ...so.order,
+        hasB1Items: so.order.items.some((it) => it.warehouse === 'B1'),
+        items: undefined,
+      },
     }));
 
     res.json({ sequence });

@@ -79,6 +79,10 @@ router.get('/:id', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LOAD,
                     status: true,
                     route: true,
                     stopPosition: true,
+                    // driverName: nombre del repartidor asignado a la ruta
+                    // (sincronizado desde WC via _wdg_driver_name). Se usa
+                    // para el filtro rápido "R1 - Juan / R2 - Pedro / ...".
+                    driverName: true,
                     customerName: true,
                     shippingMethod: true,
                     hasB2Pending: true,

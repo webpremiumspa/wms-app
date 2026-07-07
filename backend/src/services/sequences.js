@@ -145,6 +145,9 @@ export async function getPendingPacking(sequenceId) {
       route: o.route,
       stopPosition: o.stopPosition,
       hasB2Pending: o.hasB2Pending,
+      // hasB1Items permite mostrar el badge azul B1 en la lista de packing
+      // pendiente (distingue Solo B1 / Solo B2 / Mixto).
+      hasB1Items: b1.length > 0,
       status: o.status,
       itemCount: b1.length,
       claimedAt: o.claimedAt,

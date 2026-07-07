@@ -396,6 +396,7 @@ export function SequenceDetail() {
                     <span className="font-semibold">
                       #<HighlightedNumber text={order.number} match={search} />
                     </span>
+                    {order.hasB1Items && <Badge variant="blue">{warehouseLabel('B1')}</Badge>}
                     {order.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={order.shippingMethod} />
                     <OrderStatusBadge status={order.status} />

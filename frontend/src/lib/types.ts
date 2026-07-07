@@ -83,6 +83,10 @@ export type SequenceOrderInfo = {
   shippingMethod: string | null;
   status: OrderStatus;
   hasB2Pending: boolean;
+  // hasB1Items: true si el pedido tiene al menos un item warehouse=B1.
+  // Junto con hasB2Pending permite distinguir Solo B1 / Solo B2 / Mixto en
+  // el listado de secuencia. Opcional para compat con payloads viejos.
+  hasB1Items?: boolean;
   route: string | null;
   stopPosition: number | null;
   // Estado WC tal cual (slug). Para chip de contexto.
@@ -98,6 +102,9 @@ export type PendingPackingOrder = {
   route: string | null;
   stopPosition: number | null;
   hasB2Pending: boolean;
+  // Opcional para compat con payloads viejos — el badge B1 solo se muestra
+  // cuando el backend lo trae true.
+  hasB1Items?: boolean;
   status: OrderStatus;
   itemCount: number;
   claimedAt: string | null;

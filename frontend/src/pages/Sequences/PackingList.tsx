@@ -213,6 +213,7 @@ export function PackingList() {
                   </span>
                   {o.route && <Badge variant="blue">{o.route}</Badge>}
                   {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
+                  {o.hasB1Items && <Badge variant="blue">{warehouseLabel('B1')}</Badge>}
                   {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                   <ShippingBadge method={o.shippingMethod} />
                   {done && <Badge variant="green">Empacado · entrar para reimprimir</Badge>}

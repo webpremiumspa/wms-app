@@ -33,6 +33,10 @@ export type ProcessOrderCard = {
   status: OrderStatus;
   route: string | null;
   stopPosition: number | null;
+  // Nombre del repartidor asignado a la ruta (viene del meta _wdg_driver_name
+  // sincronizado desde WC). Opcional — pedidos viejos o sin ruta pueden no
+  // tenerlo. Se usa para etiquetar chips del filtro rápido "R1 - Juan".
+  driverName?: string | null;
   customerName: string | null;
   shippingMethod: string | null;
   hasB2Pending: boolean;

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Truck, BarChart3 } from 'lucide-react';
+import { Home, Truck, BarChart3, Activity, Stethoscope } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import clsx from 'clsx';
@@ -10,11 +10,14 @@ const ITEMS: Item[] = [
   { to: '/', label: 'Inicio', icon: Home },
   { to: '/processes', label: 'Procesos', icon: Truck, caps: [CAPS.PACK_B1, CAPS.PACK_B2, CAPS.LOAD, CAPS.SUPERVISE] },
   { to: '/dashboard', label: 'Super.', icon: BarChart3, caps: [CAPS.SUPERVISE] },
+  { to: '/tracking', label: 'Seguim.', icon: Activity, caps: [CAPS.SUPERVISE] },
+  { to: '/debug', label: 'Diag.', icon: Stethoscope, caps: [CAPS.SUPERVISE] },
 ];
 
 export function BottomNav() {
   const { user } = useAuth();
-  // Mostramos máximo 5 items, priorizando los que el usuario puede usar.
+  // Máximo 5 items — el filter por caps ya decide qué ve cada rol. Labels
+  // cortos (Seguim./Diag.) para que quepan en pantallas angostas.
   const visible = ITEMS.filter((i) => !i.caps || i.caps.some((c) => hasCap(user, c))).slice(0, 5);
 
   return (

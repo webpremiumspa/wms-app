@@ -319,34 +319,115 @@ function OrderLookupResults({ query, matches }: { query: string; matches: Proces
   );
 }
 
+// Sentinel para el filtro "Sin ruta" — como null no se puede meter en un
+// state string, usamos un símbolo textual que no colisiona con las rutas.
+const ROUTE_NONE = '__none__';
+
 function KanbanView({ orders }: { orders: ProcessOrderCard[] }) {
+  // Filtro por ruta: null = "Todas", ROUTE_NONE = pedidos sin ruta, otro
+  // string = esa ruta específica. Persiste en el state del componente.
+  const [routeFilter, setRouteFilter] = useState<string | null>(null);
+
+  // Rutas únicas presentes en los pedidos del proceso, con el driverName
+  // del primer pedido que tenga esa ruta (asumimos que WC mantiene la
+  // asociación ruta ↔ conductor consistente dentro de un mismo día).
+  const routeOptions = useMemo(() => {
+    const byRoute = new Map<string, string | null>();
+    let hasNone = false;
+    for (const o of orders) {
+      if (!o.route) { hasNone = true; continue; }
+      if (!byRoute.has(o.route)) byRoute.set(o.route, o.driverName ?? null);
+    }
+    const sorted = [...byRoute.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], 'es', { numeric: true }))
+      .map(([route, driver]) => ({ route, driver }));
+    return { routes: sorted, hasNone };
+  }, [orders]);
+
+  const filteredOrders = useMemo(() => {
+    if (routeFilter == null) return orders;
+    if (routeFilter === ROUTE_NONE) return orders.filter((o) => !o.route);
+    return orders.filter((o) => o.route === routeFilter);
+  }, [orders, routeFilter]);
+
+  // Solo mostramos la fila de chips si hay al menos una ruta O pedidos sin
+  // ruta. En un proceso vacío o pre-sync no aporta.
+  const showFilter = routeOptions.routes.length > 0 || routeOptions.hasNone;
+
   return (
-    <div className="overflow-x-auto">
-      <div className="grid min-w-max grid-flow-col auto-cols-[280px] gap-3">
-        {KANBAN_COLS.map((col) => {
-          const colOrders = orders.filter((o) => (col.statuses as OrderStatus[]).includes(o.status));
-          return (
-            <div key={col.key} className={clsx('rounded-xl p-2 ring-1', col.accent)}>
-              <div className="flex items-center justify-between p-2">
-                <span className="text-sm font-semibold text-slate-800">{col.label}</span>
-                <Badge variant="gray">{colOrders.length}</Badge>
+    <div className="space-y-2">
+      {showFilter && (
+        <div className="flex flex-wrap items-center gap-1.5 rounded-lg bg-white p-2 ring-1 ring-slate-200">
+          <span className="mr-1 text-xs font-medium text-slate-600">Ruta:</span>
+          <RouteChip
+            label="Todas"
+            active={routeFilter == null}
+            onClick={() => setRouteFilter(null)}
+          />
+          {routeOptions.routes.map(({ route, driver }) => (
+            <RouteChip
+              key={route}
+              label={driver ? `${route} - ${driver}` : route}
+              active={routeFilter === route}
+              onClick={() => setRouteFilter(route)}
+            />
+          ))}
+          {routeOptions.hasNone && (
+            <RouteChip
+              label="Sin ruta"
+              active={routeFilter === ROUTE_NONE}
+              onClick={() => setRouteFilter(ROUTE_NONE)}
+            />
+          )}
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <div className="grid min-w-max grid-flow-col auto-cols-[280px] gap-3">
+          {KANBAN_COLS.map((col) => {
+            const colOrders = filteredOrders.filter((o) => (col.statuses as OrderStatus[]).includes(o.status));
+            return (
+              <div key={col.key} className={clsx('rounded-xl p-2 ring-1', col.accent)}>
+                <div className="flex items-center justify-between p-2">
+                  <span className="text-sm font-semibold text-slate-800">{col.label}</span>
+                  <Badge variant="gray">{colOrders.length}</Badge>
+                </div>
+                <div className="space-y-2">
+                  {colOrders.length === 0 && (
+                    <div className="rounded bg-white/60 p-2 text-center text-[11px] text-slate-400">—</div>
+                  )}
+                  {colOrders.map((o) => (
+                    <KanbanCard key={o.id} order={o} />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                {colOrders.length === 0 && (
-                  <div className="rounded bg-white/60 p-2 text-center text-[11px] text-slate-400">—</div>
-                )}
-                {colOrders.map((o) => (
-                  <KanbanCard key={o.id} order={o} />
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-2 text-[10px] italic text-slate-500">
-        Estados visibles en kanban. Total: {orders.length} pedidos. {orderStatusLabel('received')} y otros pre-empaque agrupados en "Pendiente". Cada card muestra pills B1/B2 con el estado de cada bodega (verde si cerrado, gris si pendiente).
+            );
+          })}
+        </div>
+        <div className="mt-2 text-[10px] italic text-slate-500">
+          Estados visibles en kanban. Total: {filteredOrders.length}
+          {routeFilter != null && ` (filtrados de ${orders.length})`} pedidos. {orderStatusLabel('received')} y otros pre-empaque agrupados en "Pendiente". Cada card muestra pills B1/B2 con el estado de cada bodega (verde si cerrado, gris si pendiente).
+        </div>
       </div>
     </div>
+  );
+}
+
+// Chip individual del filtro de rutas. Estado activo → azul brand;
+// inactivo → blanco con borde. Alto/padding calibrado para uso táctil.
+function RouteChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={clsx(
+        'rounded-full px-3 py-1 text-xs font-semibold transition-colors active:scale-95',
+        active
+          ? 'bg-brand-600 text-white shadow-sm'
+          : 'bg-white text-slate-700 ring-1 ring-slate-300 hover:bg-slate-100',
+      )}
+    >
+      {label}
+    </button>
   );
 }
 
