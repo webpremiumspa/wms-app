@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronLeft, ClipboardList, Plus, LayoutGrid, List as ListIcon, XCircle, Package, RefreshCw } from 'lucide-react';
 import { syncApi } from '@/lib/sync';
@@ -45,7 +45,36 @@ export function ProcessDetail() {
   const queryClient = useQueryClient();
   const canCreate = hasCap(user, CAPS.PACK_B1);
   const canSupervise = hasCap(user, CAPS.SUPERVISE);
-  const [view, setView] = useState<View>('list');
+  // view + routeFilter viven en la URL (?view=kanban&route=R1) para que
+  // (1) sobrevivan a refresh y navegación atrás desde el detalle de pedido,
+  // (2) sean compartibles como link, y (3) al volver desde Sequences/Detail
+  // el kanban aterrice exacto donde estaba sin re-clickear filtros.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const view: View = searchParams.get('view') === 'kanban' ? 'kanban' : 'list';
+  const routeParam = searchParams.get('route');
+  const routeFilter: string | null = routeParam ?? null; // null = "Todas"
+  const location = useLocation();
+  const currentUrl = `${location.pathname}${location.search}`;
+
+  const setView = (next: View) => {
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      if (next === 'kanban') p.set('view', 'kanban');
+      else p.delete('view');
+      // Cambiar de kanban→list vuelve la lista sin filtro de ruta guardado.
+      if (next === 'list') p.delete('route');
+      return p;
+    }, { replace: true });
+  };
+  const setRouteFilter = (next: string | null) => {
+    setSearchParams((prev) => {
+      const p = new URLSearchParams(prev);
+      if (next == null) p.delete('route');
+      else p.set('route', next);
+      return p;
+    }, { replace: true });
+  };
+
   const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery({
@@ -209,13 +238,18 @@ export function ProcessDetail() {
         placeholder="Buscar pedido por ID en este proceso…"
       />
       {searchQuery && (
-        <OrderLookupResults query={searchQuery} matches={lookupMatches} />
+        <OrderLookupResults query={searchQuery} matches={lookupMatches} fromUrl={currentUrl} />
       )}
 
       {view === 'list' ? (
         <SequenceListView sequences={process.sequences} />
       ) : (
-        <KanbanView orders={orders} />
+        <KanbanView
+          orders={orders}
+          routeFilter={routeFilter}
+          setRouteFilter={setRouteFilter}
+          fromUrl={currentUrl}
+        />
       )}
 
       {isActive && canSupervise && (
@@ -276,7 +310,7 @@ function SequenceListView({ sequences }: { sequences: import('@/lib/processes').
   );
 }
 
-function OrderLookupResults({ query, matches }: { query: string; matches: ProcessOrderCard[] }) {
+function OrderLookupResults({ query, matches, fromUrl }: { query: string; matches: ProcessOrderCard[]; fromUrl: string }) {
   if (matches.length === 0) {
     return (
       <div className="card p-3 text-center text-xs text-slate-500">
@@ -297,7 +331,9 @@ function OrderLookupResults({ query, matches }: { query: string; matches: Proces
           // ?focus=<orderId> hace que la pantalla de detalle de la secuencia
           // expanda y scrollee a esa tarjeta — evita que el operador tenga
           // que volver a buscar el mismo pedido tras navegar.
-          to={`/sequences/${o.sequenceId}?focus=${o.id}`}
+          // ?from=<url> se lo pasamos para que el breadcrumb de la secuencia
+          // vuelva al proceso con la vista + filtro intactos.
+          to={`/sequences/${o.sequenceId}?focus=${o.id}&from=${encodeURIComponent(fromUrl)}`}
           className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-slate-50"
         >
           <div className="min-w-0 flex flex-wrap items-center gap-1.5">
@@ -320,13 +356,20 @@ function OrderLookupResults({ query, matches }: { query: string; matches: Proces
 }
 
 // Sentinel para el filtro "Sin ruta" — como null no se puede meter en un
-// state string, usamos un símbolo textual que no colisiona con las rutas.
+// query string, usamos un símbolo textual que no colisiona con las rutas.
 const ROUTE_NONE = '__none__';
 
-function KanbanView({ orders }: { orders: ProcessOrderCard[] }) {
-  // Filtro por ruta: null = "Todas", ROUTE_NONE = pedidos sin ruta, otro
-  // string = esa ruta específica. Persiste en el state del componente.
-  const [routeFilter, setRouteFilter] = useState<string | null>(null);
+function KanbanView({
+  orders,
+  routeFilter,
+  setRouteFilter,
+  fromUrl,
+}: {
+  orders: ProcessOrderCard[];
+  routeFilter: string | null;
+  setRouteFilter: (next: string | null) => void;
+  fromUrl: string;
+}) {
 
   // Rutas únicas presentes en los pedidos del proceso, con el driverName
   // del primer pedido que tenga esa ruta (asumimos que WC mantiene la
@@ -396,7 +439,7 @@ function KanbanView({ orders }: { orders: ProcessOrderCard[] }) {
                     <div className="rounded bg-white/60 p-2 text-center text-[11px] text-slate-400">—</div>
                   )}
                   {colOrders.map((o) => (
-                    <KanbanCard key={o.id} order={o} />
+                    <KanbanCard key={o.id} order={o} fromUrl={fromUrl} />
                   ))}
                 </div>
               </div>
@@ -438,7 +481,7 @@ function RouteChip({ label, active, onClick }: { label: string; active: boolean;
 // ?focus=<orderId> — la tarjeta del pedido se expande, scrollea a la vista
 // y se resalta 3s. Mismo patrón que la búsqueda global y la búsqueda dentro
 // del proceso, así el supervisor identifica al toque dónde aterrizó.
-function KanbanCard({ order: o }: { order: ProcessOrderCard }) {
+function KanbanCard({ order: o, fromUrl }: { order: ProcessOrderCard; fromUrl: string }) {
   // Estado de cada bodega:
   //   B1: cerrado cuando packedAt está seteado (status >= packed)
   //   B2: cerrado cuando b2ClosedAt está seteado (independiente del status)
@@ -449,7 +492,7 @@ function KanbanCard({ order: o }: { order: ProcessOrderCard }) {
   const showB2 = o.hasB2Pending;
   return (
     <Link
-      to={`/sequences/${o.sequenceId}?focus=${o.id}`}
+      to={`/sequences/${o.sequenceId}?focus=${o.id}&from=${encodeURIComponent(fromUrl)}`}
       className="block rounded-lg bg-white p-2 text-xs ring-1 ring-slate-200 transition hover:bg-slate-50 hover:ring-brand-300 hover:shadow-sm"
     >
       <div className="flex flex-wrap items-center gap-1">

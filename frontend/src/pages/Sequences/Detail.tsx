@@ -161,6 +161,19 @@ export function SequenceDetail() {
   const [searchParams] = useSearchParams();
   const focusRaw = searchParams.get('focus');
   const focusId = focusRaw && /^\d+$/.test(focusRaw) ? Number(focusRaw) : null;
+  // ?from=<url> lo propaga el kanban del proceso para que al volver
+  // aterrices exacto donde estabas (vista + filtro de ruta intactos).
+  // Aceptamos solo paths internos que empiecen con /processes/ como
+  // guardia contra open redirects.
+  const fromRaw = searchParams.get('from');
+  const backTo = (() => {
+    if (!fromRaw) return null;
+    try {
+      const decoded = decodeURIComponent(fromRaw);
+      if (decoded.startsWith('/processes/')) return decoded;
+    } catch { /* URL malformada, ignora */ }
+    return null;
+  })();
   const [highlightId, setHighlightId] = useState<number | null>(null);
   const orderRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
@@ -247,9 +260,12 @@ export function SequenceDetail() {
 
   return (
     <div className="space-y-4">
-      <Link to={seq.processId ? `/processes/${seq.processId}` : '/processes'} className="btn-ghost text-sm">
+      <Link
+        to={backTo ?? (seq.processId ? `/processes/${seq.processId}` : '/processes')}
+        className="btn-ghost text-sm"
+      >
         <ChevronLeft size={16} />
-        Proceso
+        {backTo && backTo.includes('view=kanban') ? 'Volver al kanban' : 'Proceso'}
       </Link>
       <div className="card p-4">
         <div className="flex flex-wrap items-center gap-2">
