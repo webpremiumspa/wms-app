@@ -421,7 +421,7 @@ export function Scan() {
           <div className="rounded-lg bg-slate-100 px-3 py-2 ring-1 ring-slate-300 flex items-center justify-between gap-2">
             <div className="text-xs text-slate-700">
               Registraste <strong>Bulto {lastRegisteredBag.bag} de {bagsCount}</strong> como {lastRegisteredBag.event === 'classified' ? 'clasificado' : 'cargado'}.
-              Podés deshacer por <strong>{Math.ceil(undoRemainingMs / 1000)}s</strong> más.
+              Puedes deshacer por <strong>{Math.ceil(undoRemainingMs / 1000)}s</strong> más.
             </div>
             <button
               type="button"
