@@ -113,18 +113,38 @@ export async function ensureProducts(productIds, { force = false } = {}) {
 // pickedAt/packedAt, así que el sync los salta. Para modificar un pedido en
 // estos estados hay que eliminar la secuencia primero (revierte el pedido a
 // 'received') y volver a sincronizar.
-const LOCKED_STATUSES = ['picked', 'packed', 'classified', 'loaded', 'delivered'];
+//
+// v0.25.3: agregamos 'sequenced' al array. Antes NO estaba, entonces el sync
+// bulk hacía deleteMany de items en pedidos ya secuenciados, y por CASCADE se
+// borraban las OrderItemBagAssignment silenciosamente (sin evento auditable).
+// Un caso real: pedido con pack_plan_created + bag_packed bulto 1 perdió sus
+// asignaciones al correr un sync bulk mientras seguía como 'en-preparacion'
+// en WC. Ver commit v0.25.3 para el detalle.
+const LOCKED_STATUSES = ['sequenced', 'picked', 'packed', 'classified', 'loaded', 'delivered'];
 
 // Upsert completo de un pedido WC, incluyendo items. Lee los metas de ruta y
 // posición de carga, y calcula hasB2Pending mirando los items.
-// Si el pedido ya está en un estado "locked", lo devuelve tal cual con
-// `skipped: true` y no toca nada.
+// Si el pedido ya está en un estado "locked", NO recreamos items (evita
+// romper plan de empaque, bag events, picks). En su lugar hacemos un update
+// parcial safe de metadata via updateOrderMetaFromWc — así se refleja la
+// ruta/driver/dirección aunque el pedido esté a medio empacar. Dejamos
+// evento auditable order.wc_synced con action='meta-only'.
 export async function syncOrder(wpOrderId, wcOrder = null) {
   const existing = await prisma.order.findUnique({
     where: { wpOrderId },
     select: { id: true, wpOrderId: true, number: true, status: true },
   });
   if (existing && LOCKED_STATUSES.includes(existing.status)) {
+    // Metadata safe (ruta, driver, dirección) — no toca items ni status WMS.
+    await updateOrderMetaFromWc(wpOrderId, wcOrder);
+    // Rastro auditable: si en el futuro algo raro pasa, aquí queda registro.
+    await prisma.event.create({
+      data: {
+        type: 'order.wc_synced',
+        orderId: existing.id,
+        payload: { action: 'meta-only', currentStatus: existing.status },
+      },
+    });
     return { ...existing, skipped: true };
   }
 
@@ -257,6 +277,19 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           data: itemsData.map((it) => ({ orderId: order.id, ...it })),
         });
       }
+
+      // Rastro auditable: cada vez que el sync recrea items del pedido dejamos
+      // constancia. Combinado con la guardia LOCKED_STATUSES arriba, esto
+      // solo se dispara cuando el pedido es nuevo o está en 'received' — es
+      // seguro recrear items en esos casos porque aún no hay plan de empaque
+      // ni bag events que romper.
+      await tx.event.create({
+        data: {
+          type: 'order.wc_synced',
+          orderId: order.id,
+          payload: { action: 'full', itemCount: itemsData.length },
+        },
+      });
 
       return tx.order.findUnique({
         where: { id: order.id },
