@@ -679,7 +679,29 @@ export function PackingOrder() {
             </div>
           )}
           {planError && (
-            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{planError}</div>
+            <div className="space-y-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div>{planError}</div>
+              {/* Caso "plan roto": el pedido tiene bag events fantasma (sync
+                  bulk pre-v0.25.3 borro las asignaciones por CASCADE, pero
+                  los bag events sobrevivieron). El picker no puede recrear el
+                  plan hasta que los bag events se limpien. Este boton los
+                  borra junto con el plan (backend solo permite si el pedido
+                  esta en 'sequenced'). */}
+              {canManage && /bulto\(s\) cerrado\(s\)/i.test(planError) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Este pedido tiene registros de bulto cerrado sin plan asociado (posiblemente por un sync durante el empaque). Descartarlos permite empezar de cero. ¿Continuar?')) {
+                      deletePlan.mutate();
+                    }
+                  }}
+                  disabled={deletePlan.isPending}
+                  className="rounded-md bg-white px-3 py-1.5 text-xs font-medium text-red-700 ring-1 ring-red-300 hover:bg-red-100 disabled:opacity-60"
+                >
+                  {deletePlan.isPending ? 'Limpiando…' : 'Descartar plan roto y bultos fantasma'}
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}

@@ -119,21 +119,42 @@ export async function createPackPlan({ orderId, bagsExpected, assignments, actor
   return { ok: true, bagsExpected, assignmentCount: assignments.length };
 }
 
-// Descarta el plan de empaque para permitir reasignación. Falla si ya hay
-// bultos cerrados — en ese caso hay que desempacar el pedido antes.
+// Descarta el plan de empaque para permitir reasignación.
+//
+// Comportamiento por status del pedido:
+//   sequenced  → siempre permitido. Si hay bag events fantasma (residuos de
+//                un plan roto por sync bulk pre-v0.25.3), los borra junto con
+//                las asignaciones. Este es el camino de recuperación de
+//                pedidos en estado inconsistente.
+//   packed/+   → bloqueado. Hay que "Revertir un paso" primero (v0.25.1).
 export async function deletePackPlan({ orderId, actorId }) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: { status: true },
+  });
+  if (!order) throw new HttpError(404, 'Order not found');
+
+  if (order.status !== 'sequenced') {
+    throw new HttpError(409, `No se puede descartar el plan: el pedido está en "${order.status}". Usa "Revertir un paso" para volverlo a "En secuencia" primero.`, {
+      currentStatus: order.status,
+    });
+  }
+
   const closedBags = await prisma.orderBagEvent.count({
     where: { orderId, event: 'packed' },
   });
-  if (closedBags > 0) {
-    throw new HttpError(409, `No se puede descartar el plan: ya hay ${closedBags} bulto(s) cerrado(s). Desempaca el pedido primero.`);
-  }
   const count = await prisma.orderItemBagAssignment.count({ where: { orderId } });
-  if (count === 0) {
-    return { ok: true, deleted: 0 };
+
+  if (count === 0 && closedBags === 0) {
+    return { ok: true, deleted: 0, bagEventsCleared: 0 };
   }
+
   await prisma.$transaction([
     prisma.orderItemBagAssignment.deleteMany({ where: { orderId } }),
+    // Bag events fantasma: si el pedido está en sequenced pero tiene bag
+    // events tipo 'packed', son residuos de un plan roto — se limpian junto
+    // con las asignaciones para dejar el pedido listo para re-declarar plan.
+    prisma.orderBagEvent.deleteMany({ where: { orderId, event: 'packed' } }),
     prisma.order.update({
       where: { id: orderId },
       data: { bagsExpected: 1 },
@@ -143,11 +164,11 @@ export async function deletePackPlan({ orderId, actorId }) {
         type: 'order.pack_plan_deleted',
         actorId,
         orderId,
-        payload: { assignmentCount: count },
+        payload: { assignmentCount: count, bagEventsCleared: closedBags },
       },
     }),
   ]);
-  return { ok: true, deleted: count };
+  return { ok: true, deleted: count, bagEventsCleared: closedBags };
 }
 
 // Cierra UN bulto del pedido. El picker marcó los items del bulto (itemIds)
