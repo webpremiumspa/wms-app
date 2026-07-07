@@ -15,6 +15,7 @@ import {
   revokePartialDelivery,
   unblockOrder,
   unpackOrder,
+  revertOrderStep,
   reopenB2,
   getOrderLoadability,
   claimOrder,
@@ -516,6 +517,21 @@ router.post('/:id/unpack', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), asy
   try {
     const id = Number(req.params.id);
     const result = await unpackOrder({ orderId: id, actorId: req.user.wpUserId });
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Revertir un paso (v0.25.1). Solo SUPERVISE. Retrocede el pedido UN estado:
+//   loaded → classified   (borra bag events loaded)
+//   classified → packed   (borra bag events classified)
+//   packed → sequenced    (equivalente al POST /unpack)
+// Ver services/order-actions.js:revertOrderStep para detalles.
+router.post('/:id/revert-step', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) => {
+  try {
+    const id = Number(req.params.id);
+    const result = await revertOrderStep({ orderId: id, actorId: req.user.wpUserId });
     res.json(result);
   } catch (err) {
     next(err);

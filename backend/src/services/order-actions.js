@@ -203,6 +203,104 @@ export async function unpackOrder({ orderId, actorId }) {
   return { ok: true, bagEventsCleared: bagEventsCount };
 }
 
+// Revertir un paso del flujo B1/dispatch (v0.25.1). Solo SUPERVISE.
+// Transiciones soportadas:
+//   loaded      → classified   (borra bag events 'loaded' + loadedAt=null)
+//   classified  → packed       (borra bag events 'classified' + classifiedAt=null)
+//   packed      → sequenced    (equivalente a unpackOrder)
+//
+// Reglas:
+// - delivered/received/sequenced/picked/blocked no tienen paso previo revertible.
+// - Si el pedido pertenece a un proceso ya cerrado, se bloquea (obliga a
+//   reabrir el proceso manualmente para no dejar contadores inconsistentes).
+// - Bag events del tipo correspondiente se borran completos (todos los N
+//   bultos en un tap — coherente con "revertir todo el pedido").
+// - packedAt/packedById NO se tocan al ir loaded→classified o
+//   classified→packed (el pedido sigue empacado).
+// - Deja evento auditable con el estado previo, quién revierte y qué borró.
+export async function revertOrderStep({ orderId, actorId }) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      sequenceLinks: {
+        include: { sequence: { select: { processId: true, process: { select: { status: true } } } } },
+      },
+    },
+  });
+  if (!order) throw new HttpError(404, 'Order not found');
+
+  // Chequeo de proceso cerrado — si alguno de los procesos vinculados está
+  // cerrado, bloqueamos para no dejar contadores inconsistentes.
+  const closedProcess = order.sequenceLinks.find((l) => l.sequence?.process?.status === 'closed');
+  if (closedProcess) {
+    throw new HttpError(409, 'No se puede revertir: el proceso al que pertenece ya está cerrado. Reabre el proceso primero.', {
+      processId: closedProcess.sequence.processId,
+    });
+  }
+
+  const now = new Date();
+
+  if (order.status === 'loaded') {
+    // loaded → classified. Borra los bag events tipo 'loaded' y limpia
+    // loadedAt. classifiedAt y packedAt se preservan (el pedido sigue
+    // clasificado y empacado).
+    const eventsToDelete = await prisma.orderBagEvent.count({
+      where: { orderId, event: 'loaded' },
+    });
+    await prisma.$transaction([
+      prisma.orderBagEvent.deleteMany({ where: { orderId, event: 'loaded' } }),
+      prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'classified', loadedAt: null },
+      }),
+      prisma.event.create({
+        data: {
+          type: 'order.reverted_load',
+          actorId,
+          orderId,
+          payload: { from: 'loaded', to: 'classified', bagEventsCleared: eventsToDelete },
+        },
+      }),
+    ]);
+    return { ok: true, from: 'loaded', to: 'classified', bagEventsCleared: eventsToDelete };
+  }
+
+  if (order.status === 'classified') {
+    // classified → packed. Borra los bag events tipo 'classified' y limpia
+    // classifiedAt. packedAt se preserva.
+    const eventsToDelete = await prisma.orderBagEvent.count({
+      where: { orderId, event: 'classified' },
+    });
+    await prisma.$transaction([
+      prisma.orderBagEvent.deleteMany({ where: { orderId, event: 'classified' } }),
+      prisma.order.update({
+        where: { id: orderId },
+        data: { status: 'packed', classifiedAt: null },
+      }),
+      prisma.event.create({
+        data: {
+          type: 'order.reverted_classify',
+          actorId,
+          orderId,
+          payload: { from: 'classified', to: 'packed', bagEventsCleared: eventsToDelete },
+        },
+      }),
+    ]);
+    return { ok: true, from: 'classified', to: 'packed', bagEventsCleared: eventsToDelete };
+  }
+
+  if (order.status === 'packed') {
+    // packed → sequenced. Delegamos en la lógica de unpackOrder para no
+    // duplicar el reset de items/bag events/plan.
+    const result = await unpackOrder({ orderId, actorId });
+    return { ok: true, from: 'packed', to: 'sequenced', bagEventsCleared: result.bagEventsCleared };
+  }
+
+  throw new HttpError(409, `El pedido en estado "${order.status}" no tiene un paso previo revertible.`, {
+    currentStatus: order.status,
+  });
+}
+
 // Reabrir el cierre B2 de un pedido: limpia b2ClosedAt/By y resetea los
 // items B2 a sin pickear. Útil cuando se cerró B2 por error/prueba.
 // No toca el flujo B1 (status, packedAt, etc.). Bloqueado para pedidos

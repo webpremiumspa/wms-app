@@ -164,6 +164,15 @@ export const ordersApi = {
   // Falla si el pedido ya fue cargado o entregado.
   unpack: async (id: number): Promise<{ ok: boolean }> =>
     (await api.post(`/orders/${id}/unpack`)).data,
+  // Revertir un paso (v0.25.1, solo SUPERVISE). Retrocede el pedido UN
+  // estado: loaded→classified, classified→packed, packed→sequenced.
+  // Encadenable — el supervisor puede tocar varias veces para ir más atrás.
+  revertStep: async (id: number): Promise<{
+    ok: boolean;
+    from: 'packed' | 'classified' | 'loaded';
+    to: 'sequenced' | 'packed' | 'classified';
+    bagEventsCleared: number;
+  }> => (await api.post(`/orders/${id}/revert-step`)).data,
   // Reabre el cierre B2: limpia b2ClosedAt y los items B2 vuelven a no
   // pickeados. Independiente del flujo B1.
   reopenB2: async (id: number): Promise<{ ok: boolean }> =>
