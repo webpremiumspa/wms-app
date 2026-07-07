@@ -544,6 +544,8 @@ const packPlanSchema = z.object({
   assignments: z.array(z.object({
     orderItemId: z.number().int().positive(),
     bagNumber: z.number().int().min(1).max(6),
+    // v0.24.2: qty por bulto (un item con qty>1 puede dividirse).
+    qty: z.number().int().positive(),
   })).min(1),
 });
 
