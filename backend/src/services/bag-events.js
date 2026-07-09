@@ -48,17 +48,32 @@ export async function registerBagEvent({ orderId, bagNumber, event, actorId }) {
     if (!order.route) throw new HttpError(409, 'El pedido no tiene ruta asignada.');
   }
 
-  // Upsert idempotente. Si el evento ya existía, actualiza actor/timestamp
-  // manteniendo la misma fila (el UNIQUE evita duplicados). Mantener el
-  // timestamp original tiene más sentido operativamente que refrescarlo,
-  // así que hacemos NADA en el update.
-  await prisma.orderBagEvent.upsert({
-    where: {
-      uq_order_bag_event: { orderId, bagNumber, event },
-    },
-    create: { orderId, bagNumber, event, actorId },
-    update: {}, // no-op si ya existía
+  // Idempotencia + auditoría por bulto (v0.25.5): antes usábamos upsert que
+  // no distinguía "creado" vs "ya existía", y el timeline solo veía el evento
+  // consolidado dispatch.classified/loaded al completar los N — se perdía la
+  // trazabilidad de cada scan individual (quién/cuándo por bulto).
+  // Ahora chequeamos primero. Si el bag event NO existía, lo creamos junto
+  // con un evento auditable dispatch.bag_${event} con payload { bagNumber }.
+  // Si ya existía (re-scan), no hacemos nada — idempotente sin ruido de logs.
+  const existing = await prisma.orderBagEvent.findUnique({
+    where: { uq_order_bag_event: { orderId, bagNumber, event } },
   });
+
+  if (!existing) {
+    await prisma.$transaction([
+      prisma.orderBagEvent.create({
+        data: { orderId, bagNumber, event, actorId },
+      }),
+      prisma.event.create({
+        data: {
+          type: `dispatch.bag_${event}`, // dispatch.bag_classified | dispatch.bag_loaded
+          actorId,
+          orderId,
+          payload: { bagNumber, event, bagsExpected: total },
+        },
+      }),
+    ]);
+  }
 
   const done = await prisma.orderBagEvent.count({
     where: { orderId, event },

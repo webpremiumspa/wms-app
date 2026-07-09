@@ -78,8 +78,15 @@ export const EVENT_LABELS: Record<string, string> = {
   'order.partial_delivery_revoked': 'revocó entrega parcial',
   'picking_b2.item_picked': 'recolectó item B2',
   'picking_b2.item_unpicked': 'deshizo recolección B2',
-  'dispatch.classified': 'clasificó pedido',
-  'dispatch.loaded': 'cargó pedido',
+  'dispatch.classified': 'clasificó pedido (completo)',
+  'dispatch.loaded': 'cargó pedido (completo)',
+  // Eventos por bulto individual (v0.25.5). Cada scan multi-bulto deja un
+  // evento propio con el bagNumber en payload — el timeline los sufija.
+  'dispatch.bag_classified': 'clasificó bulto',
+  'dispatch.bag_loaded': 'cargó bulto',
+  'order.bag_packed': 'cerró bulto',
+  'bag.unclassified': 'deshizo clasificación del bulto',
+  'bag.unloaded': 'deshizo carga del bulto',
   'delivery.scanned': 'escaneó en entrega',
 };
 

@@ -187,18 +187,28 @@ function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: T
           <div className="text-sm text-slate-500">Sin eventos registrados aún.</div>
         ) : (
           <ol className="relative space-y-3 border-l border-slate-200 pl-4">
-            {timeline.map((ev) => (
-              <li key={ev.id} className="relative">
-                <span className="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-brand-500 ring-2 ring-white" />
-                <div className="text-sm text-slate-800">
-                  <strong>{ev.actor?.displayName || ev.actor?.username || (ev.actorId ? `Usuario #${ev.actorId}` : 'Sistema')}</strong>
-                  {' '}{eventLabel(ev.type)}
-                </div>
-                <div className="text-xs text-slate-500">
-                  {new Date(ev.createdAt).toLocaleString('es-CL')}
-                </div>
-              </li>
-            ))}
+            {timeline.map((ev) => {
+              // Sufijo con número de bulto cuando el payload lo trae —
+              // aplica a dispatch.bag_classified/loaded, order.bag_packed y
+              // bag.unclassified/unloaded. Trazabilidad por bulto en el UI.
+              const bagNum = typeof ev.meta?.bagNumber === 'number' ? ev.meta.bagNumber : null;
+              const bagTotal = typeof ev.meta?.bagsExpected === 'number' ? ev.meta.bagsExpected : null;
+              const bagSuffix = bagNum != null
+                ? ` #${bagNum}${bagTotal ? ` de ${bagTotal}` : ''}`
+                : '';
+              return (
+                <li key={ev.id} className="relative">
+                  <span className="absolute -left-[21px] top-1 h-3 w-3 rounded-full bg-brand-500 ring-2 ring-white" />
+                  <div className="text-sm text-slate-800">
+                    <strong>{ev.actor?.displayName || ev.actor?.username || (ev.actorId ? `Usuario #${ev.actorId}` : 'Sistema')}</strong>
+                    {' '}{eventLabel(ev.type)}{bagSuffix}
+                  </div>
+                  <div className="text-xs text-slate-500">
+                    {new Date(ev.createdAt).toLocaleString('es-CL')}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         )}
       </Section>

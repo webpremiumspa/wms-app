@@ -223,7 +223,9 @@ router.get('/by-wp/:wpOrderId/tracking', requireCap(WMS_CAPS.SUPERVISE), async (
       createdAt: e.createdAt,
       actorId: e.actorId,
       actor: e.actorId ? actorMap.get(e.actorId) || null : null,
-      meta: e.meta || null,
+      // El campo real en la BD es `payload`; lo exponemos como `meta` para
+      // no romper el contract del frontend (TrackingEvent.meta).
+      meta: e.payload || null,
     }));
 
     res.json({
