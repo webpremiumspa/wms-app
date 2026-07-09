@@ -769,6 +769,24 @@ export function PackingOrder() {
               );
             })}
           </div>
+          {/* Reimprimir albaranes en modo ejecución (v0.25.6). Si el picker
+              perdió el PDF que se abrió al declarar el plan, aquí lo recupera.
+              Reimprime los N bultos con la distribución actual (respeta el
+              plan guardado — no reasigna). */}
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => reprint.mutate()}
+              disabled={reprint.isPending}
+              className="btn-ghost w-full border border-slate-300"
+            >
+              <Printer size={16} />
+              {reprint.isPending ? 'Generando PDF…' : `Reimprimir ${bagsCount} albaranes`}
+            </button>
+          )}
+          {bagsError && (
+            <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">{bagsError}</div>
+          )}
           {(order.packPlan?.bagsPacked?.length ?? 0) === 0 && canManage && (
             <button
               type="button"
