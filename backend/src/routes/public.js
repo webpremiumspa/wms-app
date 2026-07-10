@@ -27,9 +27,14 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
     // Indica si el pedido es "empacable" (está en una secuencia abierta y en
     // estado sequenced). El frontend usa esto para mostrar el botón "Empacar
     // este pedido" después de escanear el QR del albarán.
-    const openSequenceId = order.sequenceLinks
+    const openSequence = order.sequenceLinks
       .map((l) => l.sequence)
-      .find((s) => s.status === 'open')?.id || null;
+      .find((s) => s.status === 'open');
+    const openSequenceId = openSequence?.id || null;
+    // v0.25.8: procesId del pedido activo para poder filtrar la vista
+    // /dispatch/today al proceso actual — evita que aparezcan rutas de
+    // procesos cerrados de días anteriores en la lista de progreso.
+    const openProcessId = openSequence?.processId || null;
     const packable = order.status === 'sequenced' && openSequenceId != null;
     // Indica si el pedido necesita picking B2 (tiene items B2, no está cerrado
     // B2 todavía, y está en un estado activo). El picker B2 escanea el QR y
@@ -107,6 +112,7 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
         packable,
         b2Pickable,
         openSequenceId,
+        openProcessId,
         loadable: loadability.loadable,
         partialApproved: loadability.partialApproved,
         missingB2Items: loadability.missingB2Items || [],

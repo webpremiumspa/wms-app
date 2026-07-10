@@ -113,8 +113,11 @@ export function Scan() {
   });
 
   const { data: routesProgress } = useQuery({
-    queryKey: ['dispatch-today'],
-    queryFn: () => dispatchApi.today(),
+    // v0.25.8: scopeado al proceso del pedido escaneado. Antes traía TODAS
+    // las rutas activas (incluidas de procesos cerrados de días previos), lo
+    // que hacía crecer la lista con rutas irrelevantes.
+    queryKey: ['dispatch-today', order?.openProcessId ?? null],
+    queryFn: () => dispatchApi.today({ processId: order?.openProcessId ?? undefined }),
     enabled: !!user && canLoad && !!order && ['packed', 'classified', 'loaded'].includes(order.status),
     refetchInterval: 8_000,
   });
@@ -252,6 +255,14 @@ export function Scan() {
   const noRouteYet = !order.route && (showClassifyFlow || showLoadFlow);
   const isBlocked = order.status === 'blocked';
   const isNotPacked = ['received', 'sequenced', 'picked'].includes(order.status) && !order.packable && !order.b2Pickable;
+
+  // v0.25.8: filtra rutas 100% cargadas — ya no aportan info al operador
+  // que está clasificando/cargando. La ruta del pedido actual (highlightRoute)
+  // se preserva siempre, aunque esté completa, para que se vea el estado.
+  const visibleRoutes = (routesProgress || []).filter((r) => {
+    if (r.route === order.route) return true; // siempre incluir la del pedido
+    return r.loaded < r.total; // ocultar rutas ya 100% cargadas
+  });
 
   // Multi-bulto: derivadas del progreso por bulto que trae el response.
   const bagsCount = order.bagsExpected ?? 1;
@@ -466,8 +477,8 @@ export function Scan() {
               <div className="text-xs uppercase text-brand-700">Acción · Clasificación</div>
               <div className="text-base font-semibold text-slate-800">Confirma que este pedido fue separado a su ruma de ruta.</div>
             </div>
-            <RouteProgressHero routes={routesProgress || []} mode="classified" highlightRoute={order.route} />
-            <RouteProgressPills routes={routesProgress || []} mode="classified" highlightRoute={order.route} />
+            <RouteProgressHero routes={visibleRoutes} mode="classified" highlightRoute={order.route} />
+            <RouteProgressPills routes={visibleRoutes} mode="classified" highlightRoute={order.route} />
             {/* Warning suave: secuencia aún no 100% empacada */}
             {order.sequenceProgress && order.sequenceProgress.pendingPack > 0 && (
               <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-300">
@@ -500,8 +511,8 @@ export function Scan() {
               <div className="text-xs uppercase text-emerald-700">Acción · Carga al vehículo</div>
               <div className="text-base font-semibold text-slate-800">Confirma que esta bolsa subió a la camioneta.</div>
             </div>
-            <RouteProgressHero routes={routesProgress || []} mode="loaded" highlightRoute={order.route} />
-            <RouteProgressPills routes={routesProgress || []} mode="loaded" highlightRoute={order.route} />
+            <RouteProgressHero routes={visibleRoutes} mode="loaded" highlightRoute={order.route} />
+            <RouteProgressPills routes={visibleRoutes} mode="loaded" highlightRoute={order.route} />
             {/* Warning suave: secuencia aún no 100% clasificada */}
             {order.sequenceProgress && order.sequenceProgress.pendingClassify > 0 && (
               <div className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-300">

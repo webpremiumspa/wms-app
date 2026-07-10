@@ -188,6 +188,10 @@ export type OrderDetail = {
   }>;
   packable?: boolean;
   openSequenceId?: number | null;
+  // v0.25.8: processId de la secuencia abierta (si el pedido está en una).
+  // Lo usa la vista de scan para pedirle a /dispatch/today solo las rutas
+  // del proceso actual (evita rutas viejas de procesos cerrados).
+  openProcessId?: number | null;
   loadable?: boolean;
   partialApproved?: boolean;
   missingB2Items?: Array<{ productId: number; sku: string | null; name: string | null; qty: number }>;

@@ -154,6 +154,12 @@ export const dispatchApi = {
     event: 'classified' | 'loaded',
   ): Promise<{ ok: boolean; progress: { done: number; total: number }; revertedStatus: boolean }> =>
     (await api.post(`/dispatch/${orderId}/bag/${bag}/undo`, null, { params: { event } })).data,
-  today: async (): Promise<RouteSummary[]> => (await api.get('/dispatch/today')).data.routes,
+  // v0.25.8: opts.processId filtra la vista al proceso actual del pedido
+  // escaneado. Sin processId trae todas las rutas activas (comportamiento
+  // previo, para vistas administrativas).
+  today: async (opts?: { processId?: number | null }): Promise<RouteSummary[]> =>
+    (await api.get('/dispatch/today', {
+      params: opts?.processId != null ? { processId: opts.processId } : undefined,
+    })).data.routes,
 };
 

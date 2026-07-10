@@ -187,12 +187,27 @@ router.post('/:orderId/bag/:bag/undo', requireCap(WMS_CAPS.LOAD), async (req, re
 // Multi-bulto: además del conteo por pedido, agregamos sub-conteos por bulto
 // (bagsTotal, bagsClassified, bagsLoaded) para que la UI del scan pueda
 // mostrar "1/3 bultos" cuando el pedido ya avanzó pero aún no se completó.
-router.get('/today', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (_req, res, next) => {
+//
+// v0.25.8: acepta ?processId=N para filtrar por proceso. La vista de scan
+// pasa el processId del pedido escaneado para que solo aparezcan las rutas
+// del proceso actual — evita que rutas de procesos cerrados de días
+// anteriores contaminen la lista.
+router.get('/today', requireCap(WMS_CAPS.LOAD, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
+    const processIdRaw = req.query.processId;
+    const processId = processIdRaw != null && /^\d+$/.test(String(processIdRaw)) ? Number(processIdRaw) : null;
+
     const orders = await prisma.order.findMany({
       where: {
         status: { in: ['packed', 'classified', 'loaded'] },
         route: { not: null },
+        // Filtro por proceso: solo pedidos cuyas secuencias pertenezcan al
+        // processId dado. Sin processId trae todos (comportamiento previo).
+        ...(processId != null ? {
+          sequenceLinks: {
+            some: { sequence: { processId } },
+          },
+        } : {}),
       },
       select: {
         id: true,
