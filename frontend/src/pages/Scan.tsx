@@ -104,6 +104,12 @@ export function Scan() {
     queryKey: ['order-public', idNum],
     queryFn: () => ordersApi.getPublicByWpId(idNum),
     enabled: Number.isFinite(idNum) && idNum > 0,
+    // v0.25.7: siempre traer data fresca del backend al montar. Un pedido
+    // puede cambiar de status entre scans (otro operador clasifica/cierra
+    // B2 en paralelo), y con la respuesta cacheada la app calculaba
+    // availableActions con data obsoleta y auto-navegaba mal.
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 
   const { data: routesProgress } = useQuery({
@@ -162,17 +168,23 @@ export function Scan() {
   // hace falta en otro lugar.
 
   // Acciones potenciales que aplican al usuario para este pedido, en orden
-  // de prioridad para el modal (classify primero — permite despachar aunque
-  // B2 siga abierto; pickB2 y pack pueden esperar). 'classify' se renderiza
-  // inline en esta misma vista (showClassifyFlow), así que si es la única
-  // opción NO navegamos: dejamos que el flujo classify aparezca aquí mismo.
-  const availableActions: Array<'classify' | 'pickB2' | 'pack'> = (() => {
+  // de prioridad para el modal (classify/load primero — permiten avanzar el
+  // pedido en el flujo de dispatch; pickB2 y pack pueden esperar).
+  // classify y load se renderizan INLINE en esta misma vista
+  // (showClassifyFlow / showLoadFlow), así que aunque sean la única opción
+  // NO navegamos — dejamos que el flujo aparezca aquí mismo.
+  const availableActions: Array<'classify' | 'load' | 'pickB2' | 'pack'> = (() => {
     if (!user || !order) return [];
-    const list: Array<'classify' | 'pickB2' | 'pack'> = [];
+    const list: Array<'classify' | 'load' | 'pickB2' | 'pack'> = [];
     // classify: exige status='packed' + cap load. La ruta no la exigimos
     // aquí — si falta, el flujo inline muestra el aviso "sin ruta asignada"
     // y el botón queda deshabilitado.
     if (canLoad && order.status === 'packed') list.push('classify');
+    // load (v0.25.7): exige status='classified' + cap load. Sin esto un
+    // pedido classified con B2 pendiente auto-navegaba a pickB2 (la unica
+    // opcion en la lista antigua) y el operador no podia cargar sin salir
+    // primero de picking-b2.
+    if (canLoad && order.status === 'classified') list.push('load');
     if (canPickB2 && order.b2Pickable && order.openSequenceId) list.push('pickB2');
     if (canPack && order.packable && order.openSequenceId) list.push('pack');
     return list;
@@ -200,7 +212,7 @@ export function Scan() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, order?.id, order?.status]);
 
-  function pickSelectorAction(kind: 'classify' | 'pack' | 'pickB2') {
+  function pickSelectorAction(kind: 'classify' | 'load' | 'pack' | 'pickB2') {
     setShowSelector(false);
     if (!order) return;
     if (kind === 'pack' && order.openSequenceId) {
@@ -208,8 +220,9 @@ export function Scan() {
     } else if (kind === 'pickB2' && order.openSequenceId) {
       navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`);
     }
-    // kind === 'classify': quedamos en esta vista. showClassifyFlow renderiza
-    // el bloque de clasificación con el botón "Confirmar clasificación".
+    // kind === 'classify' | 'load': quedamos en esta vista. showClassifyFlow
+    // / showLoadFlow renderiza el bloque correspondiente con el botón
+    // "Confirmar clasificación" / "Confirmar carga al vehículo".
   }
 
   if (!Number.isFinite(idNum) || idNum <= 0) {
@@ -689,8 +702,8 @@ export function Scan() {
               </p>
             </div>
             <div className="space-y-2">
-              {/* Orden intencional: classify primero (permite despachar el
-                  pedido aunque el B2 siga pendiente), luego pickB2, luego
+              {/* Orden intencional: primero las acciones que avanzan el
+                  pedido en dispatch (classify/load), luego pickB2, luego
                   pack. Coincide con availableActions arriba. */}
               {canLoad && order.status === 'packed' && (
                 <SelectorAction
@@ -698,6 +711,14 @@ export function Scan() {
                   title="Clasificar"
                   description={`Confirmar que el pedido está listo para su ruta. El ${warehouseLabel('B2')} pendiente NO bloquea — se completa aparte.`}
                   onClick={() => pickSelectorAction('classify')}
+                />
+              )}
+              {canLoad && order.status === 'classified' && (
+                <SelectorAction
+                  icon={<Truck size={20} />}
+                  title="Cargar al vehículo"
+                  description={`Confirmar que esta bolsa subió a la camioneta de ${order.route || 'su ruta'}. El ${warehouseLabel('B2')} pendiente NO bloquea — se completa aparte.`}
+                  onClick={() => pickSelectorAction('load')}
                 />
               )}
               {canPickB2 && order.b2Pickable && (

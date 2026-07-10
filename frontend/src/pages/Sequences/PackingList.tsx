@@ -196,6 +196,16 @@ export function PackingList() {
         {sorted.filter((o) => matchesOrderId(o.number, search)).map((o) => {
           const done = o.status === 'packed' || o.status === 'classified' || o.status === 'loaded' || o.status === 'delivered';
           const claimed = !!o.pickedBy && !done;
+          // v0.25.7: chip de status real. Antes se mostraba "Empacado" para
+          // TODOS los estados post-empaque — el operador no distinguía en la
+          // lista si un pedido ya estaba clasificado o cargado.
+          const statusBadge: { label: string; variant: 'blue' | 'amber' | 'green' } | null = (() => {
+            if (o.status === 'packed')     return { label: 'Empacado · reimprimir', variant: 'blue' };
+            if (o.status === 'classified') return { label: 'Clasificado · reimprimir', variant: 'amber' };
+            if (o.status === 'loaded')     return { label: 'Cargado · reimprimir', variant: 'green' };
+            if (o.status === 'delivered')  return { label: 'Entregado', variant: 'green' };
+            return null;
+          })();
           return (
             <Link
               key={o.id}
@@ -216,7 +226,7 @@ export function PackingList() {
                   {o.hasB1Items && <Badge variant="blue">{warehouseLabel('B1')}</Badge>}
                   {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                   <ShippingBadge method={o.shippingMethod} />
-                  {done && <Badge variant="green">Empacado · entrar para reimprimir</Badge>}
+                  {statusBadge && <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>}
                 </div>
                 <div className="truncate text-xs text-slate-500">
                   {o.customerName || '—'} · {o.itemCount} items {warehouseLabel('B1')}
