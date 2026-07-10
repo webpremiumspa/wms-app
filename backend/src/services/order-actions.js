@@ -247,18 +247,36 @@ export async function revertOrderStep({ orderId, actorId }) {
     const eventsToDelete = await prisma.orderBagEvent.count({
       where: { orderId, event: 'loaded' },
     });
+    // v0.25.11: si el pedido tenía chip 'returned' (regla: WMS='loaded'
+    // sin metas WDG), al dejar de estar loaded el chip ya no aplica.
+    // Lo limpiamos a null para no dejar un chip fantasma. El histórico
+    // queda en events (order.reverted_load con payload extendido).
+    const clearReturnedChip = order.deliveryStatus === 'returned';
     await prisma.$transaction([
       prisma.orderBagEvent.deleteMany({ where: { orderId, event: 'loaded' } }),
       prisma.order.update({
         where: { id: orderId },
-        data: { status: 'classified', loadedAt: null },
+        data: {
+          status: 'classified',
+          loadedAt: null,
+          ...(clearReturnedChip ? {
+            deliveryStatus: null,
+            deliveryStatusUpdatedAt: now,
+            deliveryMeta: null,
+          } : {}),
+        },
       }),
       prisma.event.create({
         data: {
           type: 'order.reverted_load',
           actorId,
           orderId,
-          payload: { from: 'loaded', to: 'classified', bagEventsCleared: eventsToDelete },
+          payload: {
+            from: 'loaded',
+            to: 'classified',
+            bagEventsCleared: eventsToDelete,
+            ...(clearReturnedChip ? { clearedDeliveryStatus: 'returned' } : {}),
+          },
         },
       }),
     ]);

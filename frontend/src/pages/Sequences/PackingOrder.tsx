@@ -1098,8 +1098,23 @@ export function PackingOrder() {
               },
             };
             const step = stepMap[order.status];
+            // v0.25.11: si el pedido tiene chip Devuelto y estás en loaded,
+            // probablemente el supervisor quiso Revivir (que reintegra al
+            // pool para nueva secuencia), no revertir un paso. Alertamos.
+            const showReturnedWarning = order.status === 'loaded' && order.deliveryStatus === 'returned';
             return (
               <div className="space-y-1 border-t border-amber-200 pt-2">
+                {showReturnedWarning && (
+                  <div className="rounded-lg bg-amber-100 px-3 py-2 text-[11px] text-amber-900 ring-1 ring-amber-400">
+                    <div className="font-semibold">⚠ Este pedido está marcado como "Devuelto".</div>
+                    <div className="mt-0.5">
+                      Si volvió sin entregar y necesita reintegrarse al pool para armar una nueva secuencia, usa <strong>"Revivir pedido devuelto"</strong> desde Seguimiento o el menú Devueltos (chip pasa a "Retomado" y queda rastro histórico).
+                    </div>
+                    <div className="mt-0.5">
+                      Si aun así prefieres solo bajar un paso (por ejemplo, error de dispatcher), continúa — el chip Devuelto se limpiará automáticamente porque ya no aplicará.
+                    </div>
+                  </div>
+                )}
                 {revertError && (
                   <div className="rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700 ring-1 ring-red-200">
                     {revertError}
