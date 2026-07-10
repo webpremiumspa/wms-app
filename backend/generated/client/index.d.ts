@@ -4017,6 +4017,8 @@ export namespace Prisma {
     status: $Enums.OrderStatus | null
     wcStatus: string | null
     wcStatusUpdatedAt: Date | null
+    deliveryStatus: string | null
+    deliveryStatusUpdatedAt: Date | null
     route: string | null
     stopPosition: number | null
     customerName: string | null
@@ -4054,6 +4056,8 @@ export namespace Prisma {
     status: $Enums.OrderStatus | null
     wcStatus: string | null
     wcStatusUpdatedAt: Date | null
+    deliveryStatus: string | null
+    deliveryStatusUpdatedAt: Date | null
     route: string | null
     stopPosition: number | null
     customerName: string | null
@@ -4091,6 +4095,9 @@ export namespace Prisma {
     status: number
     wcStatus: number
     wcStatusUpdatedAt: number
+    deliveryStatus: number
+    deliveryStatusUpdatedAt: number
+    deliveryMeta: number
     route: number
     stopPosition: number
     customerName: number
@@ -4152,6 +4159,8 @@ export namespace Prisma {
     status?: true
     wcStatus?: true
     wcStatusUpdatedAt?: true
+    deliveryStatus?: true
+    deliveryStatusUpdatedAt?: true
     route?: true
     stopPosition?: true
     customerName?: true
@@ -4189,6 +4198,8 @@ export namespace Prisma {
     status?: true
     wcStatus?: true
     wcStatusUpdatedAt?: true
+    deliveryStatus?: true
+    deliveryStatusUpdatedAt?: true
     route?: true
     stopPosition?: true
     customerName?: true
@@ -4226,6 +4237,9 @@ export namespace Prisma {
     status?: true
     wcStatus?: true
     wcStatusUpdatedAt?: true
+    deliveryStatus?: true
+    deliveryStatusUpdatedAt?: true
+    deliveryMeta?: true
     route?: true
     stopPosition?: true
     customerName?: true
@@ -4350,6 +4364,9 @@ export namespace Prisma {
     status: $Enums.OrderStatus
     wcStatus: string | null
     wcStatusUpdatedAt: Date | null
+    deliveryStatus: string | null
+    deliveryStatusUpdatedAt: Date | null
+    deliveryMeta: JsonValue | null
     route: string | null
     stopPosition: number | null
     customerName: string | null
@@ -4406,6 +4423,9 @@ export namespace Prisma {
     status?: boolean
     wcStatus?: boolean
     wcStatusUpdatedAt?: boolean
+    deliveryStatus?: boolean
+    deliveryStatusUpdatedAt?: boolean
+    deliveryMeta?: boolean
     route?: boolean
     stopPosition?: boolean
     customerName?: boolean
@@ -4453,6 +4473,9 @@ export namespace Prisma {
     status?: boolean
     wcStatus?: boolean
     wcStatusUpdatedAt?: boolean
+    deliveryStatus?: boolean
+    deliveryStatusUpdatedAt?: boolean
+    deliveryMeta?: boolean
     route?: boolean
     stopPosition?: boolean
     customerName?: boolean
@@ -4514,6 +4537,9 @@ export namespace Prisma {
       status: $Enums.OrderStatus
       wcStatus: string | null
       wcStatusUpdatedAt: Date | null
+      deliveryStatus: string | null
+      deliveryStatusUpdatedAt: Date | null
+      deliveryMeta: Prisma.JsonValue | null
       route: string | null
       stopPosition: number | null
       customerName: string | null
@@ -4925,6 +4951,9 @@ export namespace Prisma {
     readonly status: FieldRef<"Order", 'OrderStatus'>
     readonly wcStatus: FieldRef<"Order", 'String'>
     readonly wcStatusUpdatedAt: FieldRef<"Order", 'DateTime'>
+    readonly deliveryStatus: FieldRef<"Order", 'String'>
+    readonly deliveryStatusUpdatedAt: FieldRef<"Order", 'DateTime'>
+    readonly deliveryMeta: FieldRef<"Order", 'Json'>
     readonly route: FieldRef<"Order", 'String'>
     readonly stopPosition: FieldRef<"Order", 'Int'>
     readonly customerName: FieldRef<"Order", 'String'>
@@ -12186,6 +12215,9 @@ export namespace Prisma {
     status: 'status',
     wcStatus: 'wcStatus',
     wcStatusUpdatedAt: 'wcStatusUpdatedAt',
+    deliveryStatus: 'deliveryStatus',
+    deliveryStatusUpdatedAt: 'deliveryStatusUpdatedAt',
+    deliveryMeta: 'deliveryMeta',
     route: 'route',
     stopPosition: 'stopPosition',
     customerName: 'customerName',
@@ -12592,6 +12624,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
     wcStatus?: StringNullableFilter<"Order"> | string | null
     wcStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    deliveryStatus?: StringNullableFilter<"Order"> | string | null
+    deliveryStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    deliveryMeta?: JsonNullableFilter<"Order">
     route?: StringNullableFilter<"Order"> | string | null
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
@@ -12637,6 +12672,9 @@ export namespace Prisma {
     status?: SortOrder
     wcStatus?: SortOrderInput | SortOrder
     wcStatusUpdatedAt?: SortOrderInput | SortOrder
+    deliveryStatus?: SortOrderInput | SortOrder
+    deliveryStatusUpdatedAt?: SortOrderInput | SortOrder
+    deliveryMeta?: SortOrderInput | SortOrder
     route?: SortOrderInput | SortOrder
     stopPosition?: SortOrderInput | SortOrder
     customerName?: SortOrderInput | SortOrder
@@ -12685,6 +12723,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
     wcStatus?: StringNullableFilter<"Order"> | string | null
     wcStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    deliveryStatus?: StringNullableFilter<"Order"> | string | null
+    deliveryStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    deliveryMeta?: JsonNullableFilter<"Order">
     route?: StringNullableFilter<"Order"> | string | null
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
@@ -12730,6 +12771,9 @@ export namespace Prisma {
     status?: SortOrder
     wcStatus?: SortOrderInput | SortOrder
     wcStatusUpdatedAt?: SortOrderInput | SortOrder
+    deliveryStatus?: SortOrderInput | SortOrder
+    deliveryStatusUpdatedAt?: SortOrderInput | SortOrder
+    deliveryMeta?: SortOrderInput | SortOrder
     route?: SortOrderInput | SortOrder
     stopPosition?: SortOrderInput | SortOrder
     customerName?: SortOrderInput | SortOrder
@@ -12775,6 +12819,9 @@ export namespace Prisma {
     status?: EnumOrderStatusWithAggregatesFilter<"Order"> | $Enums.OrderStatus
     wcStatus?: StringNullableWithAggregatesFilter<"Order"> | string | null
     wcStatusUpdatedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+    deliveryStatus?: StringNullableWithAggregatesFilter<"Order"> | string | null
+    deliveryStatusUpdatedAt?: DateTimeNullableWithAggregatesFilter<"Order"> | Date | string | null
+    deliveryMeta?: JsonNullableWithAggregatesFilter<"Order">
     route?: StringNullableWithAggregatesFilter<"Order"> | string | null
     stopPosition?: IntNullableWithAggregatesFilter<"Order"> | number | null
     customerName?: StringNullableWithAggregatesFilter<"Order"> | string | null
@@ -13474,6 +13521,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13516,6 +13566,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13557,6 +13610,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -13599,6 +13655,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -13641,6 +13700,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -13677,6 +13739,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -13711,6 +13776,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -14556,6 +14624,28 @@ export namespace Prisma {
     notIn?: $Enums.OrderStatus[]
     not?: NestedEnumOrderStatusFilter<$PrismaModel> | $Enums.OrderStatus
   }
+  export type JsonNullableFilter<$PrismaModel = never> = 
+    | PatchUndefined<
+        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type IntNullableFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
@@ -14600,6 +14690,9 @@ export namespace Prisma {
     status?: SortOrder
     wcStatus?: SortOrder
     wcStatusUpdatedAt?: SortOrder
+    deliveryStatus?: SortOrder
+    deliveryStatusUpdatedAt?: SortOrder
+    deliveryMeta?: SortOrder
     route?: SortOrder
     stopPosition?: SortOrder
     customerName?: SortOrder
@@ -14648,6 +14741,8 @@ export namespace Prisma {
     status?: SortOrder
     wcStatus?: SortOrder
     wcStatusUpdatedAt?: SortOrder
+    deliveryStatus?: SortOrder
+    deliveryStatusUpdatedAt?: SortOrder
     route?: SortOrder
     stopPosition?: SortOrder
     customerName?: SortOrder
@@ -14685,6 +14780,8 @@ export namespace Prisma {
     status?: SortOrder
     wcStatus?: SortOrder
     wcStatusUpdatedAt?: SortOrder
+    deliveryStatus?: SortOrder
+    deliveryStatusUpdatedAt?: SortOrder
     route?: SortOrder
     stopPosition?: SortOrder
     customerName?: SortOrder
@@ -14734,6 +14831,31 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumOrderStatusFilter<$PrismaModel>
     _max?: NestedEnumOrderStatusFilter<$PrismaModel>
+  }
+  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> = 
+    | PatchUndefined<
+        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
+        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
+
+  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedJsonNullableFilter<$PrismaModel>
+    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -15102,28 +15224,6 @@ export namespace Prisma {
     sequenceId?: SortOrder
     orderId?: SortOrder
   }
-  export type JsonNullableFilter<$PrismaModel = never> = 
-    | PatchUndefined<
-        Either<Required<JsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
 
   export type OrderNullableRelationFilter = {
     is?: OrderWhereInput | null
@@ -15165,31 +15265,6 @@ export namespace Prisma {
     id?: SortOrder
     actorId?: SortOrder
     orderId?: SortOrder
-  }
-  export type JsonNullableWithAggregatesFilter<$PrismaModel = never> = 
-    | PatchUndefined<
-        Either<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>,
-        Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<JsonNullableWithAggregatesFilterBase<$PrismaModel>>, 'path'>>
-
-  export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedJsonNullableFilter<$PrismaModel>
-    _max?: NestedJsonNullableFilter<$PrismaModel>
   }
 
   export type DeliveryProcessCreateNestedManyWithoutCreatedByInput = {
@@ -16385,6 +16460,28 @@ export namespace Prisma {
     _min?: NestedEnumOrderStatusFilter<$PrismaModel>
     _max?: NestedEnumOrderStatusFilter<$PrismaModel>
   }
+  export type NestedJsonNullableFilter<$PrismaModel = never> = 
+    | PatchUndefined<
+        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
+        Required<NestedJsonNullableFilterBase<$PrismaModel>>
+      >
+    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
+
+  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
+    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+    path?: string
+    string_contains?: string | StringFieldRefInput<$PrismaModel>
+    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
+    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
+    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
+    lt?: InputJsonValue
+    lte?: InputJsonValue
+    gt?: InputJsonValue
+    gte?: InputJsonValue
+    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
+  }
 
   export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | IntFieldRefInput<$PrismaModel> | null
@@ -16463,28 +16560,6 @@ export namespace Prisma {
     _min?: NestedEnumSequenceStatusFilter<$PrismaModel>
     _max?: NestedEnumSequenceStatusFilter<$PrismaModel>
   }
-  export type NestedJsonNullableFilter<$PrismaModel = never> = 
-    | PatchUndefined<
-        Either<Required<NestedJsonNullableFilterBase<$PrismaModel>>, Exclude<keyof Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>,
-        Required<NestedJsonNullableFilterBase<$PrismaModel>>
-      >
-    | OptionalFlat<Omit<Required<NestedJsonNullableFilterBase<$PrismaModel>>, 'path'>>
-
-  export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
-    equals?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-    path?: string
-    string_contains?: string | StringFieldRefInput<$PrismaModel>
-    string_starts_with?: string | StringFieldRefInput<$PrismaModel>
-    string_ends_with?: string | StringFieldRefInput<$PrismaModel>
-    array_contains?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_starts_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    array_ends_with?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | null
-    lt?: InputJsonValue
-    lte?: InputJsonValue
-    gt?: InputJsonValue
-    gte?: InputJsonValue
-    not?: InputJsonValue | JsonFieldRefInput<$PrismaModel> | JsonNullValueFilter
-  }
 
   export type DeliveryProcessCreateWithoutCreatedByInput = {
     name: string
@@ -16556,6 +16631,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -16597,6 +16675,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -16647,6 +16728,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -16688,6 +16772,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -16738,6 +16825,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -16779,6 +16869,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -16960,6 +17053,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFilter<"Order"> | $Enums.OrderStatus
     wcStatus?: StringNullableFilter<"Order"> | string | null
     wcStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    deliveryStatus?: StringNullableFilter<"Order"> | string | null
+    deliveryStatusUpdatedAt?: DateTimeNullableFilter<"Order"> | Date | string | null
+    deliveryMeta?: JsonNullableFilter<"Order">
     route?: StringNullableFilter<"Order"> | string | null
     stopPosition?: IntNullableFilter<"Order"> | number | null
     customerName?: StringNullableFilter<"Order"> | string | null
@@ -17636,6 +17732,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -17677,6 +17776,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -17774,6 +17876,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -17815,6 +17920,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -17902,6 +18010,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -17943,6 +18054,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -18025,6 +18139,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -18066,6 +18183,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -18138,6 +18258,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -18179,6 +18302,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -18285,6 +18411,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -18326,6 +18455,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -18756,6 +18888,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -18797,6 +18932,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -18889,6 +19027,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -18930,6 +19071,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19011,6 +19155,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -19052,6 +19199,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -19155,6 +19305,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19196,6 +19349,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19258,6 +19414,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -19294,6 +19453,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -19330,6 +19492,9 @@ export namespace Prisma {
     status?: $Enums.OrderStatus
     wcStatus?: string | null
     wcStatusUpdatedAt?: Date | string | null
+    deliveryStatus?: string | null
+    deliveryStatusUpdatedAt?: Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: string | null
     stopPosition?: number | null
     customerName?: string | null
@@ -19446,6 +19611,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19487,6 +19655,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19528,6 +19699,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19563,6 +19737,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19604,6 +19781,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19645,6 +19825,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19680,6 +19863,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19721,6 +19907,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -19762,6 +19951,9 @@ export namespace Prisma {
     status?: EnumOrderStatusFieldUpdateOperationsInput | $Enums.OrderStatus
     wcStatus?: NullableStringFieldUpdateOperationsInput | string | null
     wcStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryStatus?: NullableStringFieldUpdateOperationsInput | string | null
+    deliveryStatusUpdatedAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    deliveryMeta?: NullableJsonNullValueInput | InputJsonValue
     route?: NullableStringFieldUpdateOperationsInput | string | null
     stopPosition?: NullableIntFieldUpdateOperationsInput | number | null
     customerName?: NullableStringFieldUpdateOperationsInput | string | null

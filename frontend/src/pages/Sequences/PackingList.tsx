@@ -7,6 +7,7 @@ import { sequencesApi } from '@/lib/sequences';
 import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
+import { DeliveryStatusBadge } from '@/components/DeliveryStatusBadge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { QRScanner } from '@/components/QRScanner';
 import { RouteFilter, type RouteFilterValue } from '@/components/RouteFilter';
@@ -225,6 +226,7 @@ export function PackingList() {
                   {o.stopPosition != null && <Badge variant="gray">Parada {o.stopPosition}</Badge>}
                   {o.hasB1Items && <Badge variant="blue">{warehouseLabel('B1')}</Badge>}
                   {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
+                  <DeliveryStatusBadge status={o.deliveryStatus} meta={o.deliveryMeta} />
                   <ShippingBadge method={o.shippingMethod} />
                   {statusBadge && <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>}
                 </div>

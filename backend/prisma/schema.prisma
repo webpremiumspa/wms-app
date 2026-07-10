@@ -64,6 +64,15 @@ model Order {
   // que pegarle a sync manual.
   wcStatus        String?  @map("wc_status") @db.VarChar(60)
   wcStatusUpdatedAt DateTime? @map("wc_status_updated_at")
+  // v0.25.9: estado de entrega derivado de metas WDG del sistema de rutas.
+  //   NULL         → pedido no salido a ruta / desconocido
+  //   'delivered'  → _wdg_delivered='1'
+  //   'partial'    → _wdg_partial='1'
+  //   'returned'   → WMS estaba en 'loaded' + WC volvió a 'en-preparacion' sin metas
+  // deliveryMeta guarda { by, date } o { returnedAt } segun caso.
+  deliveryStatus  String?  @map("delivery_status") @db.VarChar(20)
+  deliveryStatusUpdatedAt DateTime? @map("delivery_status_updated_at")
+  deliveryMeta    Json?    @map("delivery_meta")
   route           String?  @db.VarChar(64)
   stopPosition    Int?     @map("stop_position")
   customerName     String?  @map("customer_name") @db.VarChar(200)

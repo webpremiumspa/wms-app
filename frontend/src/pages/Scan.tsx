@@ -24,6 +24,7 @@ import { Spinner } from '@/components/Spinner';
 import { B2Alert } from '@/components/B2Alert';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { OrderStatusBadge } from '@/components/OrderStatusBadge';
+import { DeliveryStatusBadge } from '@/components/DeliveryStatusBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
 import { QRScanner } from '@/components/QRScanner';
@@ -300,6 +301,7 @@ export function Scan() {
             <span className="text-xl font-bold">#{order.number}</span>
             <OrderStatusBadge status={order.status} />
             <ShippingBadge method={order.shippingMethod} />
+            <DeliveryStatusBadge status={order.deliveryStatus} meta={order.deliveryMeta} size="md" />
           </div>
           <CustomerBlock
             name={order.customerName}

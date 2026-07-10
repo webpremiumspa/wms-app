@@ -148,6 +148,9 @@ export async function getPendingPacking(sequenceId) {
       // hasB1Items permite mostrar el badge azul B1 en la lista de packing
       // pendiente (distingue Solo B1 / Solo B2 / Mixto).
       hasB1Items: b1.length > 0,
+      // v0.25.9: chip de estado de entrega (delivered/partial/returned).
+      deliveryStatus: o.deliveryStatus,
+      deliveryMeta: o.deliveryMeta,
       status: o.status,
       itemCount: b1.length,
       claimedAt: o.claimedAt,

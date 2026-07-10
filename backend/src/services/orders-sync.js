@@ -122,6 +122,46 @@ export async function ensureProducts(productIds, { force = false } = {}) {
 // en WC. Ver commit v0.25.3 para el detalle.
 const LOCKED_STATUSES = ['sequenced', 'picked', 'packed', 'classified', 'loaded', 'delivered'];
 
+// v0.25.9: helper para derivar delivery_status desde metas WDG del sistema
+// externo de rutas. Devuelve { deliveryStatus, deliveryMeta, needsRevive }.
+// - needsRevive=true → el pedido volvio de reparto sin entregar y WC lo
+//   reagendo. syncOrder hace el revive (reset status a 'received').
+export function computeDeliveryStatus(wcData, existingWmsStatus = null) {
+  const wdgDelivered = getMeta(wcData, '_wdg_delivered') === '1';
+  const wdgPartial = getMeta(wcData, '_wdg_partial') === '1';
+  if (wdgDelivered) {
+    return {
+      deliveryStatus: 'delivered',
+      deliveryMeta: {
+        by: getMeta(wcData, '_wdg_delivered_by') || null,
+        date: getMeta(wcData, '_wdg_delivered_date') || null,
+      },
+      needsRevive: false,
+    };
+  }
+  if (wdgPartial) {
+    return {
+      deliveryStatus: 'partial',
+      deliveryMeta: {
+        by: getMeta(wcData, '_wdg_partial_by') || null,
+        date: getMeta(wcData, '_wdg_partial_date') || null,
+      },
+      needsRevive: false,
+    };
+  }
+  // Devuelto: el pedido estaba cargado en el WMS pero WC lo reagendó a
+  // en-preparacion sin metas de entrega (no se marcó delivered ni partial
+  // → volvió a bodega).
+  if (['loaded', 'classified'].includes(existingWmsStatus) && wcData.status === 'en-preparacion') {
+    return {
+      deliveryStatus: 'returned',
+      deliveryMeta: { returnedAt: new Date().toISOString() },
+      needsRevive: existingWmsStatus === 'loaded',
+    };
+  }
+  return { deliveryStatus: null, deliveryMeta: null, needsRevive: false };
+}
+
 // Upsert completo de un pedido WC, incluyendo items. Lee los metas de ruta y
 // posición de carga, y calcula hasB2Pending mirando los items.
 // Si el pedido ya está en un estado "locked", NO recreamos items (evita
@@ -132,20 +172,70 @@ const LOCKED_STATUSES = ['sequenced', 'picked', 'packed', 'classified', 'loaded'
 export async function syncOrder(wpOrderId, wcOrder = null) {
   const existing = await prisma.order.findUnique({
     where: { wpOrderId },
-    select: { id: true, wpOrderId: true, number: true, status: true },
+    select: {
+      id: true, wpOrderId: true, number: true, status: true,
+      packedAt: true, classifiedAt: true, loadedAt: true, bagsExpected: true,
+    },
   });
   if (existing && LOCKED_STATUSES.includes(existing.status)) {
-    // Metadata safe (ruta, driver, dirección) — no toca items ni status WMS.
-    await updateOrderMetaFromWc(wpOrderId, wcOrder);
-    // Rastro auditable: si en el futuro algo raro pasa, aquí queda registro.
-    await prisma.event.create({
-      data: {
-        type: 'order.wc_synced',
-        orderId: existing.id,
-        payload: { action: 'meta-only', currentStatus: existing.status },
-      },
-    });
-    return { ...existing, skipped: true };
+    // v0.25.9: chequeo previo — si el pedido volvió del reparto sin entregar
+    // (status=loaded en WMS + WC status=en-preparacion sin metas WDG), hacemos
+    // "revive": reset a 'received' y dejamos que el sync normal recree items.
+    const data = wcOrder || (await wcGetOrder(wpOrderId));
+    const delivery = computeDeliveryStatus(data, existing.status);
+    if (delivery.needsRevive) {
+      // Revive: borrar bag events, assignments, resetear timestamps y bajar
+      // a 'received' para que el pedido pueda re-secuenciarse. Preservamos
+      // el histórico en un evento auditable.
+      const now = new Date();
+      await prisma.$transaction([
+        prisma.orderBagEvent.deleteMany({ where: { orderId: existing.id } }),
+        prisma.orderItemBagAssignment.deleteMany({ where: { orderId: existing.id } }),
+        prisma.order.update({
+          where: { id: existing.id },
+          data: {
+            status: 'received',
+            packedAt: null,
+            packedById: null,
+            classifiedAt: null,
+            loadedAt: null,
+            pickedById: null,
+            claimedAt: null,
+            b2ClosedAt: null,
+            b2ClosedById: null,
+            bagsExpected: 1,
+            deliveryStatus: 'returned',
+            deliveryStatusUpdatedAt: now,
+            deliveryMeta: delivery.deliveryMeta,
+          },
+        }),
+        prisma.event.create({
+          data: {
+            type: 'order.rebooked_from_return',
+            orderId: existing.id,
+            payload: {
+              previousPackedAt: existing.packedAt,
+              previousClassifiedAt: existing.classifiedAt,
+              previousLoadedAt: existing.loadedAt,
+              previousBagsExpected: existing.bagsExpected,
+            },
+          },
+        }),
+      ]);
+      // Fall through: el sync normal (abajo) recrea items desde WC.
+    } else {
+      // Metadata safe (ruta, driver, dirección) — no toca items ni status WMS.
+      // Incluye actualizar delivery_status si el pedido fue delivered/partial.
+      await updateOrderMetaFromWc(wpOrderId, wcOrder);
+      await prisma.event.create({
+        data: {
+          type: 'order.wc_synced',
+          orderId: existing.id,
+          payload: { action: 'meta-only', currentStatus: existing.status },
+        },
+      });
+      return { ...existing, skipped: true };
+    }
   }
 
   const data = wcOrder || (await wcGetOrder(wpOrderId));
@@ -223,6 +313,32 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
       // contexto independiente del status interno del WMS.
       const wcStatusSlug = typeof data.status === 'string' && data.status.trim() ? data.status.trim().slice(0, 60) : null;
 
+      // v0.25.9: delivery_status desde metas WDG. Solo aplicamos si son
+      // metas explícitas (delivered/partial). El caso 'returned' se maneja
+      // en el revive de syncOrder — acá no lo tocamos para no pisar lo que
+      // ya se seteó arriba.
+      const wdgDelivered = getMeta(data, '_wdg_delivered') === '1';
+      const wdgPartial = getMeta(data, '_wdg_partial') === '1';
+      const explicitDelivery = wdgDelivered
+        ? {
+            deliveryStatus: 'delivered',
+            deliveryStatusUpdatedAt: new Date(),
+            deliveryMeta: {
+              by: getMeta(data, '_wdg_delivered_by') || null,
+              date: getMeta(data, '_wdg_delivered_date') || null,
+            },
+          }
+        : wdgPartial
+          ? {
+              deliveryStatus: 'partial',
+              deliveryStatusUpdatedAt: new Date(),
+              deliveryMeta: {
+                by: getMeta(data, '_wdg_partial_by') || null,
+                date: getMeta(data, '_wdg_partial_date') || null,
+              },
+            }
+          : null;
+
       const order = await tx.order.upsert({
         where: { wpOrderId: data.id },
         create: {
@@ -247,6 +363,7 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           bagsExpected: 1,
           createdAt: wcDate,
           hasB2Pending: hasB2,
+          ...(explicitDelivery || {}),
         },
         update: {
           number: String(data.number ?? data.id),
@@ -267,6 +384,7 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
           patente,
           createdAt: wcDate,
           hasB2Pending: hasB2,
+          ...(explicitDelivery || {}),
         },
       });
 
@@ -343,13 +461,19 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
 
   const existing = await prisma.order.findUnique({
     where: { wpOrderId: data.id },
-    select: { id: true },
+    select: { id: true, status: true },
   });
   if (!existing) return null;
 
   // Estado WC tal cual (slug WC), refrescado en cada webhook. Mantiene el
   // chip sincronizado en la UI sin tocar el status interno del WMS.
   const wcStatusSlug = typeof data.status === 'string' && data.status.trim() ? data.status.trim().slice(0, 60) : null;
+
+  // v0.25.9: derivar delivery_status desde metas WDG. En este path (metadata
+  // safe, pedido locked) NO hacemos revive — eso lo hace syncOrder al
+  // detectarlo. Solo actualizamos el campo para que el chip se refresque.
+  const delivery = computeDeliveryStatus(data, existing.status);
+  const now = new Date();
 
   return prisma.order.update({
     where: { id: existing.id },
@@ -369,6 +493,13 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
       customerNote,
       wcStatus: wcStatusSlug,
       wcStatusUpdatedAt: wcStatusSlug ? new Date() : null,
+      // Solo actualizamos si hay cambio real: no queremos pisar delivery_status
+      // con null cuando el pedido aún no tiene metas WDG.
+      ...(delivery.deliveryStatus != null ? {
+        deliveryStatus: delivery.deliveryStatus,
+        deliveryStatusUpdatedAt: now,
+        deliveryMeta: delivery.deliveryMeta,
+      } : {}),
     },
   });
 }

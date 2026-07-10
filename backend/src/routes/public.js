@@ -101,6 +101,9 @@ router.get('/orders/:wpOrderId', async (req, res, next) => {
         customerNote: order.customerNote,
         shippingMethod: order.shippingMethod,
         hasB2Pending: order.hasB2Pending,
+        // v0.25.9: estado de entrega derivado de metas WDG.
+        deliveryStatus: order.deliveryStatus,
+        deliveryMeta: order.deliveryMeta,
         allowPartialDelivery: order.allowPartialDelivery,
         partialDeliveryNote: order.partialDeliveryNote,
         bagsExpected: order.bagsExpected,

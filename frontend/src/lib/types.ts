@@ -1,5 +1,15 @@
 export type Warehouse = 'B1' | 'B2';
 
+// v0.25.9: estado de entrega derivado de metas WDG del sistema de rutas.
+// null = pedido no salió a ruta / desconocido.
+// 'delivered' | 'partial' | 'returned' — ver backend/services/orders-sync.js.
+export type DeliveryStatus = 'delivered' | 'partial' | 'returned' | null;
+export type DeliveryMeta = {
+  by?: string | null;
+  date?: string | null;
+  returnedAt?: string | null;
+} | null;
+
 export type OrderStatus =
   | 'received'
   | 'sequenced'
@@ -43,6 +53,10 @@ export type PendingOrder = {
   // como chip de contexto en la UI: independiente del status interno WMS.
   wcStatus?: string | null;
   wcStatusUpdatedAt?: string | null;
+  // v0.25.9: estado de entrega. Cuando es 'returned', el pedido volvió de
+  // reparto sin entregar y la bolsa B1 debe estar guardada en bodega.
+  deliveryStatus?: DeliveryStatus;
+  deliveryMeta?: DeliveryMeta;
   itemCount: number;
   createdAt: string;
   lastRemoval?: LastRemovalInfo | null;
@@ -87,6 +101,9 @@ export type SequenceOrderInfo = {
   // Junto con hasB2Pending permite distinguir Solo B1 / Solo B2 / Mixto en
   // el listado de secuencia. Opcional para compat con payloads viejos.
   hasB1Items?: boolean;
+  // v0.25.9: estado de entrega (delivered/partial/returned/null).
+  deliveryStatus?: DeliveryStatus;
+  deliveryMeta?: DeliveryMeta;
   route: string | null;
   stopPosition: number | null;
   // Estado WC tal cual (slug). Para chip de contexto.
@@ -105,6 +122,9 @@ export type PendingPackingOrder = {
   // Opcional para compat con payloads viejos — el badge B1 solo se muestra
   // cuando el backend lo trae true.
   hasB1Items?: boolean;
+  // v0.25.9: estado de entrega.
+  deliveryStatus?: DeliveryStatus;
+  deliveryMeta?: DeliveryMeta;
   status: OrderStatus;
   itemCount: number;
   claimedAt: string | null;
@@ -139,6 +159,9 @@ export type OrderDetail = {
   // status interno del WMS. Refrescado por webhook order.updated.
   wcStatus?: string | null;
   wcStatusUpdatedAt?: string | null;
+  // v0.25.9: estado de entrega derivado de metas WDG.
+  deliveryStatus?: DeliveryStatus;
+  deliveryMeta?: DeliveryMeta;
   route: string | null;
   stopPosition: number | null;
   customerName: string | null;

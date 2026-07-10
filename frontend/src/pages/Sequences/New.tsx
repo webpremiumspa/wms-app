@@ -10,6 +10,7 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { WcStatusBadge } from '@/components/WcStatusBadge';
+import { DeliveryStatusBadge } from '@/components/DeliveryStatusBadge';
 import { OrderSearchBox, HighlightedNumber, matchesOrderId } from '@/components/OrderSearchBox';
 import type { PendingOrder, StockProblem } from '@/lib/types';
 import clsx from 'clsx';
@@ -637,6 +638,7 @@ export function SequenceNew() {
                     {o.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
                     <ShippingBadge method={o.shippingMethod} />
                     <WcStatusBadge slug={o.wcStatus} />
+                    <DeliveryStatusBadge status={o.deliveryStatus} meta={o.deliveryMeta} />
                   </div>
                   <div className="truncate text-xs text-slate-500">
                     {new Date(o.createdAt).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' })} · {o.customerName || '—'}

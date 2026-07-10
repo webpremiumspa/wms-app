@@ -61,6 +61,15 @@ router.post('/wc/order', async (req, res, next) => {
     });
 
     if (existing) {
+      // v0.25.9: caso especial — si el pedido volvió del reparto sin entregar
+      // (WMS en 'loaded' + WC ahora 'en-preparacion' sin metas WDG), llamamos
+      // syncOrder que dispara el "revive" (reset a 'received' + delivery_status
+      // = 'returned'). Sino, solo metadata safe.
+      const isPossibleRevive = existing.status === 'loaded' && status === 'en-preparacion';
+      if (isPossibleRevive) {
+        const order = await syncOrder(wpId, payload);
+        return res.json({ ok: true, action: order.skipped ? 'meta-updated' : 'rebooked', orderId: existing.id });
+      }
       await updateOrderMetaFromWc(wpId, payload);
       return res.json({ ok: true, action: 'meta-updated', orderId: existing.id });
     }

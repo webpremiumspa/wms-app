@@ -10,6 +10,7 @@ import { ShippingBadge } from '@/components/ShippingBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
 import { WcStatusBadge } from '@/components/WcStatusBadge';
+import { DeliveryStatusBadge } from '@/components/DeliveryStatusBadge';
 import { ProgressBar } from '@/components/ProgressBar';
 import { ProgressHero } from '@/components/RouteProgressPills';
 import { RemoveOrderModal } from '@/components/RemoveOrderModal';
@@ -499,6 +500,7 @@ export function PackingOrder() {
           <ShippingBadge method={order.shippingMethod} />
           {isPacked && <Badge variant="green">Empacado</Badge>}
           <WcStatusBadge slug={order.wcStatus} />
+          <DeliveryStatusBadge status={order.deliveryStatus} meta={order.deliveryMeta} size="md" />
         </div>
         <CustomerBlock
           name={order.customerName}
@@ -566,6 +568,24 @@ export function PackingOrder() {
               Revocar
             </button>
           )}
+        </div>
+      )}
+
+      {/* v0.25.9: banner de pedido devuelto. La bolsa B1 debe estar en bodega
+          con su albarán pegado — el picker la busca y confirma los items en
+          la app en vez de armar una nueva. */}
+      {order.deliveryStatus === 'returned' && (
+        <div className="card flex items-start gap-3 bg-red-50 p-4 ring-2 ring-red-300">
+          <AlertOctagon className="shrink-0 text-red-700" size={24} />
+          <div className="text-sm text-red-900">
+            <div className="font-bold text-base">⚠ Pedido devuelto del reparto — bolsa ya armada</div>
+            <div className="mt-1">
+              Este pedido salió a reparto y volvió sin entregar. La bolsa <strong>{warehouseLabel('B1')}</strong> debe estar guardada en bodega con el albarán pegado.
+            </div>
+            <div className="mt-1">
+              <strong>Busca la bolsa antes de armar una nueva.</strong> Si la encontraste, verifica el contenido y marca los items en esta pantalla como confirmación (puede haber cambios menores por talla o sabor).
+            </div>
+          </div>
         </div>
       )}
 

@@ -9,6 +9,7 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { WcStatusBadge } from '@/components/WcStatusBadge';
+import { DeliveryStatusBadge } from '@/components/DeliveryStatusBadge';
 import { OrderStatusBadge } from '@/components/OrderStatusBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
@@ -417,6 +418,7 @@ export function SequenceDetail() {
                     <ShippingBadge method={order.shippingMethod} />
                     <OrderStatusBadge status={order.status} />
                     <WcStatusBadge slug={order.wcStatus} />
+                    <DeliveryStatusBadge status={order.deliveryStatus} meta={order.deliveryMeta} />
                   </div>
                   <div className="truncate text-xs text-slate-500">
                     {order.customerName || '—'}

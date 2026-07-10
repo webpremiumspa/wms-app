@@ -86,6 +86,8 @@ router.get('/search', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.PACK_B2, WMS_CAPS.LO
         route: o.route,
         stopPosition: o.stopPosition,
         hasB2Pending: o.hasB2Pending,
+        deliveryStatus: o.deliveryStatus,
+        deliveryMeta: o.deliveryMeta,
         createdAt: o.createdAt,
         sequenceId: seq?.id ?? null,
         sequenceStatus: seq?.status ?? null,
@@ -162,6 +164,9 @@ router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (
           hasB1Items: o.items.some((it) => it.warehouse === 'B1'),
           wcStatus: o.wcStatus,
           wcStatusUpdatedAt: o.wcStatusUpdatedAt,
+          // v0.25.9: estado de entrega derivado de metas WDG.
+          deliveryStatus: o.deliveryStatus,
+          deliveryMeta: o.deliveryMeta,
           itemCount: o.items.length,
           createdAt: o.createdAt,
           lastRemoval: lastRem
@@ -248,6 +253,9 @@ router.get('/by-wp/:wpOrderId/tracking', requireCap(WMS_CAPS.SUPERVISE), async (
         vehicle: order.vehicle,
         patente: order.patente,
         hasB2Pending: order.hasB2Pending,
+        // v0.25.9: delivery status derivado de metas WDG.
+        deliveryStatus: order.deliveryStatus,
+        deliveryMeta: order.deliveryMeta,
         allowPartialDelivery: order.allowPartialDelivery,
         partialDeliveryNote: order.partialDeliveryNote,
         bagsExpected: order.bagsExpected,
