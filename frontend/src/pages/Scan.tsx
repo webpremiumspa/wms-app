@@ -67,6 +67,7 @@ export function Scan() {
 
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
+  const [showSelector, setShowSelector] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   // Multi-bulto: el número del bulto activo viene por ?bag=N en la URL del
@@ -177,15 +178,15 @@ export function Scan() {
     return list;
   })();
 
-  // Auto-redirect solo cuando queda 1 acción disponible que tiene su propia
-  // vista (pack/pickB2). Si hay 2+, se muestran inline como cards para que el
-  // operador multi-cap elija — sin modal, sin magia. Ver v0.25.7.
-  // classify (y load) siempre se renderizan inline en esta misma vista.
+  // Auto-redirect solo cuando queda 1 acción que efectivamente tiene su vista
+  // separada. classify vive inline en Scan, entonces no navega.
   const navAction: 'pack' | 'pickB2' | null = (() => {
     if (availableActions.length !== 1) return null;
     const only = availableActions[0];
     return only === 'pack' || only === 'pickB2' ? only : null;
   })();
+
+  const showSelectorNow = availableActions.length >= 2;
 
   useEffect(() => {
     if (!user || !order) return;
@@ -193,18 +194,22 @@ export function Scan() {
       navigate(`/sequences/${order.openSequenceId}/packing/${order.id}${bagFromQuery ? `?bag=${bagFromQuery}` : ''}`, { replace: true });
     } else if (navAction === 'pickB2') {
       navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`, { replace: true });
+    } else if (showSelectorNow) {
+      setShowSelector(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, order?.id, order?.status]);
 
-  // Navegación desde las cards inline "También puedes:" (v0.25.7).
-  function goToAction(kind: 'pack' | 'pickB2') {
-    if (!order || !order.openSequenceId) return;
-    if (kind === 'pack') {
+  function pickSelectorAction(kind: 'classify' | 'pack' | 'pickB2') {
+    setShowSelector(false);
+    if (!order) return;
+    if (kind === 'pack' && order.openSequenceId) {
       navigate(`/sequences/${order.openSequenceId}/packing/${order.id}${bagFromQuery ? `?bag=${bagFromQuery}` : ''}`);
-    } else {
+    } else if (kind === 'pickB2' && order.openSequenceId) {
       navigate(`/sequences/${order.openSequenceId}/picking-b2/${order.id}`);
     }
+    // kind === 'classify': quedamos en esta vista. showClassifyFlow renderiza
+    // el bloque de clasificación con el botón "Confirmar clasificación".
   }
 
   if (!Number.isFinite(idNum) || idNum <= 0) {
@@ -441,61 +446,6 @@ export function Scan() {
           </div>
         )}
 
-        {/* ─────────── Cards inline de acciones secundarias (v0.25.7) ───────────
-            Cuando el operador tiene múltiples caps y el pedido tiene múltiples
-            acciones aplicables (típico caso: mixto empacado con B2 pendiente y
-            cap LOAD+PACK_B2), classify/load se muestran inline y las otras
-            acciones aparecen como cards de navegación arriba. Reemplaza al
-            modal selector que se abría antes. */}
-        {availableActions.length >= 2 && (
-          <div className="card space-y-2 p-3 ring-1 ring-slate-200 bg-slate-50">
-            <div className="text-xs font-semibold uppercase tracking-wide text-slate-600">
-              Este pedido tiene {availableActions.length} acciones disponibles para ti
-            </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {canPickB2 && order.b2Pickable && order.openSequenceId && (
-                <button
-                  type="button"
-                  onClick={() => goToAction('pickB2')}
-                  className="flex items-start gap-2 rounded-lg bg-white p-3 text-left ring-1 ring-amber-200 hover:bg-amber-50 hover:ring-amber-300"
-                >
-                  <ClipboardCheck size={18} className="mt-0.5 shrink-0 text-amber-700" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-slate-800">
-                      Ir a picking {warehouseLabel('B2')}
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Recolectar los items a granel de este pedido y cerrar {warehouseLabel('B2')}.
-                    </div>
-                  </div>
-                </button>
-              )}
-              {canPack && order.packable && order.openSequenceId && (
-                <button
-                  type="button"
-                  onClick={() => goToAction('pack')}
-                  className="flex items-start gap-2 rounded-lg bg-white p-3 text-left ring-1 ring-brand-200 hover:bg-brand-50 hover:ring-brand-300"
-                >
-                  <Package size={18} className="mt-0.5 shrink-0 text-brand-700" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold text-slate-800">
-                      Ir a empacar {warehouseLabel('B1')}
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      Armar la bolsa con los items de {warehouseLabel('B1')} y cerrar el pedido.
-                    </div>
-                  </div>
-                </button>
-              )}
-            </div>
-            {(showClassifyFlow || showLoadFlow) && (
-              <div className="text-[11px] italic text-slate-500">
-                {showClassifyFlow ? 'La clasificación' : 'La carga'} también está disponible acá abajo ↓
-              </div>
-            )}
-          </div>
-        )}
-
         {/* ─────────── CLASIFICACIÓN ─────────── */}
         {showClassifyFlow && (
           <div className="card space-y-3 p-4 ring-1 ring-brand-100">
@@ -725,6 +675,58 @@ export function Scan() {
         </div>
       </div>
 
+      {/* Modal selector cuando hay 2+ acciones aplicables (ver
+          availableActions). classify sí entra al selector cuando la cuenta
+          tiene cap load además de otra cap — antes se auto-navegaba a
+          pickB2 y el usuario quedaba trabado ahí sin poder despachar. */}
+      {showSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="card w-full max-w-md space-y-3 p-4">
+            <div>
+              <h3 className="text-base font-semibold">¿Qué quieres hacer con este pedido?</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                Tu cuenta tiene varios roles aplicables a #{order.number}. Elige una acción.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {/* Orden intencional: classify primero (permite despachar el
+                  pedido aunque el B2 siga pendiente), luego pickB2, luego
+                  pack. Coincide con availableActions arriba. */}
+              {canLoad && order.status === 'packed' && (
+                <SelectorAction
+                  icon={<CheckCircle2 size={20} />}
+                  title="Clasificar"
+                  description={`Confirmar que el pedido está listo para su ruta. El ${warehouseLabel('B2')} pendiente NO bloquea — se completa aparte.`}
+                  onClick={() => pickSelectorAction('classify')}
+                />
+              )}
+              {canPickB2 && order.b2Pickable && (
+                <SelectorAction
+                  icon={<ClipboardCheck size={20} />}
+                  title={`Pickear ${warehouseLabel('B2')}`}
+                  description={`Armar la sub-bolsa con los items de ${warehouseLabel('B2')} y cerrar el ${warehouseLabel('B2')}.`}
+                  onClick={() => pickSelectorAction('pickB2')}
+                />
+              )}
+              {canPack && order.packable && (
+                <SelectorAction
+                  icon={<ClipboardCheck size={20} />}
+                  title={`Empacar ${warehouseLabel('B1')}`}
+                  description={`Armar la bolsa con los items de ${warehouseLabel('B1')} y cerrar el pedido.`}
+                  onClick={() => pickSelectorAction('pack')}
+                />
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSelector(false)}
+              className="w-full text-xs text-slate-500 hover:underline"
+            >
+              Cancelar y ver detalle del pedido
+            </button>
+          </div>
+        </div>
+      )}
     </ScanShell>
   );
 }
@@ -741,6 +743,31 @@ function SuccessCard({ title, description }: { title: string; description: strin
   );
 }
 
+function SelectorAction({
+  icon,
+  title,
+  description,
+  onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-start gap-3 rounded-lg border border-slate-200 bg-white p-3 text-left transition hover:border-brand-300 hover:bg-brand-50"
+    >
+      <div className="rounded-lg bg-brand-50 p-2 text-brand-700">{icon}</div>
+      <div className="flex-1">
+        <div className="font-medium text-slate-900">{title}</div>
+        <div className="text-xs text-slate-500">{description}</div>
+      </div>
+    </button>
+  );
+}
 
 function ScanShell({ children }: { children: React.ReactNode }) {
   // Esta pantalla la abren los conductores al escanear el QR del albarán.
