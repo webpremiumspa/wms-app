@@ -60,5 +60,17 @@ export function DeliveryStatusBadge({
     );
   }
 
+  if (status === 'revived') {
+    return (
+      <span
+        className={clsx(baseClass, 'bg-sky-100 text-sky-800 ring-sky-300')}
+        title="Pedido devuelto que fue reactivado por el supervisor. La bolsa B1 original debe estar en bodega — verifica su contenido antes de re-empacar."
+      >
+        <RotateCcw size={isSm ? 12 : 14} />
+        Retomado · bolsa disponible
+      </span>
+    );
+  }
+
   return null;
 }

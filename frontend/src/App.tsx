@@ -19,6 +19,7 @@ import { PickingB2Order } from '@/pages/Sequences/PickingB2Order';
 import { PickingB2GlobalRedirect, SequenceB2Redirect } from '@/pages/Redirects';
 import { Dashboard } from '@/pages/Dashboard';
 import { Tracking } from '@/pages/Tracking';
+import { Returned } from '@/pages/Returned';
 import { Help } from '@/pages/Help';
 import { Debug } from '@/pages/Debug';
 import { Scan } from '@/pages/Scan';
@@ -63,6 +64,7 @@ export default function App() {
               <Route path="sequences/:id/picking-b2" element={<SequenceB2Redirect />} />
               <Route path="dashboard" element={<Dashboard />} />
               <Route path="tracking" element={<Tracking />} />
+              <Route path="returned" element={<Returned />} />
               <Route path="debug" element={<Debug />} />
               <Route path="help" element={<Help />} />
             </Route>

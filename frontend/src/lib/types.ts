@@ -1,13 +1,19 @@
 export type Warehouse = 'B1' | 'B2';
 
-// v0.25.9: estado de entrega derivado de metas WDG del sistema de rutas.
+// v0.25.9/10: estado de entrega derivado de metas WDG del sistema de rutas.
 // null = pedido no salió a ruta / desconocido.
-// 'delivered' | 'partial' | 'returned' — ver backend/services/orders-sync.js.
-export type DeliveryStatus = 'delivered' | 'partial' | 'returned' | null;
+//   'delivered' → meta _wdg_delivered='1'
+//   'partial'   → meta _wdg_partial='1'
+//   'returned'  → WMS='loaded' sin metas WDG (aún no entregado)
+//   'revived'   → devuelto reactivado manualmente por supervisor
+export type DeliveryStatus = 'delivered' | 'partial' | 'returned' | 'revived' | null;
 export type DeliveryMeta = {
   by?: string | null;
   date?: string | null;
   returnedAt?: string | null;
+  detectedAt?: string | null;
+  revivedAt?: string | null;
+  revivedById?: number | null;
 } | null;
 
 export type OrderStatus =

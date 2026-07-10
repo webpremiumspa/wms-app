@@ -6,7 +6,37 @@ import type {
   PendingPackingOrder,
   StockProblem,
   OrderDetail,
+  DeliveryStatus,
+  DeliveryMeta,
+  OrderStatus,
 } from './types';
+
+// v0.25.10: pedido con delivery_status='returned' pendiente de revive.
+export type ReturnedOrder = {
+  id: number;
+  wpOrderId: number;
+  number: string;
+  customerName: string | null;
+  customerCity: string | null;
+  route: string | null;
+  stopPosition: number | null;
+  status: OrderStatus;
+  hasB2Pending: boolean;
+  hasB1Items: boolean;
+  deliveryStatus: DeliveryStatus;
+  deliveryMeta: DeliveryMeta;
+  deliveryStatusUpdatedAt: string | null;
+  wcStatus?: string | null;
+  loadedAt: string | null;
+  packedAt: string | null;
+  createdAt: string;
+  sequenceLinks: Array<{
+    sequenceId: number;
+    sequenceCreatedAt?: string;
+    processId?: number;
+    processName?: string;
+  }>;
+};
 
 export const sequencesApi = {
   list: async (opts?: { limit?: number }): Promise<Sequence[]> =>
@@ -173,6 +203,15 @@ export const ordersApi = {
     to: 'sequenced' | 'packed' | 'classified';
     bagEventsCleared: number;
   }> => (await api.post(`/orders/${id}/revert-step`)).data,
+  // v0.25.10: revivir un pedido devuelto (solo SUPERVISE, requiere
+  // status='loaded' + delivery_status='returned'). Reset a 'received',
+  // preserva chip como 'revived'. Todo auditado en events.
+  reviveFromReturn: async (id: number): Promise<{ ok: boolean; orderId: number }> =>
+    (await api.post(`/orders/${id}/revive-from-return`)).data,
+  // Lista de pedidos con delivery_status='returned' + status='loaded'
+  // pendientes de revive. Solo SUPERVISE.
+  listReturned: async (): Promise<ReturnedOrder[]> =>
+    (await api.get('/orders/returned')).data.orders,
   // Reabre el cierre B2: limpia b2ClosedAt y los items B2 vuelven a no
   // pickeados. Independiente del flujo B1.
   reopenB2: async (id: number): Promise<{ ok: boolean }> =>

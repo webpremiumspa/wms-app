@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, LogOut, BarChart3, HelpCircle, Stethoscope, Activity, Truck, RefreshCw } from 'lucide-react';
+import { Home, LogOut, BarChart3, HelpCircle, Stethoscope, Activity, Truck, RefreshCw, RotateCcw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { CAPS, hasCap } from '@/lib/auth';
 import { forceHardRefresh } from '@/lib/hardRefresh';
@@ -12,6 +12,7 @@ const NAV: NavItem[] = [
   { to: '/processes', label: 'Procesos', icon: Truck, caps: [CAPS.PACK_B1, CAPS.PACK_B2, CAPS.LOAD, CAPS.SUPERVISE] },
   { to: '/dashboard', label: 'Supervisión', icon: BarChart3, caps: [CAPS.SUPERVISE] },
   { to: '/tracking', label: 'Seguimiento', icon: Activity, caps: [CAPS.SUPERVISE] },
+  { to: '/returned', label: 'Devueltos', icon: RotateCcw, caps: [CAPS.SUPERVISE] },
   { to: '/debug', label: 'Diagnóstico', icon: Stethoscope, caps: [CAPS.SUPERVISE] },
   { to: '/help', label: 'Ayuda', icon: HelpCircle },
 ];

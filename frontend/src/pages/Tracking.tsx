@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Search,
   Truck,
@@ -10,6 +10,8 @@ import {
   Image as ImageIcon,
   Calendar,
   Activity,
+  RotateCcw,
+  AlertOctagon,
 } from 'lucide-react';
 import { trackingApi, type TrackingEvent, type TrackingOrder } from '@/lib/tracking';
 import { ordersApi } from '@/lib/sequences';
@@ -18,6 +20,7 @@ import { Spinner } from '@/components/Spinner';
 import { Badge } from '@/components/Badge';
 import { ShippingBadge } from '@/components/ShippingBadge';
 import { OrderStatusBadge } from '@/components/OrderStatusBadge';
+import { DeliveryStatusBadge } from '@/components/DeliveryStatusBadge';
 import { CustomerNote } from '@/components/CustomerNote';
 import { CustomerBlock } from '@/components/CustomerBlock';
 import { useAuth } from '@/hooks/useAuth';
@@ -83,9 +86,25 @@ function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: T
   const b1Items = order.items.filter((i) => i.warehouse === 'B1');
   const b2Items = order.items.filter((i) => i.warehouse === 'B2');
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const canReprint = hasCap(user, CAPS.PACK_B1) || hasCap(user, CAPS.SUPERVISE);
+  const canSupervise = hasCap(user, CAPS.SUPERVISE);
   const bagsCount = order.bagsExpected ?? 1;
   const isPacked = ['packed', 'classified', 'loaded', 'delivered'].includes(order.status);
+  // v0.25.10: revivir pedidos devueltos (SUPERVISE + loaded + delivery=returned).
+  const canRevive = canSupervise && order.status === 'loaded' && order.deliveryStatus === 'returned';
+  const [confirmRevive, setConfirmRevive] = useState(false);
+  const [reviveError, setReviveError] = useState<string | null>(null);
+  const revive = useMutation({
+    mutationFn: () => ordersApi.reviveFromReturn(order.id),
+    onSuccess: () => {
+      setConfirmRevive(false);
+      setReviveError(null);
+      queryClient.invalidateQueries({ queryKey: ['tracking'] });
+      queryClient.invalidateQueries({ queryKey: ['orders', 'returned'] });
+    },
+    onError: (err: any) => setReviveError(err.response?.data?.message || 'No se pudo revivir el pedido'),
+  });
 
   return (
     <div className="space-y-4">
@@ -95,6 +114,7 @@ function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: T
           <span className="text-lg font-bold">#{order.number}</span>
           <OrderStatusBadge status={order.status} />
           {order.hasB2Pending && <Badge variant="amber">{warehouseLabel('B2')}</Badge>}
+          <DeliveryStatusBadge status={order.deliveryStatus} meta={order.deliveryMeta} size="md" />
           {bagsCount > 1 && (
             <Badge variant="blue">
               <Package size={11} className="inline" /> {bagsCount} bultos
@@ -116,7 +136,69 @@ function TrackingDetail({ order, timeline }: { order: TrackingOrder; timeline: T
             {bagsCount > 1 ? `Reimprimir albarán (${bagsCount} bultos)` : 'Reimprimir albarán'}
           </button>
         )}
+        {canRevive && (
+          <div className="space-y-1 pt-1">
+            <button
+              type="button"
+              onClick={() => { setReviveError(null); setConfirmRevive(true); }}
+              disabled={revive.isPending}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+            >
+              <RotateCcw size={16} />
+              Revivir pedido devuelto
+            </button>
+            <div className="text-[11px] text-slate-500">
+              El pedido volverá a "En preparación" para reingresar al pool de secuenciación.
+              La bolsa B1 original debe estar guardada en bodega.
+            </div>
+          </div>
+        )}
       </div>
+
+      {confirmRevive && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="card w-full max-w-md space-y-3 p-4">
+            <div className="flex items-start gap-2">
+              <AlertOctagon className="text-sky-600" size={22} />
+              <div className="flex-1">
+                <h3 className="font-semibold">¿Revivir pedido #{order.number}?</h3>
+                <p className="mt-1 text-sm text-slate-700">
+                  El pedido volverá al pool de <strong>En preparación</strong>. Se aplicará:
+                </p>
+                <ul className="mt-1 list-disc pl-5 text-xs text-slate-600">
+                  <li>Pasa de <strong>Cargado</strong> a <strong>En preparación</strong>.</li>
+                  <li>Se borran timestamps de picking, empaque, clasificación y carga.</li>
+                  <li>Se limpian bag events y plan de empaque anterior.</li>
+                  <li>Los items vuelven a estado sin marcar.</li>
+                  <li>El chip pasa a <strong>Retomado</strong> (celeste) como rastro histórico.</li>
+                </ul>
+                <p className="mt-2 text-xs text-slate-500">
+                  Verifica que la bolsa B1 original esté guardada en bodega con el albarán pegado.
+                </p>
+                {reviveError && (
+                  <div className="mt-2 rounded-lg bg-red-50 px-3 py-1.5 text-xs text-red-700">{reviveError}</div>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                onClick={() => setConfirmRevive(false)}
+                disabled={revive.isPending}
+                className="btn-ghost border border-slate-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => revive.mutate()}
+                disabled={revive.isPending}
+                className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700 disabled:opacity-60"
+              >
+                {revive.isPending ? 'Revivendo…' : 'Sí, revivir pedido'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Cliente */}
       <Section icon={<User size={16} />} title="Cliente">

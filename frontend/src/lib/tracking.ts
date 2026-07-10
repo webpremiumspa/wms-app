@@ -1,5 +1,5 @@
 import { api } from './api';
-import type { OrderStatus, Picker, Warehouse } from './types';
+import type { OrderStatus, Picker, Warehouse, DeliveryStatus, DeliveryMeta } from './types';
 
 export type TrackingEvent = {
   id: number;
@@ -45,6 +45,9 @@ export type TrackingOrder = {
   vehicle: string | null;
   patente: string | null;
   hasB2Pending: boolean;
+  // v0.25.10: chip de estado de entrega.
+  deliveryStatus?: DeliveryStatus;
+  deliveryMeta?: DeliveryMeta;
   allowPartialDelivery: boolean;
   partialDeliveryNote: string | null;
   bagsExpected: number;
