@@ -6,7 +6,6 @@ import { HttpError } from '../middleware/error.js';
 import { prisma } from '../db/prisma.js';
 import { parseQrPayload } from '../services/qr.js';
 import { getOrderLoadability } from '../services/order-actions.js';
-import { maybeAutoCloseProcess } from '../services/processes.js';
 import { registerBagEvent, undoBagEvent } from '../services/bag-events.js';
 
 const router = Router();

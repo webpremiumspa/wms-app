@@ -1,6 +1,8 @@
 import { prisma } from '../db/prisma.js';
 import { HttpError } from '../middleware/error.js';
-import { maybeAutoCloseProcess } from './processes.js';
+// v0.25.12: maybeAutoCloseProcess ya no se usa. El cierre de proceso es
+// solo manual desde la UI. La función sigue exportada en processes.js por
+// si en el futuro se quiere reactivar con condiciones distintas.
 
 // Ventana de 30 segundos desde el registro dentro de la cual el mismo actor
 // puede deshacer un bulto. Después, solo un supervisor con vista aparte
@@ -110,17 +112,11 @@ export async function registerBagEvent({ orderId, bagNumber, event, actorId }) {
             data: { type: 'dispatch.loaded', actorId, orderId },
           }),
         ]);
-        // Auto-cierre del proceso si era el último pedido.
-        const seqLink = await prisma.sequenceOrder.findFirst({
-          where: { orderId },
-          select: { sequence: { select: { processId: true } } },
-        });
-        if (seqLink?.sequence?.processId) {
-          await maybeAutoCloseProcess({
-            processId: seqLink.sequence.processId,
-            actorId,
-          });
-        }
+        // v0.25.12: auto-cierre del proceso deshabilitado. Antes se cerraba
+        // solo cuando todos los pedidos estaban 'loaded', pero al cerrar el
+        // proceso desaparecían los links a picking B1/B2 en la UI (solo se
+        // muestran cuando process.status='open'). El operador puede cerrar
+        // manualmente con el botón "Cerrar proceso" en /processes/:id.
       }
       transitionedNow = true;
     }
