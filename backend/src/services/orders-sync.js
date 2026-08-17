@@ -1,6 +1,7 @@
 import { prisma } from '../db/prisma.js';
 import { config } from '../config.js';
 import { wcGetOrder, wcGetProduct, wcGetProductsByIds, getMeta } from './woocommerce.js';
+import { reviveOrderFromReturn } from './order-actions.js';
 
 // Normaliza el valor del meta de bodega. Soporta los formatos comunes:
 //   "B1"/"B2" (recomendado), "1"/"2" (numérico string como en algunos plugins),
@@ -122,22 +123,23 @@ export async function ensureProducts(productIds, { force = false } = {}) {
 // en WC. Ver commit v0.25.3 para el detalle.
 const LOCKED_STATUSES = ['sequenced', 'picked', 'packed', 'classified', 'loaded', 'delivered'];
 
-// v0.25.10: helper para derivar delivery_status desde metas WDG del sistema
-// externo de rutas. Devuelve { deliveryStatus, deliveryMeta }.
+// v0.25.13: helper para derivar delivery_status desde metas WDG del sistema
+// externo de rutas. Devuelve { deliveryStatus, deliveryMeta, wdgDate, wdgBy }.
 //
-// El "revive" (bajar loaded → received para re-secuenciar) ya NO es
-// automático — es una acción manual del supervisor via
-// POST /orders/:id/revive-from-return. Solo actualizamos el chip acá.
+// Reemplaza la inferencia por ausencia de v0.25.10 (loaded sin metas)
+// por señales explícitas del plugin:
+//   'delivered' → meta _wdg_delivered='1'
+//   'partial'   → meta _wdg_partial='1'
+//   'returned'  → meta _wdg_not_delivered='1'  (dispara auto-revive)
+//   null        → cualquier otro caso (aún en ruta activa, sin decisión)
 //
-// Regla simplificada (v0.25.10):
-//   'delivered' → meta _wdg_delivered=1
-//   'partial'   → meta _wdg_partial=1
-//   'returned'  → WMS='loaded' y no hay metas WDG (el sistema de rutas
-//                 no marcó nada → pedido no entregado / devuelto)
-//   null        → cualquier otro estado
-export function computeDeliveryStatus(wcData, existingWmsStatus = null) {
+// El auto-revive corre desde updateOrderMetaFromWc cuando detecta
+// _wdg_not_delivered + status='loaded'. wdgDate/wdgBy los usa el revive
+// para dejarlos en el evento auditable.
+export function computeDeliveryStatus(wcData) {
   const wdgDelivered = getMeta(wcData, '_wdg_delivered') === '1';
   const wdgPartial = getMeta(wcData, '_wdg_partial') === '1';
+  const wdgNotDelivered = getMeta(wcData, '_wdg_not_delivered') === '1';
   if (wdgDelivered) {
     return {
       deliveryStatus: 'delivered',
@@ -145,6 +147,7 @@ export function computeDeliveryStatus(wcData, existingWmsStatus = null) {
         by: getMeta(wcData, '_wdg_delivered_by') || null,
         date: getMeta(wcData, '_wdg_delivered_date') || null,
       },
+      wdgDate: null, wdgBy: null,
     };
   }
   if (wdgPartial) {
@@ -154,17 +157,20 @@ export function computeDeliveryStatus(wcData, existingWmsStatus = null) {
         by: getMeta(wcData, '_wdg_partial_by') || null,
         date: getMeta(wcData, '_wdg_partial_date') || null,
       },
+      wdgDate: null, wdgBy: null,
     };
   }
-  // Devuelto (informativo): el pedido está cargado en el WMS y no tiene
-  // metas WDG. Chip visible; el revive lo dispara el supervisor manual.
-  if (existingWmsStatus === 'loaded') {
+  if (wdgNotDelivered) {
+    const notDelivDate = getMeta(wcData, '_wdg_not_delivered_date') || null;
+    const notDelivBy = getMeta(wcData, '_wdg_not_delivered_by') || null;
     return {
       deliveryStatus: 'returned',
-      deliveryMeta: { detectedAt: new Date().toISOString() },
+      deliveryMeta: { by: notDelivBy, date: notDelivDate, detectedAt: new Date().toISOString() },
+      wdgDate: notDelivDate,
+      wdgBy: notDelivBy,
     };
   }
-  return { deliveryStatus: null, deliveryMeta: null };
+  return { deliveryStatus: null, deliveryMeta: null, wdgDate: null, wdgBy: null };
 }
 
 // Upsert completo de un pedido WC, incluyendo items. Lee los metas de ruta y
@@ -183,9 +189,10 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
     },
   });
   if (existing && LOCKED_STATUSES.includes(existing.status)) {
-    // v0.25.10: sin revive automático — el chip 'returned' aparece solo por
-    // la lógica de updateOrderMetaFromWc. El supervisor revive con el botón
-    // manual en la vista de Devueltos / Tracking.
+    // v0.25.13: updateOrderMetaFromWc refresca metadata Y dispara auto-revive
+    // si detecta _wdg_not_delivered='1' en un pedido 'loaded'. Después del
+    // revive el pedido queda en 'received' — el status previo queda en el
+    // evento auditable. Registramos wc_synced con el status observado antes.
     await updateOrderMetaFromWc(wpOrderId, wcOrder);
     await prisma.event.create({
       data: {
@@ -272,10 +279,11 @@ export async function syncOrder(wpOrderId, wcOrder = null) {
       // contexto independiente del status interno del WMS.
       const wcStatusSlug = typeof data.status === 'string' && data.status.trim() ? data.status.trim().slice(0, 60) : null;
 
-      // v0.25.9: delivery_status desde metas WDG. Solo aplicamos si son
-      // metas explícitas (delivered/partial). El caso 'returned' se maneja
-      // en el revive de syncOrder — acá no lo tocamos para no pisar lo que
-      // ya se seteó arriba.
+      // v0.25.13: delivery_status desde metas WDG en el path completo (pedido
+      // nuevo o en 'received'). En este path solo aplican delivered/partial
+      // — 'returned' vive en pedidos en 'loaded' y esos caen por la rama
+      // locked donde updateOrderMetaFromWc + reviveOrderFromReturn los
+      // procesan.
       const wdgDelivered = getMeta(data, '_wdg_delivered') === '1';
       const wdgPartial = getMeta(data, '_wdg_partial') === '1';
       const explicitDelivery = wdgDelivered
@@ -428,13 +436,12 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
   // chip sincronizado en la UI sin tocar el status interno del WMS.
   const wcStatusSlug = typeof data.status === 'string' && data.status.trim() ? data.status.trim().slice(0, 60) : null;
 
-  // v0.25.9: derivar delivery_status desde metas WDG. En este path (metadata
-  // safe, pedido locked) NO hacemos revive — eso lo hace syncOrder al
-  // detectarlo. Solo actualizamos el campo para que el chip se refresque.
-  const delivery = computeDeliveryStatus(data, existing.status);
+  // v0.25.13: derivar delivery_status desde metas WDG (delivered / partial /
+  // returned explícito con _wdg_not_delivered).
+  const delivery = computeDeliveryStatus(data);
   const now = new Date();
 
-  return prisma.order.update({
+  const updated = await prisma.order.update({
     where: { id: existing.id },
     data: {
       route,
@@ -461,6 +468,24 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
       } : {}),
     },
   });
+
+  // v0.25.13: auto-revive. Si el sistema de rutas marcó el pedido como no
+  // entregado (_wdg_not_delivered='1') y el WMS lo tiene en 'loaded',
+  // disparamos el revive automáticamente — el pedido queda listo para
+  // re-secuenciar sin que el supervisor tenga que hacerlo a mano.
+  // El revive es idempotente: si ya se ejecutó en un webhook anterior,
+  // reviveOrderFromReturn detecta que status ya no es 'loaded' y skippea.
+  if (delivery.deliveryStatus === 'returned' && existing.status === 'loaded') {
+    await reviveOrderFromReturn({
+      orderId: existing.id,
+      actorId: null,
+      trigger: 'wdg_not_delivered_webhook',
+      wdgDate: delivery.wdgDate,
+      wdgBy: delivery.wdgBy,
+    });
+  }
+
+  return updated;
 }
 
 // Retry helper: MySQL puede tirar deadlock errors cuando varias transacciones

@@ -16,6 +16,7 @@ import {
   unblockOrder,
   unpackOrder,
   revertOrderStep,
+  reviveOrderFromReturn,
   reopenB2,
   getOrderLoadability,
   claimOrder,
@@ -603,78 +604,21 @@ router.post('/:id/revert-step', requireCap(WMS_CAPS.SUPERVISE), async (req, res,
   }
 });
 
-// v0.25.10: revivir un pedido devuelto sin entregar. Solo SUPERVISE.
-// Requiere que el pedido esté en status='loaded' y delivery_status='returned'.
-// Efecto: reset del pedido a 'received' + limpia bag events / assignments /
-// timestamps para que pueda re-secuenciarse. Preserva el chip como 'revived'
-// para dejar rastro histórico. Todo queda auditado en events.
+// v0.25.10/13: revivir un pedido devuelto sin entregar. Solo SUPERVISE.
+// Endpoint manual — la mayoría de los revives ahora son automáticos vía
+// webhook cuando llega la meta _wdg_not_delivered='1' del sistema de rutas.
+// Este endpoint queda como fallback (por si el webhook no llegó o para
+// casos edge donde el supervisor necesita revivir uno específico).
+// Ver services/order-actions.js:reviveOrderFromReturn para la lógica.
 router.post('/:id/revive-from-return', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    const order = await prisma.order.findUnique({
-      where: { id },
-      select: {
-        id: true, status: true, deliveryStatus: true,
-        packedAt: true, classifiedAt: true, loadedAt: true, bagsExpected: true,
-      },
+    const result = await reviveOrderFromReturn({
+      orderId: id,
+      actorId: req.user.wpUserId,
+      trigger: 'manual',
     });
-    if (!order) throw new HttpError(404, 'Order not found');
-    if (order.status !== 'loaded') {
-      throw new HttpError(409, `Solo se puede revivir un pedido en status 'loaded'. Actual: '${order.status}'`, { currentStatus: order.status });
-    }
-    if (order.deliveryStatus !== 'returned') {
-      throw new HttpError(409, `Solo se puede revivir un pedido con delivery_status='returned'. Actual: '${order.deliveryStatus || 'null'}'`, { currentDeliveryStatus: order.deliveryStatus });
-    }
-
-    const now = new Date();
-    await prisma.$transaction([
-      // Items de vuelta a "sin marcar" para el re-empaque.
-      prisma.orderItem.updateMany({
-        where: { orderId: id },
-        data: { pickedAt: null, packedAt: null },
-      }),
-      // Bag events del ciclo anterior — se borran para no arrastrar
-      // classified/loaded fantasmas al nuevo ciclo.
-      prisma.orderBagEvent.deleteMany({ where: { orderId: id } }),
-      // Assignments del pack plan anterior.
-      prisma.orderItemBagAssignment.deleteMany({ where: { orderId: id } }),
-      // Reset del pedido a 'received' con chip 'revived' como rastro histórico.
-      prisma.order.update({
-        where: { id },
-        data: {
-          status: 'received',
-          packedAt: null,
-          packedById: null,
-          classifiedAt: null,
-          loadedAt: null,
-          pickedById: null,
-          claimedAt: null,
-          b2ClosedAt: null,
-          b2ClosedById: null,
-          bagsExpected: 1,
-          deliveryStatus: 'revived',
-          deliveryStatusUpdatedAt: now,
-          deliveryMeta: {
-            revivedAt: now.toISOString(),
-            revivedById: req.user.wpUserId,
-          },
-        },
-      }),
-      prisma.event.create({
-        data: {
-          type: 'order.revived_from_return',
-          actorId: req.user.wpUserId,
-          orderId: id,
-          payload: {
-            previousPackedAt: order.packedAt,
-            previousClassifiedAt: order.classifiedAt,
-            previousLoadedAt: order.loadedAt,
-            previousBagsExpected: order.bagsExpected,
-          },
-        },
-      }),
-    ]);
-    res.json({ ok: true, orderId: id });
+    res.json(result);
   } catch (err) {
     next(err);
   }

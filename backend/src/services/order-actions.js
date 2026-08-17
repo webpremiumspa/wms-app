@@ -319,6 +319,100 @@ export async function revertOrderStep({ orderId, actorId }) {
   });
 }
 
+// v0.25.13: revivir un pedido devuelto (extraído del route). Se llama tanto
+// desde el endpoint manual POST /orders/:id/revive-from-return como desde
+// updateOrderMetaFromWc / syncOrder cuando llega la meta _wdg_not_delivered.
+//
+// Reset del pedido a 'received' + limpia bag events / assignments /
+// timestamps. Preserva chip como 'revived' con la info de qué gatilló.
+//
+// Args:
+//   orderId   — PK interna del pedido
+//   actorId   — wpUserId del supervisor (null si es automático por webhook)
+//   trigger   — 'manual' | 'wdg_not_delivered_webhook' | 'wdg_not_delivered_sync'
+//   wdgDate   — opcional: _wdg_not_delivered_date del sistema de rutas
+//   wdgBy     — opcional: _wdg_not_delivered_by del sistema de rutas
+//
+// Valida: status='loaded' + deliveryStatus in ('returned', 'revived' cuando
+// es re-revive del webhook). Idempotente para el auto-revive: si el pedido
+// ya fue revivido y llega otra vez la meta, no vuelve a resetear.
+export async function reviveOrderFromReturn({ orderId, actorId = null, trigger = 'manual', wdgDate = null, wdgBy = null }) {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true, status: true, deliveryStatus: true,
+      packedAt: true, classifiedAt: true, loadedAt: true, bagsExpected: true,
+    },
+  });
+  if (!order) throw new HttpError(404, 'Order not found');
+
+  // Idempotencia: si el auto-revive ya corrió antes (webhook re-entregado)
+  // y el pedido ya no está en loaded, no hacemos nada.
+  if (order.status !== 'loaded') {
+    if (trigger !== 'manual') {
+      // Auto-trigger: no error, solo skippear.
+      return { ok: true, orderId, skipped: true, reason: `status='${order.status}'` };
+    }
+    throw new HttpError(409, `Solo se puede revivir un pedido en status 'loaded'. Actual: '${order.status}'`, { currentStatus: order.status });
+  }
+
+  // Para el manual exigimos que el chip esté en 'returned'. El auto puede
+  // dispararse aunque el chip esté nulo (todavía no procesado) porque la
+  // meta acaba de llegar y estamos procesando el mismo webhook.
+  if (trigger === 'manual' && order.deliveryStatus !== 'returned') {
+    throw new HttpError(409, `Solo se puede revivir un pedido con delivery_status='returned'. Actual: '${order.deliveryStatus || 'null'}'`, { currentDeliveryStatus: order.deliveryStatus });
+  }
+
+  const now = new Date();
+  const meta = trigger === 'manual'
+    ? { revivedAt: now.toISOString(), revivedById: actorId, trigger }
+    : { revivedAt: now.toISOString(), trigger, wdgDate, wdgBy };
+
+  await prisma.$transaction([
+    prisma.orderItem.updateMany({
+      where: { orderId },
+      data: { pickedAt: null, packedAt: null },
+    }),
+    prisma.orderBagEvent.deleteMany({ where: { orderId } }),
+    prisma.orderItemBagAssignment.deleteMany({ where: { orderId } }),
+    prisma.order.update({
+      where: { id: orderId },
+      data: {
+        status: 'received',
+        packedAt: null,
+        packedById: null,
+        classifiedAt: null,
+        loadedAt: null,
+        pickedById: null,
+        claimedAt: null,
+        b2ClosedAt: null,
+        b2ClosedById: null,
+        bagsExpected: 1,
+        deliveryStatus: 'revived',
+        deliveryStatusUpdatedAt: now,
+        deliveryMeta: meta,
+      },
+    }),
+    prisma.event.create({
+      data: {
+        type: 'order.revived_from_return',
+        actorId,
+        orderId,
+        payload: {
+          trigger,
+          previousPackedAt: order.packedAt,
+          previousClassifiedAt: order.classifiedAt,
+          previousLoadedAt: order.loadedAt,
+          previousBagsExpected: order.bagsExpected,
+          ...(wdgDate ? { wdgDate } : {}),
+          ...(wdgBy ? { wdgBy } : {}),
+        },
+      },
+    }),
+  ]);
+  return { ok: true, orderId, trigger };
+}
+
 // Reabrir el cierre B2 de un pedido: limpia b2ClosedAt/By y resetea los
 // items B2 a sin pickear. Útil cuando se cerró B2 por error/prueba.
 // No toca el flujo B1 (status, packedAt, etc.). Bloqueado para pedidos
