@@ -63,8 +63,20 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     // completados, en ruta) arrastrándose en la vista de Generar Secuencia.
     // Los pedidos que ya están en una secuencia (sequenced/packed/...) NO
     // se tocan: solo eliminamos los que están fuera del flujo activo.
-    const cleared = await prisma.order.deleteMany({ where: { status: 'received' } });
-    slog(`reset: cleared ${cleared.count} pending orders (status=received)`);
+    //
+    // v0.25.14: excluimos pedidos con delivery_status='revived'. Son pedidos
+    // que volvieron de reparto sin entregar y fueron reintegrados al pool
+    // (por auto-revive vía webhook o revive manual del supervisor). Perder
+    // esa marca al hacer sync bulk implicaba que el pedido se re-creaba
+    // desde WC como nuevo, sin trazabilidad histórica y sin el chip
+    // 'revived' que le recordaba al picker buscar la bolsa guardada.
+    const cleared = await prisma.order.deleteMany({
+      where: {
+        status: 'received',
+        NOT: { deliveryStatus: 'revived' },
+      },
+    });
+    slog(`reset: cleared ${cleared.count} pending orders (status=received, revived preservados)`);
 
     // Paginación: WC permite hasta 100 por página. Tope de seguridad: 10 páginas (1000 pedidos).
     const wcOrders = [];
