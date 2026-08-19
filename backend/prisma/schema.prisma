@@ -267,7 +267,12 @@ model Event {
   createdAt     DateTime @default(now()) @map("created_at")
 
   actor         UserMeta? @relation(fields: [actorId], references: [wpUserId])
-  order         Order?   @relation(fields: [orderId], references: [id])
+  // v0.25.15: onDelete SetNull para preservar audit trail. Antes con
+  // CASCADE se perdían todos los eventos si el pedido se borraba (caso
+  // real: sync bulk borró el pedido 1156275 y con él todo su timeline).
+  // Ahora si un pedido se borra, sus eventos sobreviven con order_id=NULL;
+  // se pueden reconstruir buscando por payload que mencione wpOrderId.
+  order         Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@index([type])
   @@index([orderId])
