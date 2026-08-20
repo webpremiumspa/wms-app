@@ -428,7 +428,10 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
 
   const existing = await prisma.order.findUnique({
     where: { wpOrderId: data.id },
-    select: { id: true, status: true },
+    select: {
+      id: true, status: true,
+      deliveryStatus: true, deliveryStatusUpdatedAt: true,
+    },
   });
   if (!existing) return null;
 
@@ -440,6 +443,13 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
   // returned explícito con _wdg_not_delivered).
   const delivery = computeDeliveryStatus(data);
   const now = new Date();
+
+  // v0.25.16: si el pedido ya fue revivido antes ('revived') y sigue llegando
+  // la meta wdg_not_delivered vieja (no limpiada por el sistema de rutas al
+  // reagendar), NO sobrescribir el chip a 'returned'. Preserva la marca
+  // histórica 'revived' hasta que llegue una meta delivered/partial real.
+  const preserveRevivedChip = existing.deliveryStatus === 'revived'
+    && delivery.deliveryStatus === 'returned';
 
   const updated = await prisma.order.update({
     where: { id: existing.id },
@@ -459,9 +469,8 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
       customerNote,
       wcStatus: wcStatusSlug,
       wcStatusUpdatedAt: wcStatusSlug ? new Date() : null,
-      // Solo actualizamos si hay cambio real: no queremos pisar delivery_status
-      // con null cuando el pedido aún no tiene metas WDG.
-      ...(delivery.deliveryStatus != null ? {
+      // Solo actualizamos si hay cambio real y no estamos preservando revived.
+      ...(delivery.deliveryStatus != null && !preserveRevivedChip ? {
         deliveryStatus: delivery.deliveryStatus,
         deliveryStatusUpdatedAt: now,
         deliveryMeta: delivery.deliveryMeta,
@@ -473,16 +482,38 @@ export async function updateOrderMetaFromWc(wpOrderId, wcOrder = null) {
   // entregado (_wdg_not_delivered='1') y el WMS lo tiene en 'loaded',
   // disparamos el revive automáticamente — el pedido queda listo para
   // re-secuenciar sin que el supervisor tenga que hacerlo a mano.
-  // El revive es idempotente: si ya se ejecutó en un webhook anterior,
-  // reviveOrderFromReturn detecta que status ya no es 'loaded' y skippea.
+  //
+  // v0.25.16: guardia anti-bucle. El sistema de rutas NO limpia la meta
+  // _wdg_not_delivered al reagendar el pedido — queda pegada hasta que se
+  // entregue realmente (_wdg_delivered='1'). Sin esta guardia, cada webhook
+  // posterior (cambio de ruta, driver, etc) volvía a disparar el revive:
+  // pedido cargado → webhook → revive → pedido a received. Se destapó con
+  // el caso de 4 pedidos del proceso volviendo a pendiente tras la carga.
+  //
+  // Regla: si el pedido ya fue revivido antes (deliveryStatus='revived') y
+  // la meta wdg_not_delivered_date es del mismo día o anterior al último
+  // revive, es la meta vieja sin limpiar → NO revivar. Si el date es más
+  // nuevo, es un segundo ciclo de devolución legítimo → sí revivar.
   if (delivery.deliveryStatus === 'returned' && existing.status === 'loaded') {
-    await reviveOrderFromReturn({
-      orderId: existing.id,
-      actorId: null,
-      trigger: 'wdg_not_delivered_webhook',
-      wdgDate: delivery.wdgDate,
-      wdgBy: delivery.wdgBy,
-    });
+    const alreadyRevived = existing.deliveryStatus === 'revived';
+    const wdgDateStr = delivery.wdgDate;
+    const prevReviveDate = existing.deliveryStatusUpdatedAt
+      ? existing.deliveryStatusUpdatedAt.toISOString().slice(0, 10)
+      : null;
+    const isSameOrOlderCycle = alreadyRevived
+      && wdgDateStr
+      && prevReviveDate
+      && wdgDateStr <= prevReviveDate;
+
+    if (!isSameOrOlderCycle) {
+      await reviveOrderFromReturn({
+        orderId: existing.id,
+        actorId: null,
+        trigger: 'wdg_not_delivered_webhook',
+        wdgDate: delivery.wdgDate,
+        wdgBy: delivery.wdgBy,
+      });
+    }
   }
 
   return updated;
