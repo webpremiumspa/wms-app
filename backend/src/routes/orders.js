@@ -159,26 +159,29 @@ router.get('/returned', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) =
   }
 });
 
-// v0.25.17: excluir pedidos cerrados en WC del listado de pendientes.
-// Si el pedido está 'received' en el WMS pero WC ya lo cerró (entregado,
-// cancelado, refund, etc), no debería aparecer en Nueva Secuencia — es
-// ruido y confunde al operador (se manifestó tras v0.25.14 cuando los
-// revived quedaron protegidos del delete masivo). Ver GET /orders/pending.
-const CLOSED_WC_STATUSES = ['completed', 'cancelled', 'refunded', 'trash', 'failed'];
+// v0.25.18: consistencia estricta con el estado WC.
+// El pool de pendientes son SOLO pedidos que actualmente están en WC como
+// 'en-preparacion' (o sin wc_status seteado, que son pedidos recién
+// sincronizados sin webhook posterior). Cualquier otro wc_status significa
+// que el pedido cambió de estado en WC (asignado a ruta, cancelado,
+// completado, etc.) y no debería aparecer en Nueva Secuencia — el operador
+// no puede/debe secuenciarlo hasta que WC lo devuelva a 'en-preparacion'.
+//
+// Antes filtrábamos solo cerrados (v0.25.17), lo que dejaba pasar
+// 'en-ruta-*'. Ahora la lista respeta 1:1 lo que el operador selecciona en
+// el filtro de sincronización (que apunta a 'en-preparacion' por default).
+const ACTIVE_POOL_WC_STATUS = 'en-preparacion';
 
 router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     // Default alto: el operador del WMS necesita ver TODOS los pendientes del
     // día para armar secuencias. Cap duro a 2000 para evitar payloads enormes.
     const limit = Math.min(Number(req.query.limit) || 500, 2000);
-    // v0.25.17: filtro para excluir pedidos con wc_status cerrado. Aceptamos
-    // wc_status=null (pedido nuevo sin webhook aún) y cualquier valor que
-    // no esté en la lista de cerrados.
     const pendingWhere = {
       status: 'received',
       OR: [
         { wcStatus: null },
-        { wcStatus: { notIn: CLOSED_WC_STATUSES } },
+        { wcStatus: ACTIVE_POOL_WC_STATUS },
       ],
     };
     const [total, orders] = await Promise.all([
