@@ -1,6 +1,6 @@
 {
   "name": "wms-chimuelo-frontend",
-  "version": "0.25.16",
+  "version": "0.25.17",
   "private": true,
   "type": "module",
   "scripts": {

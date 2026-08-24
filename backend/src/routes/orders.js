@@ -159,15 +159,32 @@ router.get('/returned', requireCap(WMS_CAPS.SUPERVISE), async (req, res, next) =
   }
 });
 
+// v0.25.17: excluir pedidos cerrados en WC del listado de pendientes.
+// Si el pedido está 'received' en el WMS pero WC ya lo cerró (entregado,
+// cancelado, refund, etc), no debería aparecer en Nueva Secuencia — es
+// ruido y confunde al operador (se manifestó tras v0.25.14 cuando los
+// revived quedaron protegidos del delete masivo). Ver GET /orders/pending.
+const CLOSED_WC_STATUSES = ['completed', 'cancelled', 'refunded', 'trash', 'failed'];
+
 router.get('/pending', requireCap(WMS_CAPS.PACK_B1, WMS_CAPS.SUPERVISE), async (req, res, next) => {
   try {
     // Default alto: el operador del WMS necesita ver TODOS los pendientes del
     // día para armar secuencias. Cap duro a 2000 para evitar payloads enormes.
     const limit = Math.min(Number(req.query.limit) || 500, 2000);
+    // v0.25.17: filtro para excluir pedidos con wc_status cerrado. Aceptamos
+    // wc_status=null (pedido nuevo sin webhook aún) y cualquier valor que
+    // no esté en la lista de cerrados.
+    const pendingWhere = {
+      status: 'received',
+      OR: [
+        { wcStatus: null },
+        { wcStatus: { notIn: CLOSED_WC_STATUSES } },
+      ],
+    };
     const [total, orders] = await Promise.all([
-      prisma.order.count({ where: { status: 'received' } }),
+      prisma.order.count({ where: pendingWhere }),
       prisma.order.findMany({
-        where: { status: 'received' },
+        where: pendingWhere,
         take: limit,
         orderBy: { createdAt: 'asc' },
         // items.warehouse permite calcular hasB1Items (para distinguir en el

@@ -65,18 +65,24 @@ router.post('/orders', requireCap(WMS_CAPS.SUPERVISE, WMS_CAPS.PACK_B1), async (
     // se tocan: solo eliminamos los que están fuera del flujo activo.
     //
     // v0.25.14: excluimos pedidos con delivery_status='revived'. Son pedidos
-    // que volvieron de reparto sin entregar y fueron reintegrados al pool
-    // (por auto-revive vía webhook o revive manual del supervisor). Perder
-    // esa marca al hacer sync bulk implicaba que el pedido se re-creaba
-    // desde WC como nuevo, sin trazabilidad histórica y sin el chip
-    // 'revived' que le recordaba al picker buscar la bolsa guardada.
+    // que volvieron de reparto sin entregar y fueron reintegrados al pool.
+    //
+    // v0.25.17: pero SÍ borramos los revived que WC ya cerró (completed,
+    // cancelled, refunded, etc). Un pedido revived que fue cancelado o
+    // completado por otro canal no debería quedar atrapado en el pool.
+    const CLOSED_WC = ['completed', 'cancelled', 'refunded', 'trash', 'failed'];
     const cleared = await prisma.order.deleteMany({
       where: {
         status: 'received',
-        NOT: { deliveryStatus: 'revived' },
+        OR: [
+          // Received sin revived — comportamiento normal.
+          { NOT: { deliveryStatus: 'revived' } },
+          // Revived pero cerrado en WC — igual limpiamos.
+          { wcStatus: { in: CLOSED_WC } },
+        ],
       },
     });
-    slog(`reset: cleared ${cleared.count} pending orders (status=received, revived preservados)`);
+    slog(`reset: cleared ${cleared.count} pending orders (revived preservados salvo cerrados en WC)`);
 
     // Paginación: WC permite hasta 100 por página. Tope de seguridad: 10 páginas (1000 pedidos).
     const wcOrders = [];
